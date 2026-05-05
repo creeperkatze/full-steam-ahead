@@ -77,7 +77,7 @@ const platformCards = computed<PlatformCard[]>(() => {
       selectable: false
     }
   ];
-  return cards.filter((card) => card.selectable || card.candidates.length > 0);
+  return cards.filter((card) => card.candidates.length > 0);
 });
 
 const manualCandidates = computed(() => candidatesFor("manual"));

@@ -1,4 +1,20 @@
-export type ImportSource = "manual" | "playnite" | "epic" | "gog" | { other: string };
+export type ImportSource =
+  | "manual"
+  | "playnite"
+  | "epic"
+  | "gog"
+  | "amazon"
+  | "bottles"
+  | "flatpak"
+  | "gamePass"
+  | "heroic"
+  | "itch"
+  | "legendary"
+  | "lutris"
+  | "miniGalaxy"
+  | "origin"
+  | "ubisoftConnect"
+  | { other: string };
 
 export interface SteamInstallation {
   installPath: string;

@@ -4,7 +4,18 @@ const IMPORT_SOURCE_NAMES: Record<Exclude<ImportSource, { other: string }>, stri
   manual: "Manual",
   playnite: "Playnite",
   epic: "Epic Games",
-  gog: "GOG"
+  gog: "GOG",
+  amazon: "Amazon Games",
+  bottles: "Bottles",
+  flatpak: "Flatpak",
+  gamePass: "Game Pass",
+  heroic: "Heroic",
+  itch: "itch.io",
+  legendary: "Legendary",
+  lutris: "Lutris",
+  miniGalaxy: "MiniGalaxy",
+  origin: "EA app / Origin",
+  ubisoftConnect: "Ubisoft Connect"
 };
 
 export function importSourceName(source: ImportSource) {

@@ -77,15 +77,28 @@ pub struct ScanRequest {
     pub user_steam_id: String,
     pub include_playnite: bool,
     pub include_epic: bool,
+    #[serde(default)]
+    pub include_sources: Vec<ImportSource>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ImportSource {
     Manual,
     Playnite,
     Epic,
     Gog,
+    Amazon,
+    Bottles,
+    Flatpak,
+    GamePass,
+    Heroic,
+    Itch,
+    Legendary,
+    Lutris,
+    MiniGalaxy,
+    Origin,
+    UbisoftConnect,
     Other(String),
 }
 
@@ -96,6 +109,17 @@ impl ImportSource {
             ImportSource::Playnite => "Playnite".to_string(),
             ImportSource::Epic => "Epic Games".to_string(),
             ImportSource::Gog => "GOG".to_string(),
+            ImportSource::Amazon => "Amazon Games".to_string(),
+            ImportSource::Bottles => "Bottles".to_string(),
+            ImportSource::Flatpak => "Flatpak".to_string(),
+            ImportSource::GamePass => "Game Pass".to_string(),
+            ImportSource::Heroic => "Heroic".to_string(),
+            ImportSource::Itch => "itch.io".to_string(),
+            ImportSource::Legendary => "Legendary".to_string(),
+            ImportSource::Lutris => "Lutris".to_string(),
+            ImportSource::MiniGalaxy => "MiniGalaxy".to_string(),
+            ImportSource::Origin => "EA app / Origin".to_string(),
+            ImportSource::UbisoftConnect => "Ubisoft Connect".to_string(),
             ImportSource::Other(value) => value.clone(),
         }
     }

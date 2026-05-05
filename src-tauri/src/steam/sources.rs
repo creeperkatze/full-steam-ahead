@@ -1,23 +1,66 @@
 use crate::{
     error::AppResult,
     importers::{self, quote_path},
-    models::{ArtworkKind, ArtworkSource, ImportCandidate, ScanRequest, ShortcutEntry, SteamUser},
+    models::{
+        ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanRequest, ShortcutEntry,
+        SteamUser,
+    },
     steam::{artwork, non_steam_app_id},
 };
 use std::path::Path;
 
 pub fn scan_sources(user: &SteamUser, request: &ScanRequest) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
+    let enabled_sources = enabled_sources(request);
 
-    if request.include_playnite {
+    if enabled_sources.contains(&ImportSource::Playnite) {
         candidates.extend(importers::playnite::scan(user)?);
     }
 
-    if request.include_epic {
+    if enabled_sources.contains(&ImportSource::Epic) {
         candidates.extend(importers::epic::scan(user)?);
     }
 
+    if enabled_sources.contains(&ImportSource::Amazon) {
+        candidates.extend(importers::amazon::scan(user)?);
+    }
+
+    if enabled_sources.contains(&ImportSource::Gog) {
+        candidates.extend(importers::gog::scan(user)?);
+    }
+
+    if enabled_sources.contains(&ImportSource::Itch) {
+        candidates.extend(importers::itch::scan(user)?);
+    }
+
+    if enabled_sources.contains(&ImportSource::Origin) {
+        candidates.extend(importers::origin::scan(user)?);
+    }
+
+    if enabled_sources.contains(&ImportSource::UbisoftConnect) {
+        candidates.extend(importers::ubisoft::scan(user)?);
+    }
+
+    if enabled_sources.contains(&ImportSource::GamePass) {
+        candidates.extend(importers::game_pass::scan(user)?);
+    }
+
     Ok(candidates)
+}
+
+fn enabled_sources(request: &ScanRequest) -> Vec<ImportSource> {
+    if !request.include_sources.is_empty() {
+        return request.include_sources.clone();
+    }
+
+    let mut sources = Vec::new();
+    if request.include_playnite {
+        sources.push(ImportSource::Playnite);
+    }
+    if request.include_epic {
+        sources.push(ImportSource::Epic);
+    }
+    sources
 }
 
 pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) -> ShortcutEntry {

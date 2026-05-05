@@ -1,9 +1,68 @@
+pub mod amazon;
 pub mod epic;
+pub mod game_pass;
+pub mod gog;
+pub mod itch;
 pub mod manual;
+pub mod origin;
 pub mod playnite;
+pub mod ubisoft;
 
-use std::path::Path;
+use crate::{
+    models::{ImportCandidate, ImportSource, SteamUser},
+    steam::{artwork, non_steam_app_id},
+};
+use std::path::{Path, PathBuf};
 
 pub fn quote_path(path: &Path) -> String {
     format!("\"{}\"", path.display())
+}
+
+pub fn candidate_from_parts(
+    user: &SteamUser,
+    source: ImportSource,
+    source_slug: &str,
+    name: String,
+    executable_path: PathBuf,
+    start_dir: PathBuf,
+    launch_options: Option<String>,
+    tags: Vec<String>,
+) -> ImportCandidate {
+    let app_id = non_steam_app_id(&quote_path(&executable_path), &name);
+    let (matched_steam_app_id, artwork) = artwork::steam_preferred_plan(&user.grid_path, app_id, &name);
+
+    ImportCandidate {
+        id: format!("{source_slug}-{app_id}"),
+        source,
+        name,
+        executable_path,
+        start_dir,
+        launch_options,
+        existing_app_id: None,
+        matched_steam_app_id,
+        tags,
+        artwork,
+    }
+}
+
+pub fn launcher_candidate(
+    user: &SteamUser,
+    source: ImportSource,
+    source_slug: &str,
+    name: String,
+    launcher_path: PathBuf,
+    launch_url: String,
+    tags: Vec<String>,
+) -> ImportCandidate {
+    let start_dir = launcher_path.parent().map(PathBuf::from).unwrap_or_default();
+    candidate_from_parts(
+        user,
+        source,
+        source_slug,
+        name,
+        launcher_path,
+        start_dir,
+        Some(launch_url),
+        tags,
+    )
 }
