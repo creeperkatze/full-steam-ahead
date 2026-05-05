@@ -1,0 +1,25 @@
+[package]
+name = "full-steam-ahead"
+version = "0.1.0"
+description = "A desktop utility for importing non-Steam games."
+authors = ["Creeperkatze"]
+edition = "2021"
+
+[lib]
+name = "full_steam_ahead_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2.0.0", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2.0.0"
+thiserror = "1"
+walkdir = "2"
+winreg = "0.52"

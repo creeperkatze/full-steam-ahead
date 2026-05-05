@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Aptos, "Segoe UI", sans-serif;
+  --color-fsa-bg: #1f2328;
+  --color-fsa-header: #171a1f;
+  --color-fsa-panel: #292e35;
+  --color-fsa-panel-2: #333941;
+  --color-fsa-panel-3: #22272e;
+  --color-fsa-line: #454c56;
+  --color-fsa-text: #e6edf3;
+  --color-fsa-muted: #9da7b1;
+  --color-fsa-accent: #66c0f4;
+  --color-fsa-accent-2: #1a9fff;
+  --color-fsa-danger: #e17d6d;
+  --color-fsa-warning: #d6b95d;
+}
+
+@layer base {
+  body {
+    @apply m-0 min-h-screen min-w-[1040px] bg-fsa-bg font-sans text-sm tracking-normal text-fsa-text;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+
+  input[type="checkbox"] {
+    accent-color: theme(colors.fsa-accent);
+  }
+
+  table {
+    @apply w-full table-fixed border-collapse;
+  }
+
+  th,
+  td {
+    @apply border-b border-fsa-line px-2.5 py-2.5 text-left align-middle;
+  }
+
+  th {
+    @apply font-semibold text-fsa-muted;
+  }
+}
+
+@layer utilities {
+  .path-cell {
+    @apply truncate text-[#c8d1da];
+  }
+}
