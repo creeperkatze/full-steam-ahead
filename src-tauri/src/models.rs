@@ -90,14 +90,18 @@ pub enum ImportSource {
 }
 
 impl ImportSource {
-    pub fn collection_name(&self) -> String {
+    pub fn display_name(&self) -> String {
         match self {
             ImportSource::Manual => "Manual".to_string(),
             ImportSource::Playnite => "Playnite".to_string(),
-            ImportSource::Epic => "Epic".to_string(),
+            ImportSource::Epic => "Epic Games".to_string(),
             ImportSource::Gog => "GOG".to_string(),
             ImportSource::Other(value) => value.clone(),
         }
+    }
+
+    pub fn collection_name(&self) -> String {
+        self.display_name()
     }
 }
 

@@ -2,7 +2,8 @@
 import { computed } from "vue";
 import { FolderPlus, Plus, RefreshCw, Search } from "@lucide/vue";
 import UiButton from "../components/ui/UiButton.vue";
-import type { ImportCandidate, ImportSource, SteamInstallation, SteamUser } from "../types";
+import { importSourceName } from "../sourceNames";
+import type { ImportCandidate, SteamInstallation, SteamUser } from "../types";
 
 const props = defineProps<{
   install: SteamInstallation | null;
@@ -50,7 +51,7 @@ const platformCards = computed<PlatformCard[]>(() => {
   const cards: PlatformCard[] = [
     {
       key: "epic",
-      title: "Epic Games",
+      title: importSourceName("epic"),
       eyebrow: "Launcher",
       description: "Installed titles from Epic launcher manifests.",
       enabled: props.includeEpic,
@@ -59,7 +60,7 @@ const platformCards = computed<PlatformCard[]>(() => {
     },
     {
       key: "playnite",
-      title: "Playnite",
+      title: importSourceName("playnite"),
       eyebrow: "Library manager",
       description: "Games from the local Playnite library.",
       enabled: props.includePlaynite,
@@ -68,7 +69,7 @@ const platformCards = computed<PlatformCard[]>(() => {
     },
     {
       key: "gog",
-      title: "GOG",
+      title: importSourceName("gog"),
       eyebrow: "Library",
       description: "GOG entries found during source scans.",
       enabled: candidatesFor("gog").length > 0,
@@ -124,9 +125,6 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
   }
 }
 
-function sourceLabel(source: ImportSource) {
-  return typeof source === "string" ? source : source.other;
-}
 </script>
 
 <template>
@@ -281,7 +279,7 @@ function sourceLabel(source: ImportSource) {
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
               <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
-              <small class="block text-fsa-muted">{{ sourceLabel(candidate.source) }}</small>
+              <small class="block text-fsa-muted">{{ importSourceName(candidate.source) }}</small>
             </span>
           </label>
         </div>
@@ -300,7 +298,7 @@ function sourceLabel(source: ImportSource) {
           />
           <span class="min-w-0">
             <span class="mb-1 block text-xs uppercase text-fsa-muted">Manual</span>
-            <strong class="block text-lg">Manual</strong>
+            <strong class="block text-lg">{{ importSourceName("manual") }}</strong>
             <span class="block text-fsa-muted">Add executables directly to this list.</span>
           </span>
         </label>

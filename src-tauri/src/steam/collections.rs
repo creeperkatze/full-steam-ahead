@@ -93,7 +93,7 @@ fn managed_collection_entry(source: &str, app_ids: &[u32]) -> (String, Value) {
     let key = format!("user-collections.{id}");
     let value = SteamCollectionValue {
         id: id.clone(),
-        name: format!("Full Steam Ahead: {source}"),
+        name: source.to_string(),
         added: app_ids.to_vec(),
         removed: Vec::new(),
     };

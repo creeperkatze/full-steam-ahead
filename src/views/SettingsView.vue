@@ -2,14 +2,10 @@
 import { ArrowLeft } from "@lucide/vue";
 import { RouterLink } from "vue-router";
 import UiButton from "../components/ui/UiButton.vue";
+import { importSourceName } from "../sourceNames";
 import { useAppState } from "../state/appState";
-import type { ImportCandidate } from "../types";
 
 const state = useAppState();
-
-function sourceName(source: ImportCandidate["source"]) {
-  return typeof source === "string" ? source : source.other;
-}
 </script>
 
 <template>
@@ -55,11 +51,11 @@ function sourceName(source: ImportCandidate["source"]) {
         <p class="path-cell mb-3">{{ state.selectedUser.value?.collectionsPath || "No Steam user selected" }}</p>
         <div class="grid gap-2">
           <p
-            v-for="source in Array.from(new Set(state.selectedCandidates.value.map((candidate) => sourceName(candidate.source))))"
+            v-for="source in Array.from(new Set(state.selectedCandidates.value.map((candidate) => importSourceName(candidate.source))))"
             :key="source"
             class="rounded-md border border-fsa-line bg-fsa-panel-3 px-3 py-2"
           >
-            Full Steam Ahead: {{ source }}
+            {{ source }}
           </p>
           <p v-if="state.selectedCandidates.value.length === 0" class="text-fsa-muted">
             Select imports to preview managed collections.

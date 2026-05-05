@@ -3,7 +3,12 @@ use crate::{
     models::{ApplyRequest, ApplyResult},
     steam::{artwork, collections, detect, shortcuts, sources},
 };
-use std::{fs, process::Command};
+use std::{
+    fs,
+    process::Command,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
     let install = detect::detect_steam()?;
@@ -14,7 +19,7 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
         .ok_or_else(|| AppError::UserNotFound(request.plan.user_steam_id.clone()))?;
 
     if request.options.stop_steam {
-        let _ = Command::new("taskkill").args(["/IM", "steam.exe"]).output();
+        stop_steam()?;
     }
 
     let mut backups_created = Vec::new();
@@ -61,4 +66,47 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
         backups_created,
         skipped_changes,
     })
+}
+
+fn stop_steam() -> AppResult<()> {
+    if !is_steam_running() {
+        return Ok(());
+    }
+
+    let output = Command::new("taskkill")
+        .args(["/F", "/T", "/IM", "steam.exe"])
+        .output()
+        .map_err(|source| AppError::Io {
+            path: "taskkill".into(),
+            source,
+        })?;
+
+    if !output.status.success() && is_steam_running() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let details = if stderr.is_empty() { stdout } else { stderr };
+        return Err(AppError::Message(format!(
+            "Steam could not be stopped before applying. {details}"
+        )));
+    }
+
+    let deadline = Instant::now() + Duration::from_secs(15);
+    while Instant::now() < deadline {
+        if !is_steam_running() {
+            return Ok(());
+        }
+        sleep(Duration::from_millis(300));
+    }
+
+    Err(AppError::Message(
+        "Steam was asked to close, but steam.exe was still running after 15 seconds.".to_string(),
+    ))
+}
+
+fn is_steam_running() -> bool {
+    Command::new("tasklist")
+        .args(["/FI", "IMAGENAME eq steam.exe"])
+        .output()
+        .map(|output| String::from_utf8_lossy(&output.stdout).contains("steam.exe"))
+        .unwrap_or(false)
 }
