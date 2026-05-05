@@ -29,12 +29,18 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
         backups_created.push(backup.destination.clone());
     }
 
+    let skipped_changes = artwork::apply_artwork(
+        &user.grid_path,
+        &request.candidates,
+        request.options.replace_existing_artwork,
+    )?;
+
     let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
     let additions = request
         .candidates
         .iter()
         .filter(|candidate| candidate.existing_app_id.is_none())
-        .map(sources::shortcut_from_candidate)
+        .map(|candidate| sources::shortcut_from_candidate(candidate, &user.grid_path))
         .collect::<Vec<_>>();
     shortcuts::append_missing(&mut existing, additions);
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
@@ -42,12 +48,6 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
     if request.options.write_collections {
         collections::update_modern_collections(&user.collections_path, &request.candidates)?;
     }
-
-    let skipped_changes = artwork::apply_artwork(
-        &user.grid_path,
-        &request.candidates,
-        request.options.replace_existing_artwork,
-    )?;
 
     if request.options.restart_steam {
         let steam_exe = install.install_path.join("steam.exe");
