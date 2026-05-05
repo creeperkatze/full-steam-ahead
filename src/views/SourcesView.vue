@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { FolderPlus, Plus, RefreshCw, Search } from "@lucide/vue";
 import UiButton from "../components/ui/UiButton.vue";
-import type { ImportCandidate, SteamInstallation, SteamUser } from "../types";
+import type { ImportCandidate, ImportSource, SteamInstallation, SteamUser } from "../types";
 
 const props = defineProps<{
   install: SteamInstallation | null;
@@ -17,7 +17,7 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   "update:selectedUserId": [value: string];
   "update:manualPath": [value: string];
   "update:manualName": [value: string];
@@ -32,21 +32,112 @@ defineEmits<{
   "select-none": [];
 }>();
 
+type PlatformKey = "epic" | "playnite" | "manual" | "gog";
+
+interface PlatformCard {
+  key: PlatformKey;
+  title: string;
+  eyebrow: string;
+  description: string;
+  enabled: boolean;
+  candidates: ImportCandidate[];
+  selectable: boolean;
+}
+
 const selectedCount = computed(() => props.selectedIds.size);
 
-function sourceLabel(source: ImportCandidate["source"]) {
+const platformCards = computed<PlatformCard[]>(() => {
+  const cards: PlatformCard[] = [
+    {
+      key: "epic",
+      title: "Epic Games",
+      eyebrow: "Launcher",
+      description: "Installed titles from Epic launcher manifests.",
+      enabled: props.includeEpic,
+      candidates: candidatesFor("epic"),
+      selectable: true
+    },
+    {
+      key: "playnite",
+      title: "Playnite",
+      eyebrow: "Library manager",
+      description: "Games from the local Playnite library.",
+      enabled: props.includePlaynite,
+      candidates: candidatesFor("playnite"),
+      selectable: true
+    },
+    {
+      key: "gog",
+      title: "GOG",
+      eyebrow: "Library",
+      description: "GOG entries found during source scans.",
+      enabled: candidatesFor("gog").length > 0,
+      candidates: candidatesFor("gog"),
+      selectable: false
+    }
+  ];
+  return cards.filter((card) => card.selectable || card.candidates.length > 0);
+});
+
+const manualCandidates = computed(() => candidatesFor("manual"));
+const otherCards = computed(() => {
+  const grouped = new Map<string, ImportCandidate[]>();
+  for (const candidate of props.candidates) {
+    if (typeof candidate.source !== "string") {
+      const label = candidate.source.other;
+      grouped.set(label, [...(grouped.get(label) ?? []), candidate]);
+    }
+  }
+  return Array.from(grouped.entries()).map(([title, candidates]) => ({
+    title,
+    candidates
+  }));
+});
+
+function candidatesFor(source: PlatformKey) {
+  return props.candidates.filter((candidate) => candidate.source === source);
+}
+
+function selectedIn(candidates: ImportCandidate[]) {
+  return candidates.filter((candidate) => props.selectedIds.has(candidate.id)).length;
+}
+
+function allSelected(candidates: ImportCandidate[]) {
+  return candidates.length > 0 && selectedIn(candidates) === candidates.length;
+}
+
+function cardEnabled(card: PlatformCard) {
+  return card.enabled || card.candidates.length > 0;
+}
+
+function setPlatformEnabled(card: PlatformCard, value: boolean) {
+  if (card.key === "epic") emit("update:includeEpic", value);
+  if (card.key === "playnite") emit("update:includePlaynite", value);
+  setCandidatesSelected(card.candidates, value);
+}
+
+function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
+  for (const candidate of candidates) {
+    if (props.selectedIds.has(candidate.id) !== value) {
+      emit("toggle-candidate", candidate.id);
+    }
+  }
+}
+
+function sourceLabel(source: ImportSource) {
   return typeof source === "string" ? source : source.other;
 }
 </script>
 
 <template>
-  <div class="grid gap-3">
-    <section class="grid grid-cols-[minmax(0,1.5fr)_minmax(360px,0.9fr)] gap-5 rounded-lg border border-fsa-line bg-fsa-panel p-4">
-      <div>
-        <span class="mb-2 block text-xs font-bold uppercase text-fsa-accent">Welcome</span>
-        <h1 class="mb-2 text-[26px] font-bold leading-tight">Choose what gets imported into Steam.</h1>
+  <div class="grid gap-4">
+    <section class="grid grid-cols-[minmax(0,1fr)_420px] gap-4 rounded-lg border border-fsa-line bg-fsa-panel p-4">
+      <div class="min-w-0">
+        <span class="mb-2 block text-xs font-bold uppercase text-fsa-accent">Import sources</span>
+        <h1 class="mb-2 text-[26px] font-bold leading-tight">Pick games by platform.</h1>
         <p class="max-w-3xl text-fsa-muted">
-          Scanning reads library metadata only. Nothing is written until the final review step creates backups and applies.
+          Select an entire platform from the card header, or choose individual games inside it.
+          Nothing is written to Steam until the final review.
         </p>
       </div>
 
@@ -85,106 +176,185 @@ function sourceLabel(source: ImportCandidate["source"]) {
       </div>
     </section>
 
-    <section class="rounded-lg border border-fsa-line bg-fsa-panel p-4">
-      <div class="mb-3 flex items-center justify-between gap-4">
-        <div>
-          <h2 class="text-base font-semibold">Detected Sources</h2>
-          <p class="text-fsa-muted">Pick sources, scan them, then choose the games to carry forward.</p>
-        </div>
+    <section class="flex items-center justify-between gap-4 rounded-lg border border-fsa-line bg-fsa-panel p-4">
+      <div>
+        <h2 class="text-base font-semibold">Platform Libraries</h2>
+        <p class="text-fsa-muted">{{ candidates.length }} games available / {{ selectedCount }} selected</p>
+      </div>
+      <div class="flex gap-2">
+        <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-all')">All</UiButton>
+        <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-none')">None</UiButton>
         <UiButton variant="secondary" :disabled="loading || !selectedUser" @click="$emit('scan')">
           <Search :size="16" />
-          Scan Sources
+          Scan
         </UiButton>
-      </div>
-
-      <div class="mb-3 grid grid-cols-3 gap-2">
-        <label class="grid min-h-[88px] grid-cols-[auto_1fr] gap-x-2 gap-y-1 rounded-md border border-fsa-line bg-fsa-panel-3 p-3">
-          <input
-            type="checkbox"
-            :checked="includeEpic"
-            @change="$emit('update:includeEpic', ($event.target as HTMLInputElement).checked)"
-          />
-          <strong>Epic Games</strong>
-          <span class="col-start-2 text-fsa-muted">Installed games from Epic launcher manifests.</span>
-        </label>
-        <label class="grid min-h-[88px] grid-cols-[auto_1fr] gap-x-2 gap-y-1 rounded-md border border-fsa-line bg-fsa-panel-3 p-3">
-          <input
-            type="checkbox"
-            :checked="includePlaynite"
-            @change="$emit('update:includePlaynite', ($event.target as HTMLInputElement).checked)"
-          />
-          <strong>Playnite</strong>
-          <span class="col-start-2 text-fsa-muted">Games found in the local Playnite library.</span>
-        </label>
-        <div class="grid min-h-[88px] grid-cols-[auto_1fr] gap-x-2 gap-y-1 rounded-md border border-fsa-line bg-fsa-panel-3 p-3">
-          <FolderPlus :size="18" />
-          <strong>Manual executable</strong>
-          <span class="col-start-2 text-fsa-muted">Add one game directly from an executable.</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <UiButton size="icon" variant="secondary" title="Pick executable" @click="$emit('pick-executable')">
-          <Plus :size="18" />
-        </UiButton>
-        <input
-          class="h-9 flex-1 rounded-md border border-fsa-line bg-fsa-panel-3 px-2 text-fsa-text"
-          :value="manualPath"
-          placeholder="Executable path"
-          @input="$emit('update:manualPath', ($event.target as HTMLInputElement).value)"
-        />
-        <input
-          class="h-9 w-60 rounded-md border border-fsa-line bg-fsa-panel-3 px-2 text-fsa-text"
-          :value="manualName"
-          placeholder="Display name"
-          @input="$emit('update:manualName', ($event.target as HTMLInputElement).value)"
-        />
-        <UiButton variant="secondary" :disabled="!manualPath" @click="$emit('add-manual')">Add</UiButton>
       </div>
     </section>
 
-    <section class="overflow-hidden rounded-lg border border-fsa-line bg-fsa-panel">
-      <div class="flex items-center justify-between gap-4 border-b border-fsa-line bg-fsa-panel-2 px-4 py-3">
-        <div>
-          <h2 class="text-base font-semibold">Import Selection</h2>
-          <p class="text-fsa-muted">{{ candidates.length }} found / {{ selectedCount }} selected</p>
+    <section class="grid grid-cols-2 gap-4">
+      <article
+        v-for="card in platformCards"
+        :key="card.key"
+        class="overflow-hidden rounded-lg border bg-fsa-panel"
+        :class="cardEnabled(card) ? 'border-fsa-line' : 'border-[#3a424d] opacity-70'"
+      >
+        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-fsa-line bg-fsa-panel-2 p-4">
+          <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+            <input
+              class="mt-1"
+              type="checkbox"
+              :checked="card.enabled && (card.candidates.length === 0 || allSelected(card.candidates))"
+              @change="setPlatformEnabled(card, ($event.target as HTMLInputElement).checked)"
+            />
+            <span class="min-w-0">
+              <span class="mb-1 block text-xs uppercase text-fsa-muted">{{ card.eyebrow }}</span>
+              <strong class="block text-lg">{{ card.title }}</strong>
+              <span class="block text-fsa-muted">{{ card.description }}</span>
+            </span>
+          </label>
+          <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+            {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
+          </span>
+        </header>
+
+        <div class="grid max-h-[320px] gap-2 overflow-auto p-3">
+          <label
+            v-for="candidate in card.candidates"
+            :key="candidate.id"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-fsa-line bg-fsa-panel-3 p-3 transition-colors hover:bg-[#2b333d]"
+          >
+            <input
+              class="mt-1"
+              type="checkbox"
+              :checked="selectedIds.has(candidate.id)"
+              @change="$emit('toggle-candidate', candidate.id)"
+            />
+            <span class="min-w-0">
+              <strong class="block truncate">{{ candidate.name }}</strong>
+              <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
+              <small v-if="candidate.launchOptions" class="block text-fsa-accent">Uses launcher URL</small>
+            </span>
+          </label>
+
+          <div v-if="card.candidates.length === 0" class="grid min-h-[132px] place-items-center rounded-md border border-dashed border-[#596370] bg-fsa-panel-3 p-4 text-center text-fsa-muted">
+            Scan to fill this platform.
+          </div>
         </div>
-        <div class="flex gap-2">
-          <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-all')">All</UiButton>
-          <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-none')">None</UiButton>
+      </article>
+
+      <article
+        v-for="card in otherCards"
+        :key="card.title"
+        class="overflow-hidden rounded-lg border border-fsa-line bg-fsa-panel"
+      >
+        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-fsa-line bg-fsa-panel-2 p-4">
+          <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+            <input
+              class="mt-1"
+              type="checkbox"
+              :checked="allSelected(card.candidates)"
+              @change="setCandidatesSelected(card.candidates, ($event.target as HTMLInputElement).checked)"
+            />
+            <span class="min-w-0">
+              <span class="mb-1 block text-xs uppercase text-fsa-muted">Custom source</span>
+              <strong class="block text-lg">{{ card.title }}</strong>
+              <span class="block text-fsa-muted">Games reported by {{ card.title }}.</span>
+            </span>
+          </label>
+          <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+            {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
+          </span>
+        </header>
+
+        <div class="grid max-h-[320px] gap-2 overflow-auto p-3">
+          <label
+            v-for="candidate in card.candidates"
+            :key="candidate.id"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-fsa-line bg-fsa-panel-3 p-3 transition-colors hover:bg-[#2b333d]"
+          >
+            <input
+              class="mt-1"
+              type="checkbox"
+              :checked="selectedIds.has(candidate.id)"
+              @change="$emit('toggle-candidate', candidate.id)"
+            />
+            <span class="min-w-0">
+              <strong class="block truncate">{{ candidate.name }}</strong>
+              <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
+              <small class="block text-fsa-muted">{{ sourceLabel(candidate.source) }}</small>
+            </span>
+          </label>
+        </div>
+      </article>
+    </section>
+
+    <section class="overflow-hidden rounded-lg border border-fsa-line bg-fsa-panel">
+      <header class="flex items-start justify-between gap-3 border-b border-fsa-line bg-fsa-panel-2 p-4">
+        <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+          <input
+            class="mt-1"
+            type="checkbox"
+            :checked="allSelected(manualCandidates)"
+            :disabled="manualCandidates.length === 0"
+            @change="setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)"
+          />
+          <span class="min-w-0">
+            <span class="mb-1 block text-xs uppercase text-fsa-muted">Manual</span>
+            <strong class="block text-lg">Manual</strong>
+            <span class="block text-fsa-muted">Add executables directly to this list.</span>
+          </span>
+        </label>
+        <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+          {{ selectedIn(manualCandidates) }} / {{ manualCandidates.length }}
+        </span>
+      </header>
+
+      <div class="grid gap-3 p-3">
+        <div class="flex items-center gap-2 rounded-md border border-fsa-line bg-fsa-panel-3 p-2">
+          <UiButton size="icon" variant="secondary" title="Pick executable" @click="$emit('pick-executable')">
+            <FolderPlus :size="18" />
+          </UiButton>
+          <input
+            class="h-9 min-w-0 flex-1 rounded-md border border-fsa-line bg-fsa-panel px-2 text-fsa-text"
+            :value="manualPath"
+            placeholder="Executable path"
+            @input="$emit('update:manualPath', ($event.target as HTMLInputElement).value)"
+          />
+          <input
+            class="h-9 w-64 rounded-md border border-fsa-line bg-fsa-panel px-2 text-fsa-text"
+            :value="manualName"
+            placeholder="Display name"
+            @input="$emit('update:manualName', ($event.target as HTMLInputElement).value)"
+          />
+          <UiButton variant="secondary" :disabled="!manualPath" @click="$emit('add-manual')">
+            <Plus :size="16" />
+            Add
+          </UiButton>
+        </div>
+
+        <div class="grid gap-2">
+          <label
+            v-for="candidate in manualCandidates"
+            :key="candidate.id"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-fsa-line bg-fsa-panel-3 p-3 transition-colors hover:bg-[#2b333d]"
+          >
+            <input
+              class="mt-1"
+              type="checkbox"
+              :checked="selectedIds.has(candidate.id)"
+              @change="$emit('toggle-candidate', candidate.id)"
+            />
+            <span class="min-w-0">
+              <strong class="block truncate">{{ candidate.name }}</strong>
+              <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
+            </span>
+          </label>
+
+          <div v-if="manualCandidates.length === 0" class="grid min-h-[88px] place-items-center rounded-md border border-dashed border-[#596370] bg-fsa-panel-3 p-4 text-center text-fsa-muted">
+            No manual games added yet.
+          </div>
         </div>
       </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th class="w-11"></th>
-            <th>Name</th>
-            <th>Source</th>
-            <th>Executable</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="candidate in candidates" :key="candidate.id">
-            <td>
-              <input
-                type="checkbox"
-                :checked="selectedIds.has(candidate.id)"
-                @change="$emit('toggle-candidate', candidate.id)"
-              />
-            </td>
-            <td>
-              <strong>{{ candidate.name }}</strong>
-              <small v-if="candidate.launchOptions">Uses launcher URL</small>
-            </td>
-            <td>{{ sourceLabel(candidate.source) }}</td>
-            <td class="path-cell">{{ candidate.executablePath }}</td>
-          </tr>
-          <tr v-if="candidates.length === 0">
-            <td colspan="4" class="h-20 text-center text-fsa-muted">No games scanned yet.</td>
-          </tr>
-        </tbody>
-      </table>
     </section>
   </div>
 </template>
