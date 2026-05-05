@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AlertTriangle, ShieldCheck } from "@lucide/vue";
-import type { ApplyResult, PreviewPlan } from "../types";
+import type { ApplyResult, PreviewPlan } from "../types/steam";
 
 defineProps<{
   plan: PreviewPlan | null;

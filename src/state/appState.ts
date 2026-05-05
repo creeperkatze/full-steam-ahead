@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
-import { api } from "../api";
+import { api } from "../api/steam";
 import type {
   ApplyOptions,
   ApplyResult,
@@ -10,7 +10,7 @@ import type {
   PreviewPlan,
   SteamInstallation,
   SteamUser
-} from "../types";
+} from "../types/steam";
 
 export type FlowStep = "sources" | "artwork" | "review";
 

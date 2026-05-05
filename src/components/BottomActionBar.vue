@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UiButton from "./ui/UiButton.vue";
+import UiButton from "./ui/Button.vue";
 
 defineProps<{
   backLabel?: string;

@@ -8,7 +8,7 @@ import type {
   ScanRequest,
   ShortcutEntry,
   SteamInstallation
-} from "./types";
+} from "../types/steam";
 
 export const api = {
   detectSteam: () => invoke<SteamInstallation>("detect_steam"),

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ArrowLeft } from "@lucide/vue";
 import { RouterLink } from "vue-router";
-import UiButton from "../components/ui/UiButton.vue";
-import { importSourceName } from "../sourceNames";
+import UiButton from "../components/ui/Button.vue";
+import { importSourceName } from "../domain/sourceNames";
 import { useAppState } from "../state/appState";
 
 const state = useAppState();
