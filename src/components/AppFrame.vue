@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Settings } from "@lucide/vue";
 import UiButton from "./ui/Button.vue";
-import appIconUrl from "../assets/app-icon.svg";
+import appIconUrl from "../assets/icon.svg";
 
 defineProps<{
   activeStep: number;
