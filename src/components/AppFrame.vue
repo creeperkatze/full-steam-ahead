@@ -10,6 +10,7 @@ defineProps<{
 }>();
 
 defineEmits<{
+  "select-step": [index: number];
   "toggle-settings": [];
 }>();
 
@@ -24,15 +25,17 @@ const steps = ["Sources", "Artwork", "Review"];
       </div>
 
       <nav v-if="!settingsOpen" class="grid grid-cols-3 gap-2" aria-label="Import progress">
-        <span
+        <button
           v-for="(step, index) in steps"
           :key="step"
-          class="flex min-h-9 items-center gap-2 rounded-md border px-3 text-secondary"
+          type="button"
+          class="flex min-h-9 items-center gap-2 rounded-md border px-3 text-left text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary"
           :class="
             activeStep >= index
               ? 'border-accent bg-accent-bg text-primary'
               : 'border-border bg-surface-5'
           "
+          @click="$emit('select-step', index)"
         >
           <b
             class="grid size-5 place-items-center rounded-full text-xs"
@@ -41,7 +44,7 @@ const steps = ["Sources", "Artwork", "Review"];
             {{ index + 1 }}
           </b>
           {{ step }}
-        </span>
+        </button>
       </nav>
       <div v-else aria-hidden="true" />
 

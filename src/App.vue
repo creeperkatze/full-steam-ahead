@@ -23,6 +23,7 @@ function toggleSettings() {
     :active-step="state.activeStepIndex.value"
     :error="state.error.value"
     :settings-open="settingsOpen"
+    @select-step="state.goToStepIndex"
     @toggle-settings="toggleSettings"
   >
     <RouterView />

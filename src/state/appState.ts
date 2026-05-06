@@ -247,6 +247,28 @@ async function goNext() {
   await apply();
 }
 
+async function goToStepIndex(index: number) {
+  if (index === 0) {
+    step.value = "sources";
+    return;
+  }
+
+  if (index === 1) {
+    if (selectedCandidates.value.length > 0) {
+      step.value = "artwork";
+    }
+    return;
+  }
+
+  if (index === 2 && selectedCandidates.value.length > 0) {
+    if (previewPlan.value) {
+      step.value = "review";
+      return;
+    }
+    await continueToReview();
+  }
+}
+
 function toggleCandidate(id: string) {
   const next = new Set(selectedCandidateIds.value);
   if (next.has(id)) {
@@ -316,6 +338,7 @@ export function useAppState() {
     artworkKey,
     goBack,
     goNext,
+    goToStepIndex,
     toggleCandidate,
     selectAll,
     selectNone
