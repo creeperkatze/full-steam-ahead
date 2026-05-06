@@ -18,7 +18,7 @@ const steps = ["Sources", "Artwork", "Review"];
 
 <template>
   <main class="grid min-h-screen grid-rows-[76px_1fr] bg-surface-1 text-primary">
-    <header class="grid grid-cols-[280px_1fr_auto] items-center gap-5 border-b border-border bg-surface-2 px-2">
+    <header class="grid grid-cols-[280px_1fr_auto] items-center gap-5 border-b border-border bg-surface-2 px-5">
       <div class="flex items-center">
         <Logo class="h-12 w-auto" aria-label="Full Steam Ahead" />
       </div>
