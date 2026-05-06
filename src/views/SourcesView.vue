@@ -129,51 +129,6 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
 
 <template>
   <div class="grid gap-4">
-    <section class="grid grid-cols-[minmax(0,1fr)_420px] gap-4 rounded-lg border border-fsa-line bg-fsa-panel p-4">
-      <div class="min-w-0">
-        <span class="mb-2 block text-xs font-bold uppercase text-fsa-accent">Import sources</span>
-        <h1 class="mb-2 text-[26px] font-bold leading-tight">Pick games by platform.</h1>
-        <p class="max-w-3xl text-fsa-muted">
-          Select an entire platform from the card header, or choose individual games inside it.
-          Nothing is written to Steam until the final review.
-        </p>
-      </div>
-
-      <div class="grid gap-2">
-        <div class="min-w-0 rounded-md border border-fsa-line bg-fsa-panel-3 p-3">
-          <div class="mb-2 flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <span class="mb-1 block text-xs uppercase text-fsa-muted">Steam install</span>
-              <strong class="mb-1 block text-lg">{{ install ? "Detected" : "Not detected" }}</strong>
-              <small class="block truncate text-fsa-muted">{{ install?.installPath || "Refresh once Steam is installed." }}</small>
-            </div>
-            <UiButton variant="ghost" title="Refresh Steam detection" :disabled="loading" @click="$emit('refresh-steam')">
-              <RefreshCw :size="16" />
-              Refresh
-            </UiButton>
-          </div>
-        </div>
-
-        <div class="min-w-0 rounded-md border border-fsa-line bg-fsa-panel-3 p-3">
-          <span class="mb-2 block text-xs uppercase text-fsa-muted">Steam account</span>
-          <select
-            class="mb-2 h-9 w-full rounded-md border border-fsa-line bg-fsa-panel px-2 text-fsa-text"
-            :value="selectedUserId"
-            :disabled="loading || (install?.users.length ?? 0) === 0"
-            @change="$emit('update:selectedUserId', ($event.target as HTMLSelectElement).value)"
-          >
-            <option v-if="(install?.users.length ?? 0) === 0" value="">No Steam users found</option>
-            <option v-for="user in install?.users ?? []" :key="user.steamId" :value="user.steamId">
-              {{ user.accountName || user.steamId }}
-            </option>
-          </select>
-          <small class="block truncate text-fsa-muted">
-            {{ selectedUser?.shortcutsPath || "No shortcuts file selected." }}
-          </small>
-        </div>
-      </div>
-    </section>
-
     <section class="flex items-center justify-between gap-4 rounded-lg border border-fsa-line bg-fsa-panel p-4">
       <div>
         <h2 class="text-base font-semibold">Platform Libraries</h2>
