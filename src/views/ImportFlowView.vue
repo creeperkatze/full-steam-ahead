@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, CheckCircle2 } from "@lucide/vue";
+import { ArrowRight, Check } from "@lucide/vue";
 import BottomActionBar from "../components/BottomActionBar.vue";
 import ArtworkView from "./ArtworkView.vue";
 import ReviewView from "./ReviewView.vue";
@@ -55,7 +55,7 @@ const state = useAppState();
       @next="state.goNext"
     >
       <template #next-icon>
-        <CheckCircle2 v-if="state.step.value === 'review'" :size="18" />
+        <Check v-if="state.step.value === 'review'" :size="18" />
         <ArrowRight v-else :size="16" />
       </template>
     </BottomActionBar>
