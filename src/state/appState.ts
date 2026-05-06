@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { api } from "../api/steam";
 import type {
@@ -37,6 +37,18 @@ const options = ref<ApplyOptions>({
   writeCollections: true,
   useLegacyCollectionsFallback: false
 });
+
+watch(
+  options,
+  () => {
+    previewPlan.value = null;
+    applyResult.value = null;
+    if (step.value === "review" && selectedCandidates.value.length > 0) {
+      void continueToReview();
+    }
+  },
+  { deep: true }
+);
 
 const selectedUser = computed<SteamUser | undefined>(() =>
   install.value?.users.find((user) => user.steamId === selectedUserId.value)

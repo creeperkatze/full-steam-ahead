@@ -15,10 +15,6 @@ const state = useAppState();
             <input v-model="state.options.value.writeCollections" type="checkbox" />
             Create managed source collections
           </label>
-          <label class="flex min-h-10 items-center gap-2 rounded-md border border-border bg-surface-5 px-3">
-            <input v-model="state.options.value.useLegacyCollectionsFallback" type="checkbox" />
-            Legacy LevelDB fallback
-          </label>
           <label class="flex min-h-10 items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger">
             <input v-model="state.options.value.stopSteam" type="checkbox" />
             Stop Steam before applying
@@ -33,7 +29,7 @@ const state = useAppState();
       <section class="rounded-lg border border-border bg-surface-3 p-4">
         <h2 class="mb-3 text-base font-semibold">Collections</h2>
         <p class="path-cell mb-3">{{ state.selectedUser.value?.collectionsPath || "No Steam user selected" }}</p>
-        <div class="grid gap-2">
+        <div v-if="state.options.value.writeCollections" class="grid gap-2">
           <p
             v-for="source in Array.from(new Set(state.selectedCandidates.value.map((candidate) => importSourceName(candidate.source))))"
             :key="source"
@@ -45,6 +41,9 @@ const state = useAppState();
             Select imports to preview managed collections.
           </p>
         </div>
+        <p v-else class="rounded-md border border-border bg-surface-5 px-3 py-2 text-secondary">
+          Managed source collections will not be changed.
+        </p>
       </section>
     </div>
   </section>
