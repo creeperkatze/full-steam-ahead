@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { ArrowLeft } from "@lucide/vue";
-import { RouterLink } from "vue-router";
-import UiButton from "../components/ui/Button.vue";
 import { importSourceName } from "../domain/sourceNames";
 import { useAppState } from "../state/appState";
 
@@ -10,19 +7,6 @@ const state = useAppState();
 
 <template>
   <section class="mx-auto grid max-w-5xl gap-3">
-    <div class="flex items-center justify-between rounded-lg border border-border bg-surface-3 p-4">
-      <div>
-        <h1 class="text-[26px] font-bold leading-tight">Settings</h1>
-        <p class="text-secondary">Import behavior, collections, and Steam process options.</p>
-      </div>
-      <RouterLink to="/">
-        <UiButton variant="ghost">
-          <ArrowLeft :size="16" />
-          Import Flow
-        </UiButton>
-      </RouterLink>
-    </div>
-
     <div class="grid grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)] gap-3">
       <section class="rounded-lg border border-border bg-surface-3 p-4">
         <h2 class="mb-3 text-base font-semibold">Apply Options</h2>

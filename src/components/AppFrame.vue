@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Settings } from "@lucide/vue";
+import { Settings, X } from "@lucide/vue";
 import UiButton from "./ui/Button.vue";
 import Logo from "../assets/logo.svg?component";
 
@@ -43,15 +43,18 @@ const steps = ["Sources", "Artwork", "Review"];
           {{ step }}
         </span>
       </nav>
-
-      <div v-else class="rounded-md border border-accent bg-accent-bg px-4 py-2">
-        <strong class="block">Settings</strong>
-        <span class="text-secondary">Application preferences and apply behavior</span>
-      </div>
+      <div v-else aria-hidden="true" />
 
       <div class="flex items-center gap-2">
-        <UiButton size="icon" variant="ghost" title="Settings" :active="settingsOpen" @click="$emit('toggle-settings')">
-          <Settings :size="17" />
+        <UiButton
+          size="icon"
+          variant="ghost"
+          :title="settingsOpen ? 'Close settings' : 'Settings'"
+          :active="settingsOpen"
+          @click="$emit('toggle-settings')"
+        >
+          <X v-if="settingsOpen" :size="18" />
+          <Settings v-else :size="17" />
         </UiButton>
       </div>
     </header>
