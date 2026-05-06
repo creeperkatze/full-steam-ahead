@@ -17,36 +17,31 @@ defineEmits<{
   "update:replaceExistingArtwork": [value: boolean];
 }>();
 
-const slots: Array<{ kind: ArtworkKind; label: string; shape: string; image: string }> = [
+const slots: Array<{ kind: ArtworkKind; label: string; preview: string }> = [
   {
     kind: "header",
     label: "Header",
-    shape: "h-[88px] w-full",
-    image: "object-contain"
+    preview: "h-32 p-2"
   },
   {
     kind: "capsule",
     label: "Capsule",
-    shape: "aspect-[2/3] h-[116px]",
-    image: "object-contain"
+    preview: "h-44 p-2"
   },
   {
     kind: "hero",
     label: "Hero",
-    shape: "h-[88px] w-full",
-    image: "object-contain"
+    preview: "h-32 p-2"
   },
   {
     kind: "logo",
     label: "Logo",
-    shape: "h-[96px] w-full",
-    image: "object-contain p-2"
+    preview: "h-32 p-4"
   },
   {
     kind: "icon",
     label: "Icon",
-    shape: "h-14 w-14",
-    image: "object-contain"
+    preview: "h-32 p-5"
   }
 ];
 
@@ -108,8 +103,8 @@ function selectedSlotCount(candidate: ImportCandidate) {
 </script>
 
 <template>
-  <section class="rounded-lg border border-border bg-surface-3 p-4">
-    <div class="mb-3 flex items-center justify-between gap-4">
+  <section class="grid gap-3">
+    <div class="flex items-center justify-between gap-4">
       <div>
         <h1 class="text-[26px] font-bold leading-tight">Artwork</h1>
         <p class="text-secondary">
@@ -126,26 +121,34 @@ function selectedSlotCount(candidate: ImportCandidate) {
       </label>
     </div>
 
-    <div class="grid gap-2.5">
+    <div
+      v-if="candidates.length === 0"
+      class="grid min-h-[220px] place-items-center rounded-lg border border-dashed border-border-dashed bg-surface-3 p-6 text-secondary"
+    >
+      Select games before reviewing artwork.
+    </div>
+
+    <div v-else class="grid gap-3">
       <article
         v-for="candidate in candidates"
         :key="candidate.id"
-        class="grid grid-cols-[180px_minmax(0,1fr)] gap-3 rounded-lg border border-border bg-surface-5 p-3"
+        class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
-        <div class="flex min-w-0 flex-col justify-between gap-3 border-r border-border pr-3">
+        <header class="flex min-h-14 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
           <div class="min-w-0">
             <strong class="block truncate text-base">{{ candidate.name }}</strong>
+            <span class="text-xs text-secondary">Artwork slots</span>
           </div>
           <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedSlotCount(candidate) }} / {{ slots.length }} selected
           </span>
-        </div>
+        </header>
 
-        <div class="grid min-w-0 grid-cols-[minmax(180px,1.15fr)_116px_minmax(180px,1.15fr)_minmax(160px,1fr)_96px] gap-2">
+        <div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3 p-3">
           <div
             v-for="slot in slots"
             :key="slot.kind"
-            class="grid min-w-0 grid-rows-[auto_1fr_auto] gap-2 overflow-hidden rounded-md border border-border bg-surface-inset p-2"
+            class="grid min-w-0 grid-rows-[auto_auto_auto] gap-2 rounded-md border border-border bg-surface-5 p-2.5"
           >
             <div class="flex min-w-0 items-center justify-between gap-2">
               <strong class="shrink-0 text-xs">{{ slot.label }}</strong>
@@ -154,26 +157,23 @@ function selectedSlotCount(candidate: ImportCandidate) {
               </span>
             </div>
 
-            <div class="grid min-h-[76px] place-items-center">
-              <div
-                class="grid place-items-center overflow-hidden rounded-md border border-dashed border-border-dashed bg-surface-5"
-                :class="slot.shape"
-              >
-                <img
-                  v-if="displayAsset(candidate, slot.kind)?.pathOrUrl && !previewErrored(displayAsset(candidate, slot.kind))"
-                  class="h-full w-full"
-                  :class="slot.image"
-                  :src="previewSrc(displayAsset(candidate, slot.kind))"
-                  @error="markPreviewErrored(displayAsset(candidate, slot.kind))"
-                  alt=""
-                />
-                <span v-else class="px-2 text-xs text-secondary">Missing</span>
-              </div>
+            <div
+              class="flex w-full items-center justify-center rounded-md border border-dashed border-border-dashed bg-surface-inset"
+              :class="slot.preview"
+            >
+              <img
+                v-if="displayAsset(candidate, slot.kind)?.pathOrUrl && !previewErrored(displayAsset(candidate, slot.kind))"
+                class="max-h-full max-w-full object-contain"
+                :src="previewSrc(displayAsset(candidate, slot.kind))"
+                @error="markPreviewErrored(displayAsset(candidate, slot.kind))"
+                alt=""
+              />
+              <span v-else class="px-2 text-xs text-secondary">Missing</span>
             </div>
 
-            <div class="grid grid-cols-[1fr_32px] gap-2">
+            <div class="grid grid-cols-[1fr_36px] gap-2">
               <UiButton
-                class="h-8 min-w-0 px-2 text-xs"
+                class="h-9 min-w-0 px-2 text-xs"
                 variant="secondary"
                 size="sm"
                 title="Pick local artwork"
@@ -183,7 +183,7 @@ function selectedSlotCount(candidate: ImportCandidate) {
                 <span v-if="slot.kind !== 'icon'">Local</span>
               </UiButton>
               <UiButton
-                class="h-8 w-8"
+                class="h-9 w-9"
                 size="icon"
                 variant="ghost"
                 title="Use official Steam artwork"
