@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Settings } from "@lucide/vue";
 import UiButton from "./ui/Button.vue";
-import appIconUrl from "../assets/icon.svg";
+import Logo from "../assets/logo.svg?component";
 
 defineProps<{
   activeStep: number;
@@ -18,13 +18,9 @@ const steps = ["Sources", "Artwork", "Review"];
 
 <template>
   <main class="grid min-h-screen grid-rows-[76px_1fr] bg-fsa-bg text-fsa-text">
-    <header class="grid grid-cols-[280px_1fr_auto] items-center gap-5 border-b border-fsa-line bg-fsa-header px-5">
-      <div class="flex items-center gap-3">
-        <img class="size-8 rounded-md" :src="appIconUrl" alt="" />
-        <div>
-          <strong class="block">Full Steam Ahead</strong>
-          <span class="block text-fsa-muted">Import safely, review everything.</span>
-        </div>
+    <header class="grid grid-cols-[280px_1fr_auto] items-center gap-5 border-b border-fsa-line bg-fsa-header px-2">
+      <div class="flex items-center">
+        <Logo class="h-12 w-auto" aria-label="Full Steam Ahead" />
       </div>
 
       <nav v-if="!settingsOpen" class="grid grid-cols-3 gap-2" aria-label="Import progress">
