@@ -108,15 +108,15 @@ function selectedSlotCount(candidate: ImportCandidate) {
 </script>
 
 <template>
-  <section class="rounded-lg border border-fsa-line bg-fsa-panel p-4">
+  <section class="rounded-lg border border-border bg-surface-3 p-4">
     <div class="mb-3 flex items-center justify-between gap-4">
       <div>
         <h1 class="text-[26px] font-bold leading-tight">Artwork</h1>
-        <p class="text-fsa-muted">
+        <p class="text-secondary">
           Official Steam artwork is selected automatically when a Steam match is found. Each slot can be replaced locally.
         </p>
       </div>
-      <label class="inline-flex h-9 items-center gap-2 rounded-md border border-fsa-line bg-fsa-panel-3 px-3">
+      <label class="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface-5 px-3">
         <input
           type="checkbox"
           :checked="replaceExistingArtwork"
@@ -130,13 +130,13 @@ function selectedSlotCount(candidate: ImportCandidate) {
       <article
         v-for="candidate in candidates"
         :key="candidate.id"
-        class="grid grid-cols-[180px_minmax(0,1fr)] gap-3 rounded-lg border border-fsa-line bg-fsa-panel-3 p-3"
+        class="grid grid-cols-[180px_minmax(0,1fr)] gap-3 rounded-lg border border-border bg-surface-5 p-3"
       >
-        <div class="flex min-w-0 flex-col justify-between gap-3 border-r border-fsa-line pr-3">
+        <div class="flex min-w-0 flex-col justify-between gap-3 border-r border-border pr-3">
           <div class="min-w-0">
             <strong class="block truncate text-base">{{ candidate.name }}</strong>
           </div>
-          <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+          <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedSlotCount(candidate) }} / {{ slots.length }} selected
           </span>
         </div>
@@ -145,18 +145,18 @@ function selectedSlotCount(candidate: ImportCandidate) {
           <div
             v-for="slot in slots"
             :key="slot.kind"
-            class="grid min-w-0 grid-rows-[auto_1fr_auto] gap-2 overflow-hidden rounded-md border border-fsa-line bg-[#1a1f25] p-2"
+            class="grid min-w-0 grid-rows-[auto_1fr_auto] gap-2 overflow-hidden rounded-md border border-border bg-surface-inset p-2"
           >
             <div class="flex min-w-0 items-center justify-between gap-2">
               <strong class="shrink-0 text-xs">{{ slot.label }}</strong>
-              <span class="min-w-0 truncate text-xs text-fsa-muted">
+              <span class="min-w-0 truncate text-xs text-secondary">
                 {{ sourceLabel(selectedAsset(candidate, slot.kind) || existingAsset(candidate, slot.kind)) }}
               </span>
             </div>
 
             <div class="grid min-h-[76px] place-items-center">
               <div
-                class="grid place-items-center overflow-hidden rounded-md border border-dashed border-[#596370] bg-fsa-panel-3"
+                class="grid place-items-center overflow-hidden rounded-md border border-dashed border-border-dashed bg-surface-5"
                 :class="slot.shape"
               >
                 <img
@@ -167,7 +167,7 @@ function selectedSlotCount(candidate: ImportCandidate) {
                   @error="markPreviewErrored(displayAsset(candidate, slot.kind))"
                   alt=""
                 />
-                <span v-else class="px-2 text-xs text-fsa-muted">Missing</span>
+                <span v-else class="px-2 text-xs text-secondary">Missing</span>
               </div>
             </div>
 

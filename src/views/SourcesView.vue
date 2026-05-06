@@ -129,10 +129,10 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
 
 <template>
   <div class="grid gap-4">
-    <section class="flex items-center justify-between gap-4 rounded-lg border border-fsa-line bg-fsa-panel p-4">
+    <section class="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-3 p-4">
       <div>
         <h2 class="text-base font-semibold">Platform Libraries</h2>
-        <p class="text-fsa-muted">{{ candidates.length }} games available / {{ selectedCount }} selected</p>
+        <p class="text-secondary">{{ candidates.length }} games available / {{ selectedCount }} selected</p>
       </div>
       <div class="flex gap-2">
         <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-all')">All</UiButton>
@@ -148,10 +148,10 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
       <article
         v-for="card in platformCards"
         :key="card.key"
-        class="overflow-hidden rounded-lg border bg-fsa-panel"
-        :class="cardEnabled(card) ? 'border-fsa-line' : 'border-[#3a424d] opacity-70'"
+        class="overflow-hidden rounded-lg border bg-surface-3"
+        :class="cardEnabled(card) ? 'border-border' : 'border-border-muted opacity-70'"
       >
-        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-fsa-line bg-fsa-panel-2 p-4">
+        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
           <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
             <input
               class="mt-1"
@@ -160,12 +160,12 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
               @change="setPlatformEnabled(card, ($event.target as HTMLInputElement).checked)"
             />
             <span class="min-w-0">
-              <span class="mb-1 block text-xs uppercase text-fsa-muted">{{ card.eyebrow }}</span>
+              <span class="mb-1 block text-xs uppercase text-secondary">{{ card.eyebrow }}</span>
               <strong class="block text-lg">{{ card.title }}</strong>
-              <span class="block text-fsa-muted">{{ card.description }}</span>
+              <span class="block text-secondary">{{ card.description }}</span>
             </span>
           </label>
-          <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+          <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
           </span>
         </header>
@@ -174,7 +174,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
           <label
             v-for="candidate in card.candidates"
             :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-fsa-line bg-fsa-panel-3 p-3 transition-colors hover:bg-[#2b333d]"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 p-3 transition-colors hover:bg-surface-hover"
           >
             <input
               class="mt-1"
@@ -184,12 +184,12 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             />
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
-              <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
-              <small v-if="candidate.launchOptions" class="block text-fsa-accent">Uses launcher URL</small>
+              <small class="path-cell block">{{ candidate.executablePath }}</small>
+              <small v-if="candidate.launchOptions" class="block text-accent">Uses launcher URL</small>
             </span>
           </label>
 
-          <div v-if="card.candidates.length === 0" class="grid min-h-[132px] place-items-center rounded-md border border-dashed border-[#596370] bg-fsa-panel-3 p-4 text-center text-fsa-muted">
+          <div v-if="card.candidates.length === 0" class="grid min-h-[132px] place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
             Scan to fill this platform.
           </div>
         </div>
@@ -198,9 +198,9 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
       <article
         v-for="card in otherCards"
         :key="card.title"
-        class="overflow-hidden rounded-lg border border-fsa-line bg-fsa-panel"
+        class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
-        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-fsa-line bg-fsa-panel-2 p-4">
+        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
           <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
             <input
               class="mt-1"
@@ -209,12 +209,12 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
               @change="setCandidatesSelected(card.candidates, ($event.target as HTMLInputElement).checked)"
             />
             <span class="min-w-0">
-              <span class="mb-1 block text-xs uppercase text-fsa-muted">Custom source</span>
+              <span class="mb-1 block text-xs uppercase text-secondary">Custom source</span>
               <strong class="block text-lg">{{ card.title }}</strong>
-              <span class="block text-fsa-muted">Games reported by {{ card.title }}.</span>
+              <span class="block text-secondary">Games reported by {{ card.title }}.</span>
             </span>
           </label>
-          <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+          <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
           </span>
         </header>
@@ -223,7 +223,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
           <label
             v-for="candidate in card.candidates"
             :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-fsa-line bg-fsa-panel-3 p-3 transition-colors hover:bg-[#2b333d]"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 p-3 transition-colors hover:bg-surface-hover"
           >
             <input
               class="mt-1"
@@ -233,16 +233,16 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             />
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
-              <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
-              <small class="block text-fsa-muted">{{ importSourceName(candidate.source) }}</small>
+              <small class="path-cell block">{{ candidate.executablePath }}</small>
+              <small class="block text-secondary">{{ importSourceName(candidate.source) }}</small>
             </span>
           </label>
         </div>
       </article>
     </section>
 
-    <section class="overflow-hidden rounded-lg border border-fsa-line bg-fsa-panel">
-      <header class="flex items-start justify-between gap-3 border-b border-fsa-line bg-fsa-panel-2 p-4">
+    <section class="overflow-hidden rounded-lg border border-border bg-surface-3">
+      <header class="flex items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
         <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
           <input
             class="mt-1"
@@ -252,29 +252,29 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             @change="setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)"
           />
           <span class="min-w-0">
-            <span class="mb-1 block text-xs uppercase text-fsa-muted">Manual</span>
+            <span class="mb-1 block text-xs uppercase text-secondary">Manual</span>
             <strong class="block text-lg">{{ importSourceName("manual") }}</strong>
-            <span class="block text-fsa-muted">Add executables directly to this list.</span>
+            <span class="block text-secondary">Add executables directly to this list.</span>
           </span>
         </label>
-        <span class="shrink-0 rounded-full border border-fsa-line px-2 py-1 text-xs text-fsa-muted">
+        <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
           {{ selectedIn(manualCandidates) }} / {{ manualCandidates.length }}
         </span>
       </header>
 
       <div class="grid gap-3 p-3">
-        <div class="flex items-center gap-2 rounded-md border border-fsa-line bg-fsa-panel-3 p-2">
+        <div class="flex items-center gap-2 rounded-md border border-border bg-surface-5 p-2">
           <UiButton size="icon" variant="secondary" title="Pick executable" @click="$emit('pick-executable')">
             <FolderPlus :size="18" />
           </UiButton>
           <input
-            class="h-9 min-w-0 flex-1 rounded-md border border-fsa-line bg-fsa-panel px-2 text-fsa-text"
+            class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-3 px-2 text-primary"
             :value="manualPath"
             placeholder="Executable path"
             @input="$emit('update:manualPath', ($event.target as HTMLInputElement).value)"
           />
           <input
-            class="h-9 w-64 rounded-md border border-fsa-line bg-fsa-panel px-2 text-fsa-text"
+            class="h-9 w-64 rounded-md border border-border bg-surface-3 px-2 text-primary"
             :value="manualName"
             placeholder="Display name"
             @input="$emit('update:manualName', ($event.target as HTMLInputElement).value)"
@@ -289,7 +289,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
           <label
             v-for="candidate in manualCandidates"
             :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-fsa-line bg-fsa-panel-3 p-3 transition-colors hover:bg-[#2b333d]"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 p-3 transition-colors hover:bg-surface-hover"
           >
             <input
               class="mt-1"
@@ -299,11 +299,11 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             />
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
-              <small class="path-cell block truncate text-fsa-muted">{{ candidate.executablePath }}</small>
+              <small class="path-cell block">{{ candidate.executablePath }}</small>
             </span>
           </label>
 
-          <div v-if="manualCandidates.length === 0" class="grid min-h-[88px] place-items-center rounded-md border border-dashed border-[#596370] bg-fsa-panel-3 p-4 text-center text-fsa-muted">
+          <div v-if="manualCandidates.length === 0" class="grid min-h-[88px] place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
             No manual games added yet.
           </div>
         </div>
