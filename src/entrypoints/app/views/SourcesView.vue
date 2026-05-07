@@ -11,56 +11,80 @@ import { useAppState } from "../../../composables/useAppState";
 import { useTaskStatus } from "../../../composables/useTaskStatus";
 import { api } from "../../../helpers/api";
 import { importSourceName } from "../../../helpers/sourceNames";
-import type { ImportCandidate } from "../../../types/steam";
+import type { ImportCandidate, ImportSource } from "../../../types/steam";
 
 const state = useAppState();
 const task = useTaskStatus();
 
-type PlatformKey = "epic" | "playnite" | "manual" | "gog";
+type ScannableSource =
+  | "playnite"
+  | "epic"
+  | "amazon"
+  | "gog"
+  | "itch"
+  | "origin"
+  | "ubisoftConnect"
+  | "gamePass";
 
 interface PlatformCard {
-  key: PlatformKey;
+  key: ScannableSource;
   title: string;
   eyebrow: string;
   description: string;
-  enabled: boolean;
   candidates: ImportCandidate[];
-  selectable: boolean;
 }
+
+const SCANNABLE_SOURCES: Array<{ key: ScannableSource; eyebrow: string; description: string }> = [
+  {
+    key: "playnite",
+    eyebrow: "Library manager",
+    description: "Games from the local Playnite library."
+  },
+  {
+    key: "epic",
+    eyebrow: "Launcher",
+    description: "Installed titles from Epic launcher manifests."
+  },
+  {
+    key: "amazon",
+    eyebrow: "Launcher",
+    description: "Installed titles from Amazon Games manifests."
+  },
+  {
+    key: "gog",
+    eyebrow: "Library",
+    description: "Installed titles from GOG metadata."
+  },
+  {
+    key: "itch",
+    eyebrow: "Library",
+    description: "Installed titles from the itch.io app."
+  },
+  {
+    key: "origin",
+    eyebrow: "Launcher",
+    description: "Installed titles from EA app / Origin metadata."
+  },
+  {
+    key: "ubisoftConnect",
+    eyebrow: "Launcher",
+    description: "Installed titles from Ubisoft Connect metadata."
+  },
+  {
+    key: "gamePass",
+    eyebrow: "Launcher",
+    description: "Installed titles from Xbox Game Pass metadata."
+  }
+];
 
 const selectedCount = computed(() => state.selectedCandidateIds.value.size);
 
 const platformCards = computed<PlatformCard[]>(() => {
-  const cards: PlatformCard[] = [
-    {
-      key: "epic",
-      title: importSourceName("epic"),
-      eyebrow: "Launcher",
-      description: "Installed titles from Epic launcher manifests.",
-      enabled: state.includeEpic.value,
-      candidates: candidatesFor("epic"),
-      selectable: true
-    },
-    {
-      key: "playnite",
-      title: importSourceName("playnite"),
-      eyebrow: "Library manager",
-      description: "Games from the local Playnite library.",
-      enabled: state.includePlaynite.value,
-      candidates: candidatesFor("playnite"),
-      selectable: true
-    },
-    {
-      key: "gog",
-      title: importSourceName("gog"),
-      eyebrow: "Library",
-      description: "GOG entries found during source scans.",
-      enabled: candidatesFor("gog").length > 0,
-      candidates: candidatesFor("gog"),
-      selectable: false
-    }
-  ];
-  return cards.filter((card) => card.candidates.length > 0);
+  return SCANNABLE_SOURCES.map((source) => ({
+    ...source,
+    title: importSourceName(source.key),
+    candidates: candidatesFor(source.key)
+  })).filter((card) => card.candidates.length > 0);
 });
 
 const manualCandidates = computed(() => candidatesFor("manual"));
@@ -82,7 +106,7 @@ onMounted(() => {
   void initializeSources();
 });
 
-function candidatesFor(source: PlatformKey) {
+function candidatesFor(source: ImportSource) {
   return state.candidates.value.filter((candidate) => candidate.source === source);
 }
 
@@ -94,13 +118,7 @@ function allSelected(candidates: ImportCandidate[]) {
   return candidates.length > 0 && selectedIn(candidates) === candidates.length;
 }
 
-function cardEnabled(card: PlatformCard) {
-  return card.enabled || card.candidates.length > 0;
-}
-
 function setPlatformEnabled(card: PlatformCard, value: boolean) {
-  if (card.key === "epic") state.includeEpic.value = value;
-  if (card.key === "playnite") state.includePlaynite.value = value;
   setCandidatesSelected(card.candidates, value);
 }
 
@@ -137,8 +155,7 @@ async function scan() {
   const found = await task.runTask("Scanning sources", () =>
     api.scanSources({
       userSteamId: state.selectedUserId.value,
-      includePlaynite: state.includePlaynite.value,
-      includeEpic: state.includeEpic.value
+      includeSources: SCANNABLE_SOURCES.map((source) => source.key)
     })
   );
   if (!found) return;
@@ -233,15 +250,14 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
       <article
         v-for="card in platformCards"
         :key="card.key"
-        class="overflow-hidden rounded-lg border bg-surface-3"
-        :class="cardEnabled(card) ? 'border-border' : 'border-border-muted opacity-70'"
+        class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
         <header class="flex min-h-22 items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
           <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
             <input
               class="mt-1"
               type="checkbox"
-              :checked="card.enabled && (card.candidates.length === 0 || allSelected(card.candidates))"
+              :checked="allSelected(card.candidates)"
               @change="setPlatformEnabled(card, ($event.target as HTMLInputElement).checked)"
             />
             <span class="min-w-0">

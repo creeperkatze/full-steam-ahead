@@ -11,14 +11,10 @@ export const defaultApplyOptions: ApplyOptions = {
 };
 
 export interface AppSettings {
-  includePlaynite: boolean;
-  includeEpic: boolean;
   options: ApplyOptions;
 }
 
 const defaultSettings: AppSettings = {
-  includePlaynite: true,
-  includeEpic: true,
   options: defaultApplyOptions
 };
 
@@ -31,8 +27,6 @@ export function loadSettings(): AppSettings {
 
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
     return {
-      includePlaynite: booleanOr(parsed.includePlaynite, defaultSettings.includePlaynite),
-      includeEpic: booleanOr(parsed.includeEpic, defaultSettings.includeEpic),
       options: {
         ...defaultApplyOptions,
         ...booleanOptions(parsed.options)

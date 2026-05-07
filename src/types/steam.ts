@@ -58,8 +58,7 @@ export interface ManualImportRequest {
 
 export interface ScanRequest {
   userSteamId: string;
-  includePlaynite: boolean;
-  includeEpic: boolean;
+  includeSources: ImportSource[];
 }
 
 export interface ImportCandidate {

@@ -75,8 +75,6 @@ pub struct ManualImportRequest {
 #[serde(rename_all = "camelCase")]
 pub struct ScanRequest {
     pub user_steam_id: String,
-    pub include_playnite: bool,
-    pub include_epic: bool,
     #[serde(default)]
     pub include_sources: Vec<ImportSource>,
 }

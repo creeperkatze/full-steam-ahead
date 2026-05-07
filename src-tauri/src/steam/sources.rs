@@ -53,14 +53,16 @@ fn enabled_sources(request: &ScanRequest) -> Vec<ImportSource> {
         return request.include_sources.clone();
     }
 
-    let mut sources = Vec::new();
-    if request.include_playnite {
-        sources.push(ImportSource::Playnite);
-    }
-    if request.include_epic {
-        sources.push(ImportSource::Epic);
-    }
-    sources
+    vec![
+        ImportSource::Playnite,
+        ImportSource::Epic,
+        ImportSource::Amazon,
+        ImportSource::Gog,
+        ImportSource::Itch,
+        ImportSource::Origin,
+        ImportSource::UbisoftConnect,
+        ImportSource::GamePass,
+    ]
 }
 
 pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) -> ShortcutEntry {

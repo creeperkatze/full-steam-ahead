@@ -23,8 +23,6 @@ const applyResult = ref<ApplyResult | null>(null);
 const customArtwork = ref<Record<string, string>>({});
 const manualPath = ref("");
 const manualName = ref("");
-const includePlaynite = ref(savedSettings.includePlaynite);
-const includeEpic = ref(savedSettings.includeEpic);
 const options = ref<ApplyOptions>(savedSettings.options);
 
 watch(
@@ -35,10 +33,6 @@ watch(
   },
   { deep: true }
 );
-
-watch([includePlaynite, includeEpic], () => {
-  persistSettings();
-});
 
 const selectedUser = computed<SteamUser | undefined>(() =>
   install.value?.users.find((user) => user.steamId === selectedUserId.value)
@@ -55,8 +49,6 @@ function invalidatePreview() {
 
 function persistSettings() {
   saveSettings({
-    includePlaynite: includePlaynite.value,
-    includeEpic: includeEpic.value,
     options: options.value
   });
 }
@@ -73,8 +65,6 @@ export function useAppState() {
     customArtwork,
     manualPath,
     manualName,
-    includePlaynite,
-    includeEpic,
     options,
     selectedUser,
     selectedCandidates,
