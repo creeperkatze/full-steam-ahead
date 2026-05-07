@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { FolderPlus, Plus, RefreshCw, Search } from "@lucide/vue";
-import UiButton from "../components/ui/Button.vue";
-import { importSourceName } from "../domain/sourceNames";
-import type { ImportCandidate, SteamInstallation, SteamUser } from "../types/steam";
+import UiButton from "../../../components/ui/Button.vue";
+import { importSourceName } from "../../../helpers/sourceNames";
+import type { ImportCandidate, SteamInstallation, SteamUser } from "../../../types/steam";
 
 const props = defineProps<{
   install: SteamInstallation | null;

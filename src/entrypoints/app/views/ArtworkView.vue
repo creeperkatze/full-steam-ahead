@@ -2,8 +2,8 @@
 import { ImagePlus, RotateCcw } from "@lucide/vue";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { ref } from "vue";
-import UiButton from "../components/ui/Button.vue";
-import type { ArtworkAsset, ArtworkKind, ImportCandidate } from "../types/steam";
+import UiButton from "../../../components/ui/Button.vue";
+import type { ArtworkAsset, ArtworkKind, ImportCandidate } from "../../../types/steam";
 
 const props = defineProps<{
   candidates: ImportCandidate[];

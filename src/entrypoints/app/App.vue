@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
 import { useRouter, useRoute, RouterView } from "vue-router";
-import AppFrame from "./components/AppFrame.vue";
-import { useAppState } from "./state/appState";
+import AppFrame from "../../components/AppFrame.vue";
+import { useAppState } from "../../composables/useAppState";
 
 const router = useRouter();
 const route = useRoute();

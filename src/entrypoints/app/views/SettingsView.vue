@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { importSourceName } from "../domain/sourceNames";
-import { useAppState } from "../state/appState";
+import { useAppState } from "../../../composables/useAppState";
+import { importSourceName } from "../../../helpers/sourceNames";
 
 const state = useAppState();
 </script>

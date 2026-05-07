@@ -1,7 +1,7 @@
 import { computed, ref, watch } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
-import { api } from "../api/steam";
-import { loadSettings, saveSettings } from "../app/settings";
+import { api } from "../helpers/api";
+import { loadSettings, saveSettings } from "../helpers/settings";
 import type {
   ApplyOptions,
   ApplyResult,

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ArrowRight, Check } from "@lucide/vue";
-import BottomActionBar from "../components/BottomActionBar.vue";
+import BottomActionBar from "../../../components/BottomActionBar.vue";
 import ArtworkView from "./ArtworkView.vue";
 import ReviewView from "./ReviewView.vue";
 import SourcesView from "./SourcesView.vue";
-import { useAppState } from "../state/appState";
+import { useAppState } from "../../../composables/useAppState";
 
 const state = useAppState();
 </script>

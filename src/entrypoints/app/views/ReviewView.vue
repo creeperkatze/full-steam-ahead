@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { AlertTriangle, Check, ChevronDown, FolderArchive, Image, Library, ListChecks } from "@lucide/vue";
 import { computed } from "vue";
-import type { ApplyResult, PlannedChange, PreviewPlan } from "../types/steam";
+import type { ApplyResult, PlannedChange, PreviewPlan } from "../../../types/steam";
 
 const props = defineProps<{
   plan: PreviewPlan | null;
