@@ -44,11 +44,6 @@ const SCANNABLE_SOURCES: ScannableSource[] = [
 ];
 
 const selectedCount = computed(() => state.selectedCandidateIds.value.size);
-const activeUserLabel = computed(() => {
-  const user = state.selectedUser.value;
-  if (!user) return "No Steam user";
-  return steamUserName(user);
-});
 const steamUsers = computed(() =>
   [...(state.install.value?.users ?? [])].sort((left, right) =>
     steamUserName(left).localeCompare(steamUserName(right))
@@ -210,14 +205,11 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
 <template>
   <div class="grid gap-4">
     <section class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-border bg-surface-3 p-3">
-      <div class="grid grid-cols-[minmax(180px,0.8fr)_minmax(0,1fr)_auto_auto] items-center gap-3">
-        <div class="min-w-0">
-          <span class="block text-xs uppercase text-secondary">Steam user</span>
-          <strong class="block truncate text-base">{{ activeUserLabel }}</strong>
-        </div>
+      <div class="grid grid-cols-[auto_minmax(260px,1fr)_auto] items-center gap-3">
+        <strong class="text-base">Steam User</strong>
         <select
           v-model="state.selectedUserId.value"
-          class="h-9 min-w-0 rounded-md border border-border bg-surface-5 px-2 text-primary"
+          class="h-10 w-fit rounded-md border border-border bg-surface-5 px-2 text-primary"
           :disabled="!state.install.value?.users.length"
           @change="state.invalidatePreview()"
         >
@@ -229,13 +221,9 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             {{ steamUserName(user) }}
           </option>
         </select>
-        <div class="rounded-md border border-border bg-surface-5 px-3 py-1.5 text-right">
-          <span class="block text-xs uppercase text-secondary">Found</span>
-          <strong>{{ state.candidates.value.length }}</strong>
-        </div>
-        <div class="rounded-md border border-border bg-surface-5 px-3 py-1.5 text-right">
-          <span class="block text-xs uppercase text-secondary">Selected</span>
-          <strong>{{ selectedCount }}</strong>
+        <div class="flex items-center gap-4">
+          <span class="text-secondary">Found <strong class="text-primary">{{ state.candidates.value.length }}</strong></span>
+          <span class="text-secondary">Selected <strong class="text-primary">{{ selectedCount }}</strong></span>
         </div>
       </div>
       <div class="flex gap-2">
