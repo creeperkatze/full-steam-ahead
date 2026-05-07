@@ -253,7 +253,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
       </div>
     </section>
 
-    <section class="grid grid-cols-2 gap-4">
+    <section class="grid gap-3">
       <article
         v-for="card in platformCards"
         :key="card.key"
@@ -293,10 +293,6 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
               <small v-if="candidate.launchOptions" class="block text-accent">Uses launcher URL</small>
             </span>
           </label>
-
-          <div v-if="card.candidates.length === 0" class="grid min-h-33 place-items-center border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
-            Scan to fill this platform.
-          </div>
         </div>
       </article>
 
