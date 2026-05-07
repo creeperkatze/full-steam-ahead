@@ -11,11 +11,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,
-    "jsx": "preserve",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "jsx": "preserve"
   },
   "include": ["src/**/*.ts", "src/**/*.vue"],
   "references": []

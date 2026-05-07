@@ -41,7 +41,7 @@
 
 @layer base {
   body {
-    @apply m-0 min-h-screen min-w-[1040px] bg-surface-1 font-sans text-sm tracking-normal text-primary;
+    @apply m-0 min-h-screen min-w-260 bg-surface-1 font-sans text-sm tracking-normal text-primary;
   }
 
   button,

@@ -114,12 +114,12 @@ function titleCase(value: string) {
       <p class="text-secondary">Confirm the Steam shortcuts, artwork, and collections that will be updated.</p>
     </div>
 
-    <div v-if="!plan" class="grid min-h-[220px] place-items-center rounded-lg border border-border bg-surface-3 p-6 text-secondary">
+    <div v-if="!plan" class="grid min-h-55 place-items-center rounded-lg border border-border bg-surface-3 p-6 text-secondary">
       Preparing preview...
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-[repeat(5,minmax(0,1fr))] gap-2">
+      <div class="grid grid-cols-5 gap-2">
         <div class="rounded-lg border border-border bg-surface-3 p-3">
           <span class="text-xs uppercase text-secondary">Games</span>
           <strong class="block text-xl">{{ summary.games }}</strong>

@@ -1,37 +1,20 @@
+<script lang="ts">
+let sourcesInitialized = false;
+</script>
+
 <script setup lang="ts">
-import { computed } from "vue";
-import { FolderPlus, Plus, RefreshCw, Search } from "@lucide/vue";
+import { computed, onMounted } from "vue";
+import { FolderPlus, Plus, Search } from "@lucide/vue";
+import { open } from "@tauri-apps/plugin-dialog";
 import UiButton from "../../../components/ui/Button.vue";
+import { useAppState } from "../../../composables/useAppState";
+import { useTaskStatus } from "../../../composables/useTaskStatus";
+import { api } from "../../../helpers/api";
 import { importSourceName } from "../../../helpers/sourceNames";
-import type { ImportCandidate, SteamInstallation, SteamUser } from "../../../types/steam";
+import type { ImportCandidate } from "../../../types/steam";
 
-const props = defineProps<{
-  install: SteamInstallation | null;
-  selectedUserId: string;
-  selectedUser?: SteamUser;
-  candidates: ImportCandidate[];
-  selectedIds: Set<string>;
-  manualPath: string;
-  manualName: string;
-  includePlaynite: boolean;
-  includeEpic: boolean;
-  loading: boolean;
-}>();
-
-const emit = defineEmits<{
-  "update:selectedUserId": [value: string];
-  "update:manualPath": [value: string];
-  "update:manualName": [value: string];
-  "update:includePlaynite": [value: boolean];
-  "update:includeEpic": [value: boolean];
-  "refresh-steam": [];
-  scan: [];
-  "pick-executable": [];
-  "add-manual": [];
-  "toggle-candidate": [id: string];
-  "select-all": [];
-  "select-none": [];
-}>();
+const state = useAppState();
+const task = useTaskStatus();
 
 type PlatformKey = "epic" | "playnite" | "manual" | "gog";
 
@@ -45,7 +28,7 @@ interface PlatformCard {
   selectable: boolean;
 }
 
-const selectedCount = computed(() => props.selectedIds.size);
+const selectedCount = computed(() => state.selectedCandidateIds.value.size);
 
 const platformCards = computed<PlatformCard[]>(() => {
   const cards: PlatformCard[] = [
@@ -54,7 +37,7 @@ const platformCards = computed<PlatformCard[]>(() => {
       title: importSourceName("epic"),
       eyebrow: "Launcher",
       description: "Installed titles from Epic launcher manifests.",
-      enabled: props.includeEpic,
+      enabled: state.includeEpic.value,
       candidates: candidatesFor("epic"),
       selectable: true
     },
@@ -63,7 +46,7 @@ const platformCards = computed<PlatformCard[]>(() => {
       title: importSourceName("playnite"),
       eyebrow: "Library manager",
       description: "Games from the local Playnite library.",
-      enabled: props.includePlaynite,
+      enabled: state.includePlaynite.value,
       candidates: candidatesFor("playnite"),
       selectable: true
     },
@@ -83,7 +66,7 @@ const platformCards = computed<PlatformCard[]>(() => {
 const manualCandidates = computed(() => candidatesFor("manual"));
 const otherCards = computed(() => {
   const grouped = new Map<string, ImportCandidate[]>();
-  for (const candidate of props.candidates) {
+  for (const candidate of state.candidates.value) {
     if (typeof candidate.source !== "string") {
       const label = candidate.source.other;
       grouped.set(label, [...(grouped.get(label) ?? []), candidate]);
@@ -95,12 +78,16 @@ const otherCards = computed(() => {
   }));
 });
 
+onMounted(() => {
+  void initializeSources();
+});
+
 function candidatesFor(source: PlatformKey) {
-  return props.candidates.filter((candidate) => candidate.source === source);
+  return state.candidates.value.filter((candidate) => candidate.source === source);
 }
 
 function selectedIn(candidates: ImportCandidate[]) {
-  return candidates.filter((candidate) => props.selectedIds.has(candidate.id)).length;
+  return candidates.filter((candidate) => state.selectedCandidateIds.value.has(candidate.id)).length;
 }
 
 function allSelected(candidates: ImportCandidate[]) {
@@ -112,17 +99,113 @@ function cardEnabled(card: PlatformCard) {
 }
 
 function setPlatformEnabled(card: PlatformCard, value: boolean) {
-  if (card.key === "epic") emit("update:includeEpic", value);
-  if (card.key === "playnite") emit("update:includePlaynite", value);
+  if (card.key === "epic") state.includeEpic.value = value;
+  if (card.key === "playnite") state.includePlaynite.value = value;
   setCandidatesSelected(card.candidates, value);
 }
 
 function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
   for (const candidate of candidates) {
-    if (props.selectedIds.has(candidate.id) !== value) {
-      emit("toggle-candidate", candidate.id);
+    if (state.selectedCandidateIds.value.has(candidate.id) !== value) {
+      toggleCandidate(candidate.id);
     }
   }
+}
+
+async function initializeSources() {
+  if (sourcesInitialized) return;
+  sourcesInitialized = true;
+  await refreshSteam();
+}
+
+async function refreshSteam() {
+  const detected = await task.runTask("Detecting Steam", () => api.detectSteam());
+  if (!detected) return;
+
+  state.install.value = detected;
+  state.selectedUserId.value = detected.users[0]?.steamId ?? "";
+  state.invalidatePreview();
+
+  if (state.selectedUserId.value) {
+    await scan();
+  }
+}
+
+async function scan() {
+  if (!state.selectedUserId.value) return;
+
+  const found = await task.runTask("Scanning sources", () =>
+    api.scanSources({
+      userSteamId: state.selectedUserId.value,
+      includePlaynite: state.includePlaynite.value,
+      includeEpic: state.includeEpic.value
+    })
+  );
+  if (!found) return;
+
+  state.candidates.value = mergeCandidates(state.candidates.value, found);
+  state.selectedCandidateIds.value = new Set(state.candidates.value.map((candidate) => candidate.id));
+  state.invalidatePreview();
+}
+
+async function pickExecutable() {
+  const picked = await open({
+    multiple: false,
+    filters: [{ name: "Executable", extensions: ["exe", "bat", "cmd"] }]
+  });
+  if (typeof picked === "string") {
+    state.manualPath.value = picked;
+  }
+}
+
+async function addManual() {
+  if (!state.selectedUserId.value || !state.manualPath.value.trim()) return;
+
+  const candidate = await task.runTask("Adding manual entry", () =>
+    api.createManualCandidate({
+      userSteamId: state.selectedUserId.value,
+      executablePath: state.manualPath.value.trim(),
+      displayName: state.manualName.value.trim() || undefined,
+      source: "manual",
+      tags: ["Manual"]
+    })
+  );
+  if (!candidate) return;
+
+  state.candidates.value = mergeCandidates(state.candidates.value, [candidate]);
+  state.selectedCandidateIds.value = new Set([...state.selectedCandidateIds.value, candidate.id]);
+  state.manualPath.value = "";
+  state.manualName.value = "";
+  state.invalidatePreview();
+}
+
+function toggleCandidate(id: string) {
+  const next = new Set(state.selectedCandidateIds.value);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  state.selectedCandidateIds.value = next;
+  state.invalidatePreview();
+}
+
+function selectAll() {
+  state.selectedCandidateIds.value = new Set(state.candidates.value.map((candidate) => candidate.id));
+  state.invalidatePreview();
+}
+
+function selectNone() {
+  state.selectedCandidateIds.value = new Set();
+  state.invalidatePreview();
+}
+
+function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[]) {
+  const map = new Map(existing.map((candidate) => [candidate.id, candidate]));
+  for (const candidate of incoming) {
+    map.set(candidate.id, candidate);
+  }
+  return Array.from(map.values()).sort((left, right) => left.name.localeCompare(right.name));
 }
 
 </script>
@@ -132,12 +215,12 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
     <section class="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-3 p-4">
       <div>
         <h2 class="text-base font-semibold">Platform Libraries</h2>
-        <p class="text-secondary">{{ candidates.length }} games available / {{ selectedCount }} selected</p>
+        <p class="text-secondary">{{ state.candidates.value.length }} games available / {{ selectedCount }} selected</p>
       </div>
       <div class="flex gap-2">
-        <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-all')">All</UiButton>
-        <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-none')">None</UiButton>
-        <UiButton variant="secondary" :disabled="loading || !selectedUser" @click="$emit('scan')">
+        <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectAll">All</UiButton>
+        <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectNone">None</UiButton>
+        <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="scan">
           Scan
           <template #icon>
             <Search :size="16" />
@@ -153,7 +236,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
         class="overflow-hidden rounded-lg border bg-surface-3"
         :class="cardEnabled(card) ? 'border-border' : 'border-border-muted opacity-70'"
       >
-        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
+        <header class="flex min-h-22 items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
           <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
             <input
               class="mt-1"
@@ -172,7 +255,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
           </span>
         </header>
 
-        <div class="grid max-h-[320px] gap-2 overflow-auto p-3">
+        <div class="grid max-h-80 gap-2 overflow-auto p-3">
           <label
             v-for="candidate in card.candidates"
             :key="candidate.id"
@@ -181,8 +264,8 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             <input
               class="mt-1"
               type="checkbox"
-              :checked="selectedIds.has(candidate.id)"
-              @change="$emit('toggle-candidate', candidate.id)"
+              :checked="state.selectedCandidateIds.value.has(candidate.id)"
+              @change="toggleCandidate(candidate.id)"
             />
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
@@ -191,7 +274,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             </span>
           </label>
 
-          <div v-if="card.candidates.length === 0" class="grid min-h-[132px] place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
+          <div v-if="card.candidates.length === 0" class="grid min-h-33 place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
             Scan to fill this platform.
           </div>
         </div>
@@ -202,7 +285,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
         :key="card.title"
         class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
-        <header class="flex min-h-[88px] items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
+        <header class="flex min-h-22 items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
           <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
             <input
               class="mt-1"
@@ -221,7 +304,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
           </span>
         </header>
 
-        <div class="grid max-h-[320px] gap-2 overflow-auto p-3">
+        <div class="grid max-h-80 gap-2 overflow-auto p-3">
           <label
             v-for="candidate in card.candidates"
             :key="candidate.id"
@@ -230,8 +313,8 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             <input
               class="mt-1"
               type="checkbox"
-              :checked="selectedIds.has(candidate.id)"
-              @change="$emit('toggle-candidate', candidate.id)"
+              :checked="state.selectedCandidateIds.value.has(candidate.id)"
+              @change="toggleCandidate(candidate.id)"
             />
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
@@ -266,22 +349,20 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
 
       <div class="grid gap-3 p-3">
         <div class="flex items-center gap-2 rounded-md border border-border bg-surface-5 p-2">
-          <UiButton size="icon" variant="secondary" title="Pick executable" @click="$emit('pick-executable')">
+          <UiButton size="icon" variant="secondary" title="Pick executable" @click="pickExecutable">
             <FolderPlus :size="18" />
           </UiButton>
           <input
             class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-3 px-2 text-primary"
-            :value="manualPath"
+            v-model="state.manualPath.value"
             placeholder="Executable path"
-            @input="$emit('update:manualPath', ($event.target as HTMLInputElement).value)"
           />
           <input
             class="h-9 w-64 rounded-md border border-border bg-surface-3 px-2 text-primary"
-            :value="manualName"
+            v-model="state.manualName.value"
             placeholder="Display name"
-            @input="$emit('update:manualName', ($event.target as HTMLInputElement).value)"
           />
-          <UiButton variant="secondary" :disabled="!manualPath" @click="$emit('add-manual')">
+          <UiButton variant="secondary" :disabled="!state.manualPath.value" @click="addManual">
             Add
             <template #icon>
               <Plus :size="16" />
@@ -298,8 +379,8 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             <input
               class="mt-1"
               type="checkbox"
-              :checked="selectedIds.has(candidate.id)"
-              @change="$emit('toggle-candidate', candidate.id)"
+              :checked="state.selectedCandidateIds.value.has(candidate.id)"
+              @change="toggleCandidate(candidate.id)"
             />
             <span class="min-w-0">
               <strong class="block truncate">{{ candidate.name }}</strong>
@@ -307,7 +388,7 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             </span>
           </label>
 
-          <div v-if="manualCandidates.length === 0" class="grid min-h-[88px] place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
+          <div v-if="manualCandidates.length === 0" class="grid min-h-22 place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
             No manual games added yet.
           </div>
         </div>

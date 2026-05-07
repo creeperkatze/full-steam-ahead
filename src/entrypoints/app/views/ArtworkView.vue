@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import { ImagePlus, RotateCcw } from "@lucide/vue";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { ref } from "vue";
 import UiButton from "../../../components/ui/Button.vue";
+import { useAppState } from "../../../composables/useAppState";
 import type { ArtworkAsset, ArtworkKind, ImportCandidate } from "../../../types/steam";
 
-const props = defineProps<{
-  candidates: ImportCandidate[];
-  customArtwork: Record<string, string>;
-  replaceExistingArtwork: boolean;
-}>();
-
-defineEmits<{
-  "pick-artwork": [candidateId: string, kind: ArtworkKind];
-  "use-official-artwork": [candidateId: string, kind: ArtworkKind];
-  "update:replaceExistingArtwork": [value: boolean];
-}>();
+const state = useAppState();
 
 const slots: Array<{ kind: ArtworkKind; label: string; preview: string }> = [
   {
@@ -52,7 +44,7 @@ function artworkKey(candidateId: string, kind: ArtworkKind) {
 }
 
 function selectedAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAsset | undefined {
-  const localPath = props.customArtwork[artworkKey(candidate.id, kind)];
+  const localPath = state.customArtwork.value[artworkKey(candidate.id, kind)];
   if (localPath) {
     return {
       kind,
@@ -100,6 +92,68 @@ function displayAsset(candidate: ImportCandidate, kind: ArtworkKind) {
 function selectedSlotCount(candidate: ImportCandidate) {
   return slots.filter((slot) => selectedAsset(candidate, slot.kind)).length;
 }
+
+async function pickArtwork(candidateId: string, kind: ArtworkKind) {
+  const picked = await open({
+    multiple: false,
+    filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }]
+  });
+  if (typeof picked !== "string") return;
+
+  state.customArtwork.value = { ...state.customArtwork.value, [artworkKey(candidateId, kind)]: picked };
+  upsertArtworkAsset(candidateId, {
+    kind,
+    pathOrUrl: picked,
+    source: "localFile",
+    willReplaceExisting: true
+  });
+}
+
+function useOfficialArtwork(candidateId: string, kind: ArtworkKind) {
+  const candidate = state.candidates.value.find((candidate) => candidate.id === candidateId);
+  const official = candidate?.artwork.proposed.find(
+    (asset) => asset.kind === kind && asset.source === "officialSteam"
+  );
+  if (!official) return;
+
+  removeLocalArtworkAsset(candidateId, kind);
+  const { [artworkKey(candidateId, kind)]: _removed, ...rest } = state.customArtwork.value;
+  state.customArtwork.value = rest;
+}
+
+function upsertArtworkAsset(candidateId: string, asset: ArtworkAsset) {
+  state.candidates.value = state.candidates.value.map((candidate) => {
+    if (candidate.id !== candidateId) return candidate;
+    const proposed = candidate.artwork.proposed.filter(
+      (item) => !(item.kind === asset.kind && item.source === asset.source)
+    );
+    return {
+      ...candidate,
+      artwork: {
+        ...candidate.artwork,
+        mode: asset.source === "localFile" ? "localOverride" : candidate.artwork.mode,
+        proposed: [...proposed, asset]
+      }
+    };
+  });
+  state.invalidatePreview();
+}
+
+function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
+  state.candidates.value = state.candidates.value.map((candidate) => {
+    if (candidate.id !== candidateId) return candidate;
+    return {
+      ...candidate,
+      artwork: {
+        ...candidate.artwork,
+        proposed: candidate.artwork.proposed.filter(
+          (asset) => !(asset.kind === kind && asset.source === "localFile")
+        )
+      }
+    };
+  });
+  state.invalidatePreview();
+}
 </script>
 
 <template>
@@ -114,23 +168,22 @@ function selectedSlotCount(candidate: ImportCandidate) {
       <label class="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface-5 px-3">
         <input
           type="checkbox"
-          :checked="replaceExistingArtwork"
-          @change="$emit('update:replaceExistingArtwork', ($event.target as HTMLInputElement).checked)"
+          v-model="state.options.value.replaceExistingArtwork"
         />
         Replace existing custom art
       </label>
     </div>
 
     <div
-      v-if="candidates.length === 0"
-      class="grid min-h-[220px] place-items-center rounded-lg border border-dashed border-border-dashed bg-surface-3 p-6 text-secondary"
+      v-if="state.selectedCandidates.value.length === 0"
+      class="grid min-h-55 place-items-center rounded-lg border border-dashed border-border-dashed bg-surface-3 p-6 text-secondary"
     >
       Select games before reviewing artwork.
     </div>
 
     <div v-else class="grid gap-3">
       <article
-        v-for="candidate in candidates"
+        v-for="candidate in state.selectedCandidates.value"
         :key="candidate.id"
         class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
@@ -177,7 +230,7 @@ function selectedSlotCount(candidate: ImportCandidate) {
                 variant="secondary"
                 size="sm"
                 title="Pick local artwork"
-                @click="$emit('pick-artwork', candidate.id, slot.kind)"
+                @click="pickArtwork(candidate.id, slot.kind)"
               >
                 <span v-if="slot.kind !== 'icon'">Local</span>
                 <template #icon>
@@ -190,7 +243,7 @@ function selectedSlotCount(candidate: ImportCandidate) {
                 variant="ghost"
                 title="Use official Steam artwork"
                 :disabled="!candidate.artwork.proposed.some((asset) => asset.kind === slot.kind && asset.source === 'officialSteam')"
-                @click="$emit('use-official-artwork', candidate.id, slot.kind)"
+                @click="useOfficialArtwork(candidate.id, slot.kind)"
               >
                 <RotateCcw :size="14" />
               </UiButton>
