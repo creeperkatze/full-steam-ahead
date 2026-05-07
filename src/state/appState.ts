@@ -1,6 +1,7 @@
 import { computed, ref, watch } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { api } from "../api/steam";
+import { loadSettings, saveSettings } from "../app/settings";
 import type {
   ApplyOptions,
   ApplyResult,
@@ -13,6 +14,8 @@ import type {
 } from "../types/steam";
 
 export type FlowStep = "sources" | "artwork" | "review";
+
+const savedSettings = loadSettings();
 
 const step = ref<FlowStep>("sources");
 const install = ref<SteamInstallation | null>(null);
@@ -27,20 +30,15 @@ const error = ref("");
 const status = ref("Ready");
 const manualPath = ref("");
 const manualName = ref("");
-const includePlaynite = ref(true);
-const includeEpic = ref(true);
+const includePlaynite = ref(savedSettings.includePlaynite);
+const includeEpic = ref(savedSettings.includeEpic);
 const initialized = ref(false);
-const options = ref<ApplyOptions>({
-  stopSteam: false,
-  restartSteam: false,
-  replaceExistingArtwork: false,
-  writeCollections: true,
-  useLegacyCollectionsFallback: false
-});
+const options = ref<ApplyOptions>(savedSettings.options);
 
 watch(
   options,
   () => {
+    persistSettings();
     previewPlan.value = null;
     applyResult.value = null;
     if (step.value === "review" && selectedCandidates.value.length > 0) {
@@ -49,6 +47,10 @@ watch(
   },
   { deep: true }
 );
+
+watch([includePlaynite, includeEpic], () => {
+  persistSettings();
+});
 
 const selectedUser = computed<SteamUser | undefined>(() =>
   install.value?.users.find((user) => user.steamId === selectedUserId.value)
@@ -315,6 +317,14 @@ function commandMessage(err: unknown) {
     return String((err as { message: unknown }).message);
   }
   return String(err);
+}
+
+function persistSettings() {
+  saveSettings({
+    includePlaynite: includePlaynite.value,
+    includeEpic: includeEpic.value,
+    options: options.value
+  });
 }
 
 export function useAppState() {
