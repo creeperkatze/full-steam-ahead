@@ -6,6 +6,8 @@ use serde::Deserialize;
 use std::{fs, path::PathBuf, process::Command};
 use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 
+const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
+
 #[derive(Debug, Deserialize)]
 struct LoginUsers {
     users: std::collections::HashMap<String, LoginUser>,
@@ -15,6 +17,7 @@ struct LoginUsers {
 #[serde(rename_all = "PascalCase")]
 struct LoginUser {
     account_name: Option<String>,
+    persona_name: Option<String>,
 }
 
 pub fn detect_steam() -> AppResult<SteamInstallation> {
@@ -40,10 +43,10 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
             };
 
             users.push(SteamUser {
-                account_name: login_users
-                    .as_ref()
-                    .and_then(|users| users.users.get(&steam_id))
-                    .and_then(|user| user.account_name.clone()),
+                account_name: login_users.as_ref().and_then(|users| {
+                    login_user_for_userdata_id(users, &steam_id)
+                        .and_then(|user| user.display_name())
+                }),
                 shortcuts_path: path.join("config").join("shortcuts.vdf"),
                 grid_path: path.join("config").join("grid"),
                 collections_path: path
@@ -81,6 +84,7 @@ fn parse_login_users_vdf(raw: &str) -> Option<LoginUsers> {
     let mut users = std::collections::HashMap::new();
     let mut current_id: Option<String> = None;
     let mut account_name: Option<String> = None;
+    let mut persona_name: Option<String> = None;
 
     for line in raw.lines() {
         let tokens = quoted_tokens(line);
@@ -91,6 +95,7 @@ fn parse_login_users_vdf(raw: &str) -> Option<LoginUsers> {
                         previous,
                         LoginUser {
                             account_name: account_name.take(),
+                            persona_name: persona_name.take(),
                         },
                     );
                 }
@@ -99,15 +104,49 @@ fn parse_login_users_vdf(raw: &str) -> Option<LoginUsers> {
             [key, value] if key == "AccountName" => {
                 account_name = Some(value.clone());
             }
+            [key, value] if key == "PersonaName" => {
+                persona_name = Some(value.clone());
+            }
             _ => {}
         }
     }
 
     if let Some(previous) = current_id {
-        users.insert(previous, LoginUser { account_name });
+        users.insert(
+            previous,
+            LoginUser {
+                account_name,
+                persona_name,
+            },
+        );
     }
 
     Some(LoginUsers { users })
+}
+
+fn login_user_for_userdata_id<'a>(
+    login_users: &'a LoginUsers,
+    userdata_id: &str,
+) -> Option<&'a LoginUser> {
+    login_users.users.get(userdata_id).or_else(|| {
+        let account_id = userdata_id.parse::<u64>().ok()?;
+        let steam_id64 = account_id.checked_add(STEAM_ID64_BASE)?;
+        login_users.users.get(&steam_id64.to_string())
+    })
+}
+
+impl LoginUser {
+    fn display_name(&self) -> Option<String> {
+        self.persona_name
+            .as_ref()
+            .filter(|name| !name.trim().is_empty())
+            .or_else(|| {
+                self.account_name
+                    .as_ref()
+                    .filter(|name| !name.trim().is_empty())
+            })
+            .cloned()
+    }
 }
 
 fn quoted_tokens(line: &str) -> Vec<String> {

@@ -24,6 +24,7 @@ const customArtwork = ref<Record<string, string>>({});
 const manualPath = ref("");
 const manualName = ref("");
 const options = ref<ApplyOptions>(savedSettings.options);
+options.value.replaceExistingArtwork = true;
 
 watch(
   options,

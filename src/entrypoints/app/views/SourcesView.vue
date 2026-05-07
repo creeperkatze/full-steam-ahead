@@ -4,7 +4,7 @@ let sourcesInitialized = false;
 
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
-import { FolderPlus, Plus, Search } from "@lucide/vue";
+import { FolderPlus, Plus, RefreshCw, Search } from "@lucide/vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import UiButton from "../../../components/ui/Button.vue";
 import { useAppState } from "../../../composables/useAppState";
@@ -29,61 +29,37 @@ type ScannableSource =
 interface PlatformCard {
   key: ScannableSource;
   title: string;
-  eyebrow: string;
-  description: string;
   candidates: ImportCandidate[];
 }
 
-const SCANNABLE_SOURCES: Array<{ key: ScannableSource; eyebrow: string; description: string }> = [
-  {
-    key: "playnite",
-    eyebrow: "Library manager",
-    description: "Games from the local Playnite library."
-  },
-  {
-    key: "epic",
-    eyebrow: "Launcher",
-    description: "Installed titles from Epic launcher manifests."
-  },
-  {
-    key: "amazon",
-    eyebrow: "Launcher",
-    description: "Installed titles from Amazon Games manifests."
-  },
-  {
-    key: "gog",
-    eyebrow: "Library",
-    description: "Installed titles from GOG metadata."
-  },
-  {
-    key: "itch",
-    eyebrow: "Library",
-    description: "Installed titles from the itch.io app."
-  },
-  {
-    key: "origin",
-    eyebrow: "Launcher",
-    description: "Installed titles from EA app / Origin metadata."
-  },
-  {
-    key: "ubisoftConnect",
-    eyebrow: "Launcher",
-    description: "Installed titles from Ubisoft Connect metadata."
-  },
-  {
-    key: "gamePass",
-    eyebrow: "Launcher",
-    description: "Installed titles from Xbox Game Pass metadata."
-  }
+const SCANNABLE_SOURCES: ScannableSource[] = [
+  "playnite",
+  "epic",
+  "amazon",
+  "gog",
+  "itch",
+  "origin",
+  "ubisoftConnect",
+  "gamePass"
 ];
 
 const selectedCount = computed(() => state.selectedCandidateIds.value.size);
+const activeUserLabel = computed(() => {
+  const user = state.selectedUser.value;
+  if (!user) return "No Steam user";
+  return steamUserName(user);
+});
+const steamUsers = computed(() =>
+  [...(state.install.value?.users ?? [])].sort((left, right) =>
+    steamUserName(left).localeCompare(steamUserName(right))
+  )
+);
 
 const platformCards = computed<PlatformCard[]>(() => {
   return SCANNABLE_SOURCES.map((source) => ({
-    ...source,
-    title: importSourceName(source.key),
-    candidates: candidatesFor(source.key)
+    key: source,
+    title: importSourceName(source),
+    candidates: candidatesFor(source)
   })).filter((card) => card.candidates.length > 0);
 });
 
@@ -108,6 +84,10 @@ onMounted(() => {
 
 function candidatesFor(source: ImportSource) {
   return state.candidates.value.filter((candidate) => candidate.source === source);
+}
+
+function steamUserName(user: { accountName?: string | null }) {
+  return user.accountName?.trim() || "Unnamed Steam User";
 }
 
 function selectedIn(candidates: ImportCandidate[]) {
@@ -155,7 +135,7 @@ async function scan() {
   const found = await task.runTask("Scanning sources", () =>
     api.scanSources({
       userSteamId: state.selectedUserId.value,
-      includeSources: SCANNABLE_SOURCES.map((source) => source.key)
+      includeSources: []
     })
   );
   if (!found) return;
@@ -229,14 +209,41 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
 
 <template>
   <div class="grid gap-4">
-    <section class="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface-3 p-4">
-      <div>
-        <h2 class="text-base font-semibold">Platform Libraries</h2>
-        <p class="text-secondary">{{ state.candidates.value.length }} games available / {{ selectedCount }} selected</p>
+    <section class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-border bg-surface-3 p-3">
+      <div class="grid grid-cols-[minmax(180px,0.8fr)_minmax(0,1fr)_auto_auto] items-center gap-3">
+        <div class="min-w-0">
+          <span class="block text-xs uppercase text-secondary">Steam user</span>
+          <strong class="block truncate text-base">{{ activeUserLabel }}</strong>
+        </div>
+        <select
+          v-model="state.selectedUserId.value"
+          class="h-9 min-w-0 rounded-md border border-border bg-surface-5 px-2 text-primary"
+          :disabled="!state.install.value?.users.length"
+          @change="state.invalidatePreview()"
+        >
+          <option
+          v-for="user in steamUsers"
+          :key="user.steamId"
+          :value="user.steamId"
+        >
+            {{ steamUserName(user) }}
+          </option>
+        </select>
+        <div class="rounded-md border border-border bg-surface-5 px-3 py-1.5 text-right">
+          <span class="block text-xs uppercase text-secondary">Found</span>
+          <strong>{{ state.candidates.value.length }}</strong>
+        </div>
+        <div class="rounded-md border border-border bg-surface-5 px-3 py-1.5 text-right">
+          <span class="block text-xs uppercase text-secondary">Selected</span>
+          <strong>{{ selectedCount }}</strong>
+        </div>
       </div>
       <div class="flex gap-2">
         <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectAll">All</UiButton>
         <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectNone">None</UiButton>
+        <UiButton size="icon" variant="ghost" title="Detect Steam again" :disabled="task.loading.value" @click="refreshSteam">
+          <RefreshCw :size="16" />
+        </UiButton>
         <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="scan">
           Scan
           <template #icon>
@@ -252,30 +259,27 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
         :key="card.key"
         class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
-        <header class="flex min-h-22 items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
-          <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+        <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
+          <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
             <input
-              class="mt-1"
               type="checkbox"
               :checked="allSelected(card.candidates)"
               @change="setPlatformEnabled(card, ($event.target as HTMLInputElement).checked)"
             />
             <span class="min-w-0">
-              <span class="mb-1 block text-xs uppercase text-secondary">{{ card.eyebrow }}</span>
-              <strong class="block text-lg">{{ card.title }}</strong>
-              <span class="block text-secondary">{{ card.description }}</span>
+              <strong class="block truncate text-base">{{ card.title }}</strong>
             </span>
           </label>
-          <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
+          <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
           </span>
         </header>
 
-        <div class="grid max-h-80 gap-2 overflow-auto p-3">
+        <div class="grid max-h-80 overflow-auto">
           <label
             v-for="candidate in card.candidates"
             :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 p-3 transition-colors hover:bg-surface-hover"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 border-b border-border-muted px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface-hover"
           >
             <input
               class="mt-1"
@@ -290,7 +294,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             </span>
           </label>
 
-          <div v-if="card.candidates.length === 0" class="grid min-h-33 place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
+          <div v-if="card.candidates.length === 0" class="grid min-h-33 place-items-center border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
             Scan to fill this platform.
           </div>
         </div>
@@ -301,30 +305,27 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
         :key="card.title"
         class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
-        <header class="flex min-h-22 items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
-          <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+        <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
+          <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
             <input
-              class="mt-1"
               type="checkbox"
               :checked="allSelected(card.candidates)"
               @change="setCandidatesSelected(card.candidates, ($event.target as HTMLInputElement).checked)"
             />
             <span class="min-w-0">
-              <span class="mb-1 block text-xs uppercase text-secondary">Custom source</span>
-              <strong class="block text-lg">{{ card.title }}</strong>
-              <span class="block text-secondary">Games reported by {{ card.title }}.</span>
+              <strong class="block truncate text-base">{{ card.title }}</strong>
             </span>
           </label>
-          <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
+          <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
           </span>
         </header>
 
-        <div class="grid max-h-80 gap-2 overflow-auto p-3">
+        <div class="grid max-h-80 overflow-auto">
           <label
             v-for="candidate in card.candidates"
             :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 p-3 transition-colors hover:bg-surface-hover"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 border-b border-border-muted px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface-hover"
           >
             <input
               class="mt-1"
@@ -343,22 +344,19 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
     </section>
 
     <section class="overflow-hidden rounded-lg border border-border bg-surface-3">
-      <header class="flex items-start justify-between gap-3 border-b border-border bg-surface-4 p-4">
-        <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+      <header class="flex items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
+        <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
           <input
-            class="mt-1"
             type="checkbox"
             :checked="allSelected(manualCandidates)"
             :disabled="manualCandidates.length === 0"
             @change="setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)"
           />
           <span class="min-w-0">
-            <span class="mb-1 block text-xs uppercase text-secondary">Manual</span>
-            <strong class="block text-lg">{{ importSourceName("manual") }}</strong>
-            <span class="block text-secondary">Add executables directly to this list.</span>
+            <strong class="block truncate text-base">{{ importSourceName("manual") }}</strong>
           </span>
         </label>
-        <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
+        <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
           {{ selectedIn(manualCandidates) }} / {{ manualCandidates.length }}
         </span>
       </header>
@@ -390,7 +388,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
           <label
             v-for="candidate in manualCandidates"
             :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 p-3 transition-colors hover:bg-surface-hover"
+            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 px-3 py-2.5 transition-colors hover:bg-surface-hover"
           >
             <input
               class="mt-1"

@@ -5,7 +5,7 @@ const STORAGE_KEY = "full-steam-ahead:settings";
 export const defaultApplyOptions: ApplyOptions = {
   stopSteam: false,
   restartSteam: false,
-  replaceExistingArtwork: false,
+  replaceExistingArtwork: true,
   writeCollections: true,
   useLegacyCollectionsFallback: false
 };
@@ -57,7 +57,7 @@ function booleanOptions(value: unknown): Partial<ApplyOptions> {
   return {
     stopSteam: booleanOr(parsed.stopSteam, defaultApplyOptions.stopSteam),
     restartSteam: booleanOr(parsed.restartSteam, defaultApplyOptions.restartSteam),
-    replaceExistingArtwork: booleanOr(parsed.replaceExistingArtwork, defaultApplyOptions.replaceExistingArtwork),
+    replaceExistingArtwork: true,
     writeCollections: booleanOr(parsed.writeCollections, defaultApplyOptions.writeCollections),
     useLegacyCollectionsFallback: booleanOr(
       parsed.useLegacyCollectionsFallback,

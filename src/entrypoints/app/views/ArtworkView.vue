@@ -93,6 +93,10 @@ function selectedSlotCount(candidate: ImportCandidate) {
   return slots.filter((slot) => selectedAsset(candidate, slot.kind)).length;
 }
 
+function selectedCount() {
+  return state.selectedCandidates.value.length;
+}
+
 async function pickArtwork(candidateId: string, kind: ArtworkKind) {
   const picked = await open({
     multiple: false,
@@ -158,20 +162,13 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
 
 <template>
   <section class="grid gap-3">
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <h1 class="text-[26px] font-bold leading-tight">Artwork</h1>
-        <p class="text-secondary">
-          Official Steam artwork is selected automatically when a Steam match is found. Each slot can be replaced locally.
-        </p>
+    <div class="flex items-center rounded-lg border border-border bg-surface-3 p-3">
+      <div class="flex min-w-0 items-center gap-3">
+        <h1 class="text-xl font-bold leading-tight">Artwork</h1>
+        <span class="rounded-md border border-border bg-surface-5 px-2 py-1 text-xs text-secondary">
+          {{ selectedCount() }} games
+        </span>
       </div>
-      <label class="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface-5 px-3">
-        <input
-          type="checkbox"
-          v-model="state.options.value.replaceExistingArtwork"
-        />
-        Replace existing custom art
-      </label>
     </div>
 
     <div
@@ -187,12 +184,9 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
         :key="candidate.id"
         class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
-        <header class="flex min-h-14 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
-          <div class="min-w-0">
-            <strong class="block truncate text-base">{{ candidate.name }}</strong>
-            <span class="text-xs text-secondary">Artwork slots</span>
-          </div>
-          <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
+        <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
+          <strong class="min-w-0 truncate text-base">{{ candidate.name }}</strong>
+          <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedSlotCount(candidate) }} / {{ slots.length }} selected
           </span>
         </header>
@@ -204,8 +198,8 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
             class="grid min-w-0 grid-rows-[auto_auto_auto] gap-2 rounded-md border border-border bg-surface-5 p-2.5"
           >
             <div class="flex min-w-0 items-center justify-between gap-2">
-              <strong class="shrink-0 text-xs">{{ slot.label }}</strong>
-              <span class="min-w-0 truncate text-xs text-secondary">
+              <strong class="shrink-0 text-sm">{{ slot.label }}</strong>
+              <span class="min-w-0 truncate rounded-sm border border-border-muted px-1.5 py-0.5 text-xs text-secondary">
                 {{ sourceLabel(selectedAsset(candidate, slot.kind) || existingAsset(candidate, slot.kind)) }}
               </span>
             </div>
@@ -232,7 +226,7 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
                 title="Pick local artwork"
                 @click="pickArtwork(candidate.id, slot.kind)"
               >
-                <span v-if="slot.kind !== 'icon'">Local</span>
+                <span>Replace</span>
                 <template #icon>
                   <ImagePlus :size="14" />
                 </template>
