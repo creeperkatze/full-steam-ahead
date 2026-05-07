@@ -27,10 +27,16 @@ const classes = computed(() => [
   props.variant === "danger" && "border-danger-border bg-danger-control text-danger hover:bg-danger-hover",
   props.active && "border-accent bg-accent-bg text-primary"
 ]);
+
+defineSlots<{
+  default?: () => unknown;
+  icon?: () => unknown;
+}>();
 </script>
 
 <template>
   <button :type="type" :disabled="disabled" :class="classes">
     <slot />
+    <slot name="icon" />
   </button>
 </template>

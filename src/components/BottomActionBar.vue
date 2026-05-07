@@ -22,8 +22,10 @@ defineEmits<{
         {{ backLabel || "Back" }}
       </Button>
       <Button :variant="nextVariant || 'primary'" :disabled="nextDisabled" @click="$emit('next')">
-        <slot name="next-icon" />
         {{ nextLabel }}
+        <template #icon>
+          <slot name="next-icon" />
+        </template>
       </Button>
     </div>
   </footer>

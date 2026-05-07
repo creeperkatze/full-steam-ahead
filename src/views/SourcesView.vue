@@ -138,8 +138,10 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
         <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-all')">All</UiButton>
         <UiButton variant="ghost" :disabled="candidates.length === 0" @click="$emit('select-none')">None</UiButton>
         <UiButton variant="secondary" :disabled="loading || !selectedUser" @click="$emit('scan')">
-          <Search :size="16" />
           Scan
+          <template #icon>
+            <Search :size="16" />
+          </template>
         </UiButton>
       </div>
     </section>
@@ -280,8 +282,10 @@ function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
             @input="$emit('update:manualName', ($event.target as HTMLInputElement).value)"
           />
           <UiButton variant="secondary" :disabled="!manualPath" @click="$emit('add-manual')">
-            <Plus :size="16" />
             Add
+            <template #icon>
+              <Plus :size="16" />
+            </template>
           </UiButton>
         </div>
 

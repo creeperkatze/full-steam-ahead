@@ -179,8 +179,10 @@ function selectedSlotCount(candidate: ImportCandidate) {
                 title="Pick local artwork"
                 @click="$emit('pick-artwork', candidate.id, slot.kind)"
               >
-                <ImagePlus :size="14" />
                 <span v-if="slot.kind !== 'icon'">Local</span>
+                <template #icon>
+                  <ImagePlus :size="14" />
+                </template>
               </UiButton>
               <UiButton
                 class="h-9 w-9"
