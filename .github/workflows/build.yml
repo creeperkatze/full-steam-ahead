@@ -68,6 +68,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          cache-on-failure: true
 
       - name: Install Linux build dependencies
         if: contains(matrix.platform, 'ubuntu')

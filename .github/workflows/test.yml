@@ -49,11 +49,16 @@ jobs:
         with:
           version: 9
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          cache-on-failure: true
 
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
