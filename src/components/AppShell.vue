@@ -59,7 +59,7 @@ const steps = ["Sources", "Artwork", "Review"];
       </div>
     </header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-surface-1 px-5 py-4">
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-surface-1 px-5 py-4">
       <div v-if="error" class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-danger">
         {{ error }}
       </div>

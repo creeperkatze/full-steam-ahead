@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ArrowRight, Check } from "@lucide/vue";
+import { ArrowRight, Check, Search } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter, useRoute, RouterView } from "vue-router";
 import AppShell from "../../components/AppShell.vue";
 import UiButton from "../../components/ui/Button.vue";
 import { useAppState } from "../../composables/useAppState";
 import { useReviewPlan } from "../../composables/useReviewPlan";
+import { useScanSources } from "../../composables/useScanSources";
 import { useTaskStatus } from "../../composables/useTaskStatus";
 
 const router = useRouter();
@@ -13,6 +14,7 @@ const route = useRoute();
 const state = useAppState();
 const reviewPlan = useReviewPlan();
 const task = useTaskStatus();
+const { scan } = useScanSources();
 const settingsOpen = computed(() => route.name === "settings");
 
 const activeStepIndex = computed(() => {
@@ -21,21 +23,25 @@ const activeStepIndex = computed(() => {
   return 0;
 });
 
+const isSourcesIdle = computed(() =>
+  state.step.value === "sources" && state.scanPhase.value !== "done"
+);
+
 const nextLabel = computed(() => {
+  if (isSourcesIdle.value) return "Scan for games";
   if (state.step.value === "review") return state.applyResult.value ? "Applied" : "Apply";
   return "Continue";
 });
 
 const nextDisabled = computed(() => {
   if (task.loading.value) return true;
+  if (isSourcesIdle.value) return !state.selectedUser.value;
   if (state.step.value === "sources") return state.selectedCandidates.value.length === 0;
   if (state.step.value === "review") return !state.previewPlan.value || !!state.applyResult.value;
   return false;
 });
 
-const showActionBar = computed(() =>
-  !settingsOpen.value && (state.step.value !== "sources" || state.scanPhase.value === "done")
-);
+const showActionBar = computed(() => !settingsOpen.value);
 
 function toggleSettings() {
   router.push(settingsOpen.value ? "/" : "/settings");
@@ -73,7 +79,11 @@ function goBack() {
 
 async function goNext() {
   if (state.step.value === "sources") {
-    state.step.value = "artwork";
+    if (state.scanPhase.value === "done") {
+      state.step.value = "artwork";
+    } else {
+      await scan();
+    }
     return;
   }
 
@@ -106,6 +116,7 @@ async function goNext() {
             {{ nextLabel }}
             <template #icon>
               <Check v-if="state.step.value === 'review'" :size="18" />
+              <Search v-else-if="isSourcesIdle" :size="16" />
               <ArrowRight v-else :size="16" />
             </template>
           </UiButton>

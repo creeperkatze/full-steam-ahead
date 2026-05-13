@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { importSourceName } from "../helpers/sourceNames";
 import type { ImportCandidate } from "../types";
 import SourceIcon from "./SourceIcon.vue";
+import ItemRow from "./ui/ItemRow.vue";
 
 const props = defineProps<{
   title: string;
@@ -27,41 +28,43 @@ const allSelected = computed(() =>
 </script>
 
 <template>
-  <article class="overflow-hidden rounded-lg border border-border bg-surface-3">
-    <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
-      <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-        <input
-          type="checkbox"
-          :checked="allSelected"
-          @change="emit('set-all', ($event.target as HTMLInputElement).checked)"
-        />
-        <SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />
-        <strong class="block min-w-0 truncate text-base">{{ title }}</strong>
-      </label>
+  <article class="overflow-hidden rounded-xl border border-border">
+    <label class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
+      <input
+        type="checkbox"
+        :checked="allSelected"
+        @change="emit('set-all', ($event.target as HTMLInputElement).checked)"
+      />
+      <SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />
+      <strong class="min-w-0 flex-1 truncate text-base">{{ title }}</strong>
       <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
         {{ selectedCount }} / {{ candidates.length }}
       </span>
-    </header>
+    </label>
 
-    <div class="grid max-h-80 overflow-auto">
-      <label
+    <div class="grid gap-1.5 bg-surface-3 p-2">
+      <ItemRow
         v-for="candidate in candidates"
         :key="candidate.id"
-        class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 border-b border-border-muted px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface-hover"
+        as="label"
+        interactive
       >
-        <input
-          class="mt-1"
-          type="checkbox"
-          :checked="selectedIds.has(candidate.id)"
-          @change="emit('toggle', candidate.id)"
-        />
-        <span class="min-w-0">
-          <strong class="block truncate">{{ candidate.name }}</strong>
-          <small class="path-cell block">{{ candidate.executablePath }}</small>
-          <small v-if="candidate.launchOptions && !showSource" class="block text-accent">Uses launcher URL</small>
-          <small v-if="showSource" class="block text-secondary">{{ importSourceName(candidate.source) }}</small>
-        </span>
-      </label>
+        <template #leading>
+          <input
+            type="checkbox"
+            :checked="selectedIds.has(candidate.id)"
+            @change="emit('toggle', candidate.id)"
+          />
+        </template>
+
+        <strong class="block truncate">{{ candidate.name }}</strong>
+        <small class="block text-secondary/70">{{ candidate.executablePath }}</small>
+        <small v-if="showSource" class="block text-secondary">{{ importSourceName(candidate.source) }}</small>
+
+        <template #trailing>
+          <small v-if="candidate.launchOptions && !showSource" class="shrink-0 text-accent">URL</small>
+        </template>
+      </ItemRow>
     </div>
   </article>
 </template>

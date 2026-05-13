@@ -1,56 +1,27 @@
 <script setup lang="ts">
-import { listen } from "@tauri-apps/api/event";
 import { Check, FolderPlus, Loader2, Plus, RefreshCw, Search } from "@lucide/vue";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import SourceCard from "../../../components/SourceCard.vue";
 import SourceIcon from "../../../components/SourceIcon.vue";
+import ItemRow from "../../../components/ui/ItemRow.vue";
 import UiButton from "../../../components/ui/Button.vue";
 import { useAppState } from "../../../composables/useAppState";
 import { useTaskStatus } from "../../../composables/useTaskStatus";
+import { useScanSources, SCANNABLE_SOURCES } from "../../../composables/useScanSources";
 import { api } from "../../../helpers/api";
 import { importSourceName } from "../../../helpers/sourceNames";
-import type { ImportCandidate, ImportSource, ScanProgressEvent } from "../../../types";
+import type { ImportCandidate, ImportSource } from "../../../types";
 
 const state = useAppState();
 const task = useTaskStatus();
-
-type ScannableSource =
-  | "playnite"
-  | "epic"
-  | "amazon"
-  | "gog"
-  | "itch"
-  | "origin"
-  | "ubisoftConnect"
-  | "gamePass";
-
-interface SourceState {
-  key: ScannableSource;
-  name: string;
-  status: "pending" | "scanning" | "done";
-  found: number;
-}
+const { sourceStates } = useScanSources();
 
 interface PlatformCard {
-  key: ScannableSource;
+  key: string;
   title: string;
   candidates: ImportCandidate[];
 }
-
-const SCANNABLE_SOURCES: ScannableSource[] = [
-  "playnite",
-  "epic",
-  "amazon",
-  "gog",
-  "itch",
-  "origin",
-  "ubisoftConnect",
-  "gamePass"
-];
-
-const sourceStates = ref<SourceState[]>(makeSourceStates());
-let unlistenScan: (() => void) | undefined;
 
 const selectedCount = computed(() => state.selectedCandidateIds.value.size);
 const steamUsers = computed(() =>
@@ -93,19 +64,6 @@ onMounted(async () => {
   }
 });
 
-onUnmounted(() => {
-  unlistenScan?.();
-});
-
-function makeSourceStates(): SourceState[] {
-  return SCANNABLE_SOURCES.map(key => ({
-    key,
-    name: importSourceName(key),
-    status: "pending" as const,
-    found: 0
-  }));
-}
-
 function candidatesFor(source: ImportSource) {
   return state.candidates.value.filter(candidate => candidate.source === source);
 }
@@ -139,43 +97,6 @@ async function refreshSteam() {
   state.invalidatePreview();
 }
 
-async function scan() {
-  if (!state.selectedUserId.value) return;
-
-  sourceStates.value = makeSourceStates();
-  state.scanPhase.value = "scanning";
-
-  unlistenScan?.();
-  unlistenScan = await listen<ScanProgressEvent>("scan-progress", (event) => {
-    const { source, status, found } = event.payload;
-    const entry = sourceStates.value.find(s => s.name === source);
-    if (entry) {
-      if (status === "scanning") {
-        entry.status = "scanning";
-      } else if (status === "done") {
-        entry.status = "done";
-        entry.found = found;
-      }
-    }
-  });
-
-  const found = await task.runTask("Scanning sources", () =>
-    api.scanSources({ userSteamId: state.selectedUserId.value, includeSources: [] })
-  );
-
-  unlistenScan();
-  unlistenScan = undefined;
-
-  if (found !== undefined) {
-    state.candidates.value = mergeCandidates(state.candidates.value, found);
-    state.selectedCandidateIds.value = new Set(state.candidates.value.map(c => c.id));
-    state.invalidatePreview();
-    state.scanPhase.value = "done";
-  } else {
-    state.scanPhase.value = "idle";
-  }
-}
-
 async function pickExecutable() {
   const picked = await open({
     multiple: false,
@@ -200,7 +121,9 @@ async function addManual() {
   );
   if (!candidate) return;
 
-  state.candidates.value = mergeCandidates(state.candidates.value, [candidate]);
+  state.candidates.value = [...state.candidates.value, candidate].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
   state.selectedCandidateIds.value = new Set([...state.selectedCandidateIds.value, candidate.id]);
   state.manualPath.value = "";
   state.manualName.value = "";
@@ -227,23 +150,15 @@ function selectNone() {
   state.selectedCandidateIds.value = new Set();
   state.invalidatePreview();
 }
-
-function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[]) {
-  const map = new Map(existing.map(c => [c.id, c]));
-  for (const candidate of incoming) {
-    map.set(candidate.id, candidate);
-  }
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-}
 </script>
 
 <template>
-  <div class="grid gap-4">
+  <div class="flex flex-1 flex-col gap-4">
 
     <!-- ── Welcome (idle) ──────────────────────────────────────────── -->
     <section
       v-if="state.scanPhase.value === 'idle'"
-      class="flex flex-col items-center gap-6 rounded-xl border border-accent/30 bg-accent-bg px-8 py-14 text-center"
+      class="flex flex-1 flex-col items-center justify-center gap-6 rounded-xl border border-accent/30 bg-accent-bg px-8 py-8 text-center"
     >
       <div class="grid size-16 place-items-center rounded-full bg-accent text-accent-contrast">
         <Search :size="28" />
@@ -271,7 +186,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
         No Steam users found.
       </p>
 
-      <!-- Ready -->
+      <!-- Ready: just the user selector, scan button is in the footer -->
       <template v-else>
         <div class="flex items-center gap-3 rounded-lg border border-border bg-surface-3 px-4 py-2.5">
           <span class="text-sm text-secondary">Steam User</span>
@@ -284,64 +199,55 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             </option>
           </select>
         </div>
-
-        <UiButton variant="primary" :disabled="!state.selectedUser.value" @click="scan">
-          Scan for games
-          <template #icon><Search :size="16" /></template>
-        </UiButton>
       </template>
     </section>
 
     <!-- ── Scanning (progress) ─────────────────────────────────────── -->
     <section
       v-else-if="state.scanPhase.value === 'scanning'"
-      class="grid gap-5 rounded-xl border border-border bg-surface-3 p-6"
+      class="overflow-hidden rounded-xl border border-border"
     >
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between border-b border-border bg-surface-4 px-3 py-2.5">
         <div>
-          <h1 class="text-xl font-bold">Scanning for games…</h1>
-          <p class="mt-0.5 text-sm text-secondary">
+          <h1 class="text-base font-bold">Scanning for games…</h1>
+          <p class="text-sm text-secondary">
             {{ foundTotal }} game{{ foundTotal !== 1 ? "s" : "" }} found so far
           </p>
         </div>
-        <Loader2 :size="22" class="animate-spin text-accent" />
+        <Loader2 :size="20" class="animate-spin text-accent" />
       </div>
 
-      <div class="grid gap-1.5">
-        <div
+      <div class="grid gap-1.5 bg-surface-3 p-2">
+        <ItemRow
           v-for="s in sourceStates"
           :key="s.key"
-          class="flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors"
-          :class="
-            s.status === 'scanning'
-              ? 'border-accent/30 bg-accent-bg'
-              : 'border-transparent bg-surface-5'
-          "
+          :active="s.status === 'scanning'"
         >
-          <div class="shrink-0">
-            <Check v-if="s.status === 'done'" :size="14" class="text-accent" />
-            <Loader2 v-else-if="s.status === 'scanning'" :size="14" class="animate-spin text-accent" />
-            <div v-else class="size-3.5 rounded-full border border-border-muted" />
-          </div>
-          <SourceIcon :source="s.key" class="size-4 shrink-0" />
-          <span
-            class="flex-1 text-sm"
-            :class="s.status === 'pending' ? 'text-secondary' : 'text-primary font-medium'"
-          >{{ s.name }}</span>
-          <span v-if="s.status === 'done'" class="shrink-0 text-xs text-secondary">
-            {{ s.found > 0 ? `${s.found} found` : "none" }}
-          </span>
-        </div>
-      </div>
+          <template #leading>
+            <Check v-if="s.status === 'done'" :size="14" class="shrink-0 text-accent" />
+            <Loader2 v-else-if="s.status === 'scanning'" :size="14" class="shrink-0 animate-spin text-accent" />
+            <div v-else class="size-3.5 shrink-0 rounded-full border border-border-muted" />
+            <SourceIcon :source="s.key" class="size-4 shrink-0" />
+          </template>
 
-      <div class="space-y-1.5">
-        <div class="h-1.5 overflow-hidden rounded-full bg-surface-5">
-          <div
-            class="h-full rounded-full bg-accent transition-all duration-500"
-            :style="{ width: `${scanProgressPct}%` }"
-          />
+          <span :class="s.status === 'pending' ? 'text-secondary' : 'font-medium'">{{ s.name }}</span>
+
+          <template #trailing>
+            <span v-if="s.status === 'done'" class="shrink-0 text-xs text-secondary">
+              {{ s.found > 0 ? `${s.found} found` : "none" }}
+            </span>
+          </template>
+        </ItemRow>
+
+        <div class="space-y-1.5 px-1 pb-1 pt-0.5">
+          <div class="h-1.5 overflow-hidden rounded-full bg-surface-5">
+            <div
+              class="h-full rounded-full bg-accent transition-all duration-500"
+              :style="{ width: `${scanProgressPct}%` }"
+            />
+          </div>
+          <p class="text-xs text-secondary">{{ doneCount }} of {{ SCANNABLE_SOURCES.length }} sources scanned</p>
         </div>
-        <p class="text-xs text-secondary">{{ doneCount }} of {{ SCANNABLE_SOURCES.length }} sources scanned</p>
       </div>
     </section>
 
@@ -372,7 +278,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
           <UiButton size="icon" variant="ghost" title="Detect Steam again" :disabled="task.loading.value" @click="refreshSteam">
             <RefreshCw :size="16" />
           </UiButton>
-          <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="scan">
+          <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="$emit('rescan')">
             Re-scan
             <template #icon><Search :size="16" /></template>
           </UiButton>
@@ -405,24 +311,22 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
       </section>
 
       <!-- Manual section -->
-      <section class="overflow-hidden rounded-lg border border-border bg-surface-3">
-        <header class="flex items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
-          <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              :checked="allSelected(manualCandidates)"
-              :disabled="manualCandidates.length === 0"
-              @change="setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)"
-            />
-            <strong class="block min-w-0 truncate text-base">{{ importSourceName("manual") }}</strong>
-          </label>
+      <section class="overflow-hidden rounded-xl border border-border">
+        <label class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
+          <input
+            type="checkbox"
+            :checked="allSelected(manualCandidates)"
+            :disabled="manualCandidates.length === 0"
+            @change="setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)"
+          />
+          <strong class="min-w-0 flex-1 truncate text-base">{{ importSourceName("manual") }}</strong>
           <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedIn(manualCandidates) }} / {{ manualCandidates.length }}
           </span>
-        </header>
+        </label>
 
-        <div class="grid gap-3 p-3">
-          <div class="flex items-center gap-2 rounded-md border border-border bg-surface-5 p-2">
+        <div class="grid gap-1.5 bg-surface-3 p-2">
+          <div class="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-5 px-3 py-2">
             <UiButton size="icon" variant="secondary" title="Pick executable" @click="pickExecutable">
               <FolderPlus :size="18" />
             </UiButton>
@@ -442,30 +346,28 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             </UiButton>
           </div>
 
-          <div class="grid gap-2">
-            <label
-              v-for="candidate in manualCandidates"
-              :key="candidate.id"
-              class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 rounded-md border border-border bg-surface-5 px-3 py-2.5 transition-colors hover:bg-surface-hover"
-            >
+          <ItemRow
+            v-for="candidate in manualCandidates"
+            :key="candidate.id"
+            as="label"
+            interactive
+          >
+            <template #leading>
               <input
-                class="mt-1"
                 type="checkbox"
                 :checked="state.selectedCandidateIds.value.has(candidate.id)"
                 @change="toggleCandidate(candidate.id)"
               />
-              <span class="min-w-0">
-                <strong class="block truncate">{{ candidate.name }}</strong>
-                <small class="path-cell block">{{ candidate.executablePath }}</small>
-              </span>
-            </label>
+            </template>
+            <strong class="block truncate">{{ candidate.name }}</strong>
+            <small class="block text-secondary/70">{{ candidate.executablePath }}</small>
+          </ItemRow>
 
-            <div
-              v-if="manualCandidates.length === 0"
-              class="grid min-h-22 place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary"
-            >
-              No manual games added yet.
-            </div>
+          <div
+            v-if="manualCandidates.length === 0"
+            class="grid min-h-20 place-items-center rounded-lg border border-dashed border-border-dashed p-4 text-center text-sm text-secondary"
+          >
+            No manual games added yet.
           </div>
         </div>
       </section>

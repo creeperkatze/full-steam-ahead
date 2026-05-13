@@ -10,7 +10,7 @@ const reviewPlan = useReviewPlan();
 </script>
 
 <template>
-  <div class="grid content-start gap-3">
+  <div class="flex flex-1 flex-col gap-3">
     <SourcesView v-if="state.step.value === 'sources'" />
 
     <ArtworkView v-else-if="state.step.value === 'artwork'" />
