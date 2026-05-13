@@ -81,6 +81,18 @@ jobs:
       - name: Build app
         run: pnpm tauri build --bundles ${{ matrix.bundles }}
 
+      - name: Package standalone app
+        shell: bash
+        run: |
+          mkdir -p standalone
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp "src-tauri/target/release/Full Steam Ahead.exe" "standalone/Full Steam Ahead.exe"
+          elif [ -f "src-tauri/target/release/Full Steam Ahead" ]; then
+            cp "src-tauri/target/release/Full Steam Ahead" "standalone/Full Steam Ahead"
+          else
+            cp "src-tauri/target/release/full-steam-ahead" "standalone/full-steam-ahead"
+          fi
+
       - name: Upload app bundles
         uses: actions/upload-artifact@v4
         with:
@@ -90,4 +102,11 @@ jobs:
             src-tauri/target/release/bundle/deb/Full Steam Ahead_*.deb*
             src-tauri/target/release/bundle/msi/Full Steam Ahead_*.msi*
             src-tauri/target/release/bundle/nsis/Full Steam Ahead_*-setup.exe*
+          if-no-files-found: error
+
+      - name: Upload standalone app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Standalone app (${{ matrix.artifact-target-name }})
+          path: standalone/*
           if-no-files-found: error
