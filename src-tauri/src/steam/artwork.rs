@@ -100,50 +100,46 @@ pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
     }
 }
 
-pub fn apply_artwork(
+pub fn apply_candidate_artwork(
     grid_path: &Path,
-    candidates: &[ImportCandidate],
+    candidate: &ImportCandidate,
     replace_existing: bool,
 ) -> AppResult<Vec<String>> {
-    fs::create_dir_all(grid_path).map_err(io_context(grid_path))?;
+    let shortcut_app_id = crate::steam::non_steam_app_id(
+        &format!("\"{}\"", candidate.executable_path.display()),
+        &candidate.name,
+    );
+
     let mut skipped = Vec::new();
+    for asset in selected_artwork_assets(candidate) {
+        let target = target_path(grid_path, shortcut_app_id, &asset.kind, &asset.path_or_url);
+        if target.exists() && !replace_existing && asset.source != ArtworkSource::LocalFile {
+            skipped.push(format!(
+                "Preserved existing {:?} artwork for {}",
+                asset.kind, candidate.name
+            ));
+            continue;
+        }
 
-    for candidate in candidates {
-        let shortcut_app_id = crate::steam::non_steam_app_id(
-            &format!("\"{}\"", candidate.executable_path.display()),
-            &candidate.name,
-        );
-
-        for asset in selected_artwork_assets(candidate) {
-            let target = target_path(grid_path, shortcut_app_id, &asset.kind, &asset.path_or_url);
-            if target.exists() && !replace_existing && asset.source != ArtworkSource::LocalFile {
-                skipped.push(format!(
-                    "Preserved existing {:?} artwork for {}",
-                    asset.kind, candidate.name
-                ));
-                continue;
-            }
-
-            match asset.source {
-                ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb => {
-                    if let Err(error) = download_asset(&asset.path_or_url, &target) {
-                        skipped.push(format!(
-                            "Could not download {:?} artwork for {}: {}",
-                            asset.kind, candidate.name, error
-                        ));
-                    }
+        match asset.source {
+            ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb => {
+                if let Err(error) = download_asset(&asset.path_or_url, &target) {
+                    skipped.push(format!(
+                        "Could not download {:?} artwork for {}: {}",
+                        asset.kind, candidate.name, error
+                    ));
                 }
-                ArtworkSource::LocalFile => {
-                    let source = Path::new(&asset.path_or_url);
-                    if let Err(error) = fs::copy(source, &target).map_err(io_context(&target)) {
-                        skipped.push(format!(
-                            "Could not copy {:?} artwork for {}: {}",
-                            asset.kind, candidate.name, error
-                        ));
-                    }
-                }
-                ArtworkSource::ExistingCustom => {}
             }
+            ArtworkSource::LocalFile => {
+                let source = Path::new(&asset.path_or_url);
+                if let Err(error) = fs::copy(source, &target).map_err(io_context(&target)) {
+                    skipped.push(format!(
+                        "Could not copy {:?} artwork for {}: {}",
+                        asset.kind, candidate.name, error
+                    ));
+                }
+            }
+            ArtworkSource::ExistingCustom => {}
         }
     }
 

@@ -1,6 +1,6 @@
 use crate::{
     error::{io_context, AppError, AppResult},
-    models::{ApplyRequest, ApplyResult},
+    models::{ApplyProgressEvent, ApplyRequest, ApplyResult},
     process,
     steam::{artwork, collections, detect, shortcuts, sources},
 };
@@ -9,8 +9,9 @@ use std::{
     thread::sleep,
     time::{Duration, Instant},
 };
+use tauri::Emitter;
 
-pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
+pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -> AppResult<ApplyResult> {
     let install = detect::detect_steam()?;
     let user = install
         .users
@@ -18,10 +19,23 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
         .find(|user| user.steam_id == request.plan.user_steam_id)
         .ok_or_else(|| AppError::UserNotFound(request.plan.user_steam_id.clone()))?;
 
+    let artwork_steps = request.candidates.len().max(1);
+    let total = usize::from(request.options.stop_steam)
+        + 1 // backups
+        + artwork_steps
+        + 1 // shortcuts
+        + usize::from(request.options.write_collections)
+        + usize::from(request.options.restart_steam);
+    let mut current = 0usize;
+
     if request.options.stop_steam {
+        current += 1;
+        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Stopping Steam".into(), current, total });
         stop_steam()?;
     }
 
+    current += 1;
+    let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Creating backups".into(), current, total });
     let mut backups_created = Vec::new();
     for backup in &request.plan.backups {
         if !backup.source.exists() {
@@ -34,12 +48,28 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
         backups_created.push(backup.destination.clone());
     }
 
-    let skipped_changes = artwork::apply_artwork(
-        &user.grid_path,
-        &request.candidates,
-        request.options.replace_existing_artwork,
-    )?;
+    fs::create_dir_all(&user.grid_path).map_err(io_context(&user.grid_path))?;
+    let mut skipped_changes = Vec::new();
 
+    if request.candidates.is_empty() {
+        current += 1;
+        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Applying artwork".into(), current, total });
+    } else {
+        for candidate in &request.candidates {
+            current += 1;
+            let _ = app.emit("apply-progress", ApplyProgressEvent {
+                step: format!("Downloading artwork for {}", candidate.name),
+                current,
+                total,
+            });
+            let candidate_skipped =
+                artwork::apply_candidate_artwork(&user.grid_path, candidate, request.options.replace_existing_artwork)?;
+            skipped_changes.extend(candidate_skipped);
+        }
+    }
+
+    current += 1;
+    let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Updating shortcuts".into(), current, total });
     let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
     let additions = request
         .candidates
@@ -51,10 +81,14 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
     if request.options.write_collections {
+        current += 1;
+        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Updating collections".into(), current, total });
         collections::update_modern_collections(&user.collections_path, &request.candidates)?;
     }
 
     if request.options.restart_steam {
+        current += 1;
+        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Restarting Steam".into(), current, total });
         let _ = process::restart_steam(&install.install_path);
     }
 

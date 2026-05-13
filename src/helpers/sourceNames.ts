@@ -1,4 +1,4 @@
-import type { ImportSource } from "../types/steam";
+import type { ImportSource } from "../types";
 
 const IMPORT_SOURCE_NAMES: Record<Exclude<ImportSource, { other: string }>, string> = {
   manual: "Manual",

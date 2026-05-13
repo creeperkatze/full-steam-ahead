@@ -2,50 +2,69 @@ use crate::{
     error::AppResult,
     importers::{self, quote_path},
     models::{
-        ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanRequest, ShortcutEntry,
-        SteamUser,
+        ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanProgressEvent, ScanRequest,
+        ShortcutEntry, SteamUser,
     },
     steam::{artwork, non_steam_app_id},
 };
 use std::path::Path;
+use tauri::Emitter;
 
-pub fn scan_sources(user: &SteamUser, request: &ScanRequest) -> AppResult<Vec<ImportCandidate>> {
+pub fn scan_sources_with_progress(
+    app: &tauri::AppHandle,
+    user: &SteamUser,
+    request: &ScanRequest,
+) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
     let enabled_sources = enabled_sources(request);
 
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::Playnite) {
-        candidates.extend(importers::playnite::scan(user)?);
-    }
+    for source in &enabled_sources {
+        let source_name = source.display_name();
+        let _ = app.emit(
+            "scan-progress",
+            ScanProgressEvent {
+                source: source_name.clone(),
+                status: "scanning".to_string(),
+                found: 0,
+            },
+        );
 
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::Epic) {
-        candidates.extend(importers::epic::scan(user)?);
-    }
+        let found = scan_single_source(source, user);
+        let found_count = found.len();
+        candidates.extend(found);
 
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::Amazon) {
-        candidates.extend(importers::amazon::scan(user)?);
-    }
-
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::Gog) {
-        candidates.extend(importers::gog::scan(user)?);
-    }
-
-    if enabled_sources.contains(&ImportSource::Itch) {
-        candidates.extend(importers::itch::scan(user)?);
-    }
-
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::Origin) {
-        candidates.extend(importers::origin::scan(user)?);
-    }
-
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::UbisoftConnect) {
-        candidates.extend(importers::ubisoft::scan(user)?);
-    }
-
-    if cfg!(windows) && enabled_sources.contains(&ImportSource::GamePass) {
-        candidates.extend(importers::game_pass::scan(user)?);
+        let _ = app.emit(
+            "scan-progress",
+            ScanProgressEvent {
+                source: source_name,
+                status: "done".to_string(),
+                found: found_count,
+            },
+        );
     }
 
     Ok(candidates)
+}
+
+fn scan_single_source(source: &ImportSource, user: &SteamUser) -> Vec<ImportCandidate> {
+    match source {
+        #[cfg(windows)]
+        ImportSource::Playnite => importers::playnite::scan(user).unwrap_or_default(),
+        #[cfg(windows)]
+        ImportSource::Epic => importers::epic::scan(user).unwrap_or_default(),
+        #[cfg(windows)]
+        ImportSource::Amazon => importers::amazon::scan(user).unwrap_or_default(),
+        #[cfg(windows)]
+        ImportSource::Gog => importers::gog::scan(user).unwrap_or_default(),
+        ImportSource::Itch => importers::itch::scan(user).unwrap_or_default(),
+        #[cfg(windows)]
+        ImportSource::Origin => importers::origin::scan(user).unwrap_or_default(),
+        #[cfg(windows)]
+        ImportSource::UbisoftConnect => importers::ubisoft::scan(user).unwrap_or_default(),
+        #[cfg(windows)]
+        ImportSource::GamePass => importers::game_pass::scan(user).unwrap_or_default(),
+        _ => vec![],
+    }
 }
 
 fn enabled_sources(request: &ScanRequest) -> Vec<ImportSource> {

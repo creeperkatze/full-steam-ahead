@@ -5,7 +5,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { ref } from "vue";
 import UiButton from "../../../components/ui/Button.vue";
 import { useAppState } from "../../../composables/useAppState";
-import type { ArtworkAsset, ArtworkKind, ImportCandidate } from "../../../types/steam";
+import type { ArtworkAsset, ArtworkKind, ImportCandidate } from "../../../types";
 
 const state = useAppState();
 

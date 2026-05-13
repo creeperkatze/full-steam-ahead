@@ -274,3 +274,19 @@ pub struct ApplyResult {
     pub backups_created: Vec<PathBuf>,
     pub skipped_changes: Vec<String>,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanProgressEvent {
+    pub source: String,
+    pub status: String,
+    pub found: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyProgressEvent {
+    pub step: String,
+    pub current: usize,
+    pub total: usize,
+}

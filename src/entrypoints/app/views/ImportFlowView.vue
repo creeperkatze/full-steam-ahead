@@ -25,6 +25,11 @@ const nextDisabled = computed(() => {
   return false;
 });
 
+// Hide the action bar on the welcome and scanning sub-views of the sources step
+const showActionBar = computed(() =>
+  state.step.value !== "sources" || state.scanPhase.value === "done"
+);
+
 function goBack() {
   if (state.step.value === "review") {
     state.step.value = "artwork";
@@ -58,9 +63,11 @@ async function goNext() {
       v-else
       :plan="state.previewPlan.value"
       :apply-result="state.applyResult.value"
+      :apply-progress="reviewPlan.applyProgress.value"
     />
 
     <BottomActionBar
+      v-if="showActionBar"
       :show-back="state.step.value !== 'sources'"
       :next-label="nextLabel"
       :next-disabled="nextDisabled"

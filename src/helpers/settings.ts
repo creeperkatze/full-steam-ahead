@@ -1,4 +1,4 @@
-import type { ApplyOptions } from "../types/steam";
+import type { ApplyOptions } from "../types";
 
 const STORAGE_KEY = "full-steam-ahead:settings";
 

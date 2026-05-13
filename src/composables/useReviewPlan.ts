@@ -1,6 +1,11 @@
+import { listen } from "@tauri-apps/api/event";
+import { ref } from "vue";
+import { api } from "../helpers/api";
+import type { ApplyProgressEvent } from "../types";
 import { useAppState } from "./useAppState";
 import { useTaskStatus } from "./useTaskStatus";
-import { api } from "../helpers/api";
+
+const applyProgress = ref<ApplyProgressEvent | null>(null);
 
 export function useReviewPlan() {
   const state = useAppState();
@@ -23,9 +28,18 @@ export function useReviewPlan() {
   async function applyPreview() {
     if (!state.previewPlan.value) return;
 
+    applyProgress.value = null;
+    const unlisten = await listen<ApplyProgressEvent>("apply-progress", (event) => {
+      applyProgress.value = event.payload;
+    });
+
     const result = await task.runTask("Applying changes", () =>
       api.applyPlan(state.previewPlan.value!, state.selectedCandidates.value, state.options.value)
     );
+
+    unlisten();
+    applyProgress.value = null;
+
     if (result) {
       state.applyResult.value = result;
     }
@@ -33,6 +47,7 @@ export function useReviewPlan() {
 
   return {
     createPreview,
-    applyPreview
+    applyPreview,
+    applyProgress
   };
 }

@@ -31,7 +31,7 @@ pub fn read_shortcuts_for_user(
 }
 
 #[tauri::command]
-pub fn scan_sources(request: ScanRequest) -> CommandResult<Vec<ImportCandidate>> {
+pub fn scan_sources(app: tauri::AppHandle, request: ScanRequest) -> CommandResult<Vec<ImportCandidate>> {
     let install = steam::detect::detect_steam()?;
     let user = install
         .users
@@ -39,7 +39,7 @@ pub fn scan_sources(request: ScanRequest) -> CommandResult<Vec<ImportCandidate>>
         .find(|user| user.steam_id == request.user_steam_id)
         .ok_or_else(|| AppError::UserNotFound(request.user_steam_id.clone()))?;
 
-    steam::sources::scan_sources(user, &request).map_err(Into::into)
+    steam::sources::scan_sources_with_progress(&app, user, &request).map_err(Into::into)
 }
 
 #[tauri::command]
@@ -135,8 +135,8 @@ pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<Im
 }
 
 #[tauri::command]
-pub fn apply_plan(request: ApplyRequest) -> CommandResult<ApplyResult> {
-    steam::apply::apply_plan(request).map_err(Into::into)
+pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult<ApplyResult> {
+    steam::apply::apply_plan_with_progress(&app, request).map_err(Into::into)
 }
 
 fn candidate_changes(

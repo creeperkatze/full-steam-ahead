@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { importSourceName } from "../helpers/sourceNames";
-import type { ImportCandidate } from "../types/steam";
+import type { ImportCandidate } from "../types";
 
 const props = defineProps<{
   title: string;
