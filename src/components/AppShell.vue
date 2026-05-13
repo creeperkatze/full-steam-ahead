@@ -20,7 +20,7 @@ const steps = ["Sources", "Artwork", "Review"];
 <template>
   <main class="flex h-screen flex-col gap-3 bg-surface-2 p-3 text-primary">
 
-    <header class="grid h-15 shrink-0 grid-cols-[280px_1fr_auto] items-center gap-5 px-2">
+    <header class="grid h-15 shrink-0 grid-cols-[280px_1fr_auto] items-center gap-5">
       <div class="flex items-center">
         <Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
       </div>
