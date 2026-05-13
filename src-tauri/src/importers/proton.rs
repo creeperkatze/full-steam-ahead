@@ -32,3 +32,40 @@ pub fn translate_windows_path(compat_folder: &std::path::Path, windows_path: &st
     let rest = windows_path.get(3..)?.replace('\\', "/");
     Some(compat_folder.join("pfx").join("dosdevices").join(drive).join(rest))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn translates_c_drive_path() {
+        let compat = Path::new("/home/user/.steam/compatdata/123");
+        let result = translate_windows_path(compat, r"C:\Games\game.exe");
+        assert_eq!(
+            result,
+            Some(PathBuf::from(
+                "/home/user/.steam/compatdata/123/pfx/dosdevices/c:/Games/game.exe"
+            ))
+        );
+    }
+
+    #[test]
+    fn lowercases_drive_letter() {
+        let result = translate_windows_path(Path::new("/prefix"), r"D:\Games\game.exe");
+        assert_eq!(
+            result,
+            Some(PathBuf::from("/prefix/pfx/dosdevices/d:/Games/game.exe"))
+        );
+    }
+
+    #[test]
+    fn empty_path_returns_none() {
+        assert_eq!(translate_windows_path(Path::new("/prefix"), ""), None);
+    }
+
+    #[test]
+    fn too_short_path_returns_none() {
+        assert_eq!(translate_windows_path(Path::new("/prefix"), "C:"), None);
+    }
+}

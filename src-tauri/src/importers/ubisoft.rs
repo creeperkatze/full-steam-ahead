@@ -272,3 +272,70 @@ fn parse_game_configs(section: &str) -> Vec<GameConfig<'_>> {
     }
     results
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(unix)]
+    use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn split_on_version_marker() {
+        let buffer = b"header?version: 2.0mid?version: 2.0end";
+        let sections = split_config_sections(buffer);
+        // '?' chars are stripped, splits on the marker
+        assert_eq!(sections, vec!["header", "mid", "end"]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn valid_game_config_requires_all_keys() {
+        let valid = "executables:\nonline:\nshortcut_name: game\nregister: HKEY...";
+        assert!(is_valid_game_config(valid));
+
+        let missing_online = "executables:\nshortcut_name: game\nregister: HKEY...";
+        assert!(!is_valid_game_config(missing_online));
+
+        let missing_register = "executables:\nonline:\nshortcut_name: game";
+        assert!(!is_valid_game_config(missing_register));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn parse_game_config_extracts_fields() {
+        let section = "
+            icon_image: game.ico
+            online:
+            - shortcut_name: My Game
+              register: HKEY_LOCAL_MACHINE\\SOFTWARE\\Ubisoft\\Launcher\\Installs\\123\\InstallDir
+              denuvo: yes
+            offline:
+        ";
+        let games = parse_game_configs(section);
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].icon_image, "game.ico");
+        assert_eq!(games[0].shortcut_name, "My Game");
+        assert_eq!(
+            games[0].register,
+            "HKEY_LOCAL_MACHINE\\SOFTWARE\\Ubisoft\\Launcher\\Installs\\123\\InstallDir"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn parse_game_config_stops_at_offline() {
+        let section = "
+            online:
+            - shortcut_name: Game A
+              register: HKEY...\\1\\InstallDir
+              denuvo: yes
+            offline:
+            - shortcut_name: Should Not Appear
+              register: HKEY...\\2\\InstallDir
+              denuvo: yes
+        ";
+        let games = parse_game_configs(section);
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].shortcut_name, "Game A");
+    }
+}

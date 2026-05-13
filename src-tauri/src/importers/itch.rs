@@ -169,3 +169,50 @@ struct Receipt {
 struct ReceiptGame {
     title: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_single_entry() {
+        let data = b"junk{\"basePath\":\"/games/mygame\",\"totalSize\":100,\"candidates\":[{\"path\":\"mygame.exe\"}]}trailing";
+        let (_, entries) = parse_butler_db(data).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].base_path, "/games/mygame");
+        assert_eq!(entries[0].paths, vec!["mygame.exe"]);
+    }
+
+    #[test]
+    fn parse_multiple_entries() {
+        let data = b"{\"basePath\":\"/game1\",\"totalSize\":1,\"candidates\":[{\"path\":\"a.exe\"}]}{\"basePath\":\"/game2\",\"totalSize\":1,\"candidates\":[{\"path\":\"b.exe\"}]}";
+        let (_, entries) = parse_butler_db(data).unwrap();
+        assert_eq!(entries.len(), 2);
+        let bases: Vec<&str> = entries.iter().map(|e| e.base_path.as_str()).collect();
+        assert!(bases.contains(&"/game1"));
+        assert!(bases.contains(&"/game2"));
+    }
+
+    #[test]
+    fn parse_multiple_candidates_per_entry() {
+        let data = b"{\"basePath\":\"/game\",\"totalSize\":1,\"candidates\":[{\"path\":\"a.exe\"},{\"path\":\"b.sh\"}]}";
+        let (_, entries) = parse_butler_db(data).unwrap();
+        assert_eq!(entries[0].paths, vec!["a.exe", "b.sh"]);
+    }
+
+    #[test]
+    fn parse_no_matching_data_returns_empty() {
+        let (_, entries) = parse_butler_db(b"no butler data here").unwrap();
+        assert!(entries.is_empty());
+    }
+
+    #[cfg(not(unix))]
+    #[test]
+    fn executable_by_extension() {
+        assert!(is_executable(Path::new("game.exe")));
+        assert!(is_executable(Path::new("script.bat")));
+        assert!(is_executable(Path::new("run.cmd")));
+        assert!(!is_executable(Path::new("readme.txt")));
+        assert!(!is_executable(Path::new("game")));
+    }
+}

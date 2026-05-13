@@ -182,6 +182,41 @@ fn translate_installation_path(path: &str, wine_c_drive: &Path) -> Option<String
     Some(translated.to_string_lossy().replace('\\', "/"))
 }
 
+#[cfg(test)]
+mod tests {
+    #[cfg(unix)]
+    use super::*;
+    #[cfg(unix)]
+    use std::path::Path;
+
+    #[cfg(unix)]
+    #[test]
+    fn translates_c_drive_path() {
+        let wine_c = Path::new("/home/user/Games/gog-galaxy/drive_c");
+        let result = translate_installation_path(r"C:\GOG Games\Witcher 3", wine_c);
+        assert_eq!(
+            result,
+            Some("/home/user/Games/gog-galaxy/drive_c/GOG Games/Witcher 3".to_string())
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn non_c_drive_returns_none() {
+        let wine_c = Path::new("/home/user/drive_c");
+        assert_eq!(translate_installation_path(r"D:\Games\Witcher 3", wine_c), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn backslashes_converted_to_forward_slashes() {
+        let wine_c = Path::new("/prefix");
+        let result = translate_installation_path(r"C:\Games\Studio\MyGame", wine_c).unwrap();
+        assert!(!result.contains('\\'));
+        assert!(result.ends_with("Games/Studio/MyGame"));
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GogConfig {

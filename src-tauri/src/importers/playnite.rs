@@ -99,3 +99,63 @@ fn parse_game(i: &[u8]) -> IResult<&[u8], GameEntry> {
 
     IResult::Ok((i, GameEntry { id, name, installed }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn game_bytes(id: &str, name: &str, installed: bool) -> Vec<u8> {
+        let mut v = Vec::new();
+        // Structure matches what parse_game expects:
+        // take_until("_id") skips "SKIP"
+        // take_until("Image") skips "_id_"
+        // take_until("\\") grabs "Image\x00\x00{id}", split by \x00 gives id
+        // take_until("IsInstalled") then tag("IsInstalled"), byte[1] = installed flag
+        // take_until("InstallSizeGroup"), take_until("Name"), take(4) consumes "Name"
+        // take_while(!alphanum) skips nulls, take_while(b != 0) grabs name
+        v.extend_from_slice(b"SKIP_id_Image\x00\x00");
+        v.extend_from_slice(id.as_bytes());
+        v.push(b'\\');
+        v.extend_from_slice(b"_IsInstalled\x00");
+        v.push(if installed { 1u8 } else { 0u8 });
+        v.extend_from_slice(b"_InstallSizeGroup_Name\x00\x00\x00\x00");
+        v.extend_from_slice(name.as_bytes());
+        v.push(0u8);
+        v
+    }
+
+    #[test]
+    fn parses_installed_game() {
+        let data = game_bytes("abc-1234", "The Witcher 3", true);
+        let (_, games) = parse_db(&data).unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].id, "abc-1234");
+        assert_eq!(games[0].name, "The Witcher 3");
+        assert!(games[0].installed);
+    }
+
+    #[test]
+    fn parses_not_installed_game() {
+        let data = game_bytes("xyz-5678", "Hades", false);
+        let (_, games) = parse_db(&data).unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].name, "Hades");
+        assert!(!games[0].installed);
+    }
+
+    #[test]
+    fn parses_multiple_games() {
+        let mut data = game_bytes("id1", "Game One", true);
+        data.extend(game_bytes("id2", "Game Two", false));
+        let (_, games) = parse_db(&data).unwrap();
+        assert_eq!(games.len(), 2);
+        assert_eq!(games[0].name, "Game One");
+        assert_eq!(games[1].name, "Game Two");
+    }
+
+    #[test]
+    fn empty_data_returns_empty() {
+        let (_, games) = parse_db(b"no game data here").unwrap();
+        assert!(games.is_empty());
+    }
+}

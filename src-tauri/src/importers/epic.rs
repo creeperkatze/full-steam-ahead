@@ -289,3 +289,90 @@ fn parse_quoted_executable(command: &str) -> Option<PathBuf> {
         .filter(|v| !v.is_empty())
         .map(PathBuf::from)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn test_manifest() -> EpicManifest {
+        EpicManifest {
+            launch_executable: "Binaries/Win64/game.exe".to_string(),
+            manifest_location: "/manifests/game.item".to_string(),
+            display_name: "Test Game".to_string(),
+            install_location: "/games/test".to_string(),
+            app_name: "testgame123".to_string(),
+            catalog_namespace: "ns123".to_string(),
+            catalog_item_id: "item456".to_string(),
+            is_managed: false,
+            expected_dlc: None,
+        }
+    }
+
+    #[test]
+    fn needs_launcher_when_managed() {
+        let mut m = test_manifest();
+        m.is_managed = true;
+        assert!(m.needs_launcher());
+    }
+
+    #[test]
+    fn needs_launcher_when_has_dlc() {
+        let mut m = test_manifest();
+        m.expected_dlc = Some(HashMap::from([("dlc1".to_string(), true)]));
+        assert!(m.needs_launcher());
+    }
+
+    #[test]
+    fn no_launcher_for_plain_game() {
+        assert!(!test_manifest().needs_launcher());
+    }
+
+    #[test]
+    fn no_launcher_for_empty_dlc_map() {
+        let mut m = test_manifest();
+        m.expected_dlc = Some(HashMap::new());
+        assert!(!m.needs_launcher());
+    }
+
+    #[test]
+    fn launch_url_format() {
+        let m = test_manifest();
+        assert_eq!(
+            m.launch_url(),
+            "com.epicgames.launcher://apps/ns123%3Aitem456%3Atestgame123?action=launch&silent=true"
+        );
+    }
+
+    #[test]
+    fn dedupe_key_includes_all_parts() {
+        let m = test_manifest();
+        assert_eq!(m.dedupe_key(), "/games/test-Binaries/Win64/game.exe-false");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn parse_quoted_exe_with_quotes() {
+        let cmd = r#""C:\Program Files (x86)\Epic Games\launcher.exe" --flag"#;
+        assert_eq!(
+            parse_quoted_executable(cmd),
+            Some(PathBuf::from(r"C:\Program Files (x86)\Epic Games\launcher.exe"))
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn parse_quoted_exe_without_quotes() {
+        let cmd = r"C:\Games\launcher.exe --flag";
+        assert_eq!(
+            parse_quoted_executable(cmd),
+            Some(PathBuf::from(r"C:\Games\launcher.exe"))
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn parse_quoted_exe_empty_returns_none() {
+        assert_eq!(parse_quoted_executable(""), None);
+    }
+}
