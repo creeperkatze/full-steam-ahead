@@ -11,7 +11,16 @@ use std::{
 
 fn http_client() -> &'static reqwest::blocking::Client {
     static CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
-    CLIENT.get_or_init(reqwest::blocking::Client::new)
+    CLIENT.get_or_init(|| {
+        reqwest::blocking::Client::builder()
+            .user_agent(concat!(
+                "creeperkatze/full-steam-ahead/",
+                env!("CARGO_PKG_VERSION"),
+                " (contact@creeperkatze.dev)"
+            ))
+            .build()
+            .expect("failed to build HTTP client")
+    })
 }
 
 #[derive(Debug, Deserialize)]
