@@ -88,6 +88,7 @@ pub fn stop_steam() -> std::io::Result<Output> {
     }
 }
 
+#[allow(unreachable_code)]
 pub fn restart_steam(install_path: &std::path::Path) -> std::io::Result<Option<Child>> {
     #[cfg(windows)]
     {
@@ -114,6 +115,7 @@ pub fn restart_steam(install_path: &std::path::Path) -> std::io::Result<Option<C
     Ok(None)
 }
 
+#[cfg(windows)]
 pub fn command_output_no_window(command: &mut Command) -> std::io::Result<Output> {
     #[cfg(windows)]
     {
@@ -124,6 +126,7 @@ pub fn command_output_no_window(command: &mut Command) -> std::io::Result<Output
     command.output()
 }
 
+#[cfg(windows)]
 pub fn command_spawn_no_window(command: &mut Command) -> std::io::Result<Child> {
     #[cfg(windows)]
     {

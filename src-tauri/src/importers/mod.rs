@@ -1,11 +1,17 @@
-pub mod amazon;
 pub mod epic;
 pub mod gog;
 pub mod itch;
 pub mod manual;
 pub mod origin;
-pub mod playnite;
 pub mod ubisoft;
+
+// Windows-only launchers
+#[cfg(windows)]
+pub mod amazon;
+#[cfg(windows)]
+pub mod playnite;
+#[cfg(windows)]
+pub mod gamepass;
 
 // Unix-only launchers
 #[cfg(unix)]
@@ -22,10 +28,6 @@ pub mod lutris;
 pub mod minigalaxy;
 #[cfg(unix)]
 pub mod proton;
-
-// Windows-only launchers
-#[cfg(windows)]
-pub mod gamepass;
 
 use crate::{
     models::{ImportCandidate, ImportSource, SteamUser},
