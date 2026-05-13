@@ -3,6 +3,7 @@
   "productName": "Full Steam Ahead",
   "version": "../package.json",
   "identifier": "dev.creeperkatze.full-steam-ahead",
+  "mainBinaryName": "Full Steam Ahead",
   "build": {
     "beforeDevCommand": "pnpm dev:web",
     "beforeBuildCommand": "pnpm build:web",
@@ -31,10 +32,25 @@
   },
   "bundle": {
     "active": true,
+    "category": "Utility",
+    "publisher": "Creeperkatze",
+    "copyright": "",
+    "homepage": "https://github.com/creeperkatze/full-steam-ahead",
+    "license": "GPL-3.0-only",
+    "licenseFile": "../LICENSE",
+    "shortDescription": "",
+    "longDescription": "",
     "targets": "all",
     "icon": [
       "icons/icon.png",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "allowDowngrades": false,
+      "nsis": {
+        "installMode": "currentUser",
+        "startMenuFolder": "Full Steam Ahead"
+      }
+    }
   }
 }

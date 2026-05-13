@@ -3,6 +3,9 @@ name = "full-steam-ahead"
 version = "0.1.0"
 description = "A desktop utility for importing non-Steam games."
 authors = ["Creeperkatze"]
+license = "GPL-3.0-only"
+homepage = "https://github.com/creeperkatze/full-steam-ahead"
+repository = "https://github.com/creeperkatze/full-steam-ahead"
 edition = "2021"
 
 [lib]
