@@ -30,13 +30,23 @@ jobs:
         platform:
           - windows-latest
           - ubuntu-latest
+          - macos-latest
         include:
           - platform: windows-latest
             artifact-target-name: x86_64-pc-windows-msvc
             bundles: nsis,msi
+            bundle-path: src-tauri/target/release/bundle
+            tauri-target: ""
           - platform: ubuntu-latest
             artifact-target-name: x86_64-unknown-linux-gnu
-            bundles: deb,appimage
+            bundles: deb,appimage,rpm
+            bundle-path: src-tauri/target/release/bundle
+            tauri-target: ""
+          - platform: macos-latest
+            artifact-target-name: universal-apple-darwin
+            bundles: dmg
+            bundle-path: src-tauri/target/universal-apple-darwin/release/bundle
+            tauri-target: --target universal-apple-darwin
 
     runs-on: ${{ matrix.platform }}
 
@@ -49,6 +59,10 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install macOS universal targets
+        if: contains(matrix.platform, 'macos')
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
@@ -79,9 +93,10 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build app
-        run: pnpm tauri build --bundles ${{ matrix.bundles }}
+        run: pnpm tauri build --bundles ${{ matrix.bundles }} ${{ matrix.tauri-target }}
 
       - name: Package standalone app
+        if: runner.os != 'macOS'
         shell: bash
         run: |
           mkdir -p standalone
@@ -98,13 +113,16 @@ jobs:
         with:
           name: App bundle (${{ matrix.artifact-target-name }})
           path: |
-            src-tauri/target/release/bundle/appimage/Full Steam Ahead_*.AppImage*
-            src-tauri/target/release/bundle/deb/Full Steam Ahead_*.deb*
-            src-tauri/target/release/bundle/msi/Full Steam Ahead_*.msi*
-            src-tauri/target/release/bundle/nsis/Full Steam Ahead_*-setup.exe*
+            ${{ matrix.bundle-path }}/appimage/Full Steam Ahead_*.AppImage*
+            ${{ matrix.bundle-path }}/deb/Full Steam Ahead_*.deb*
+            ${{ matrix.bundle-path }}/msi/Full Steam Ahead_*.msi*
+            ${{ matrix.bundle-path }}/nsis/Full Steam Ahead_*-setup.exe*
+            ${{ matrix.bundle-path }}/rpm/Full Steam Ahead_*.rpm*
+            ${{ matrix.bundle-path }}/dmg/Full Steam Ahead_*.dmg*
           if-no-files-found: error
 
       - name: Upload standalone app
+        if: runner.os != 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: Standalone app (${{ matrix.artifact-target-name }})
