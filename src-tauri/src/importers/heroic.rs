@@ -138,7 +138,7 @@ fn scan_gog_games(
         }
 
         if entry.platform == "linux" {
-            let gog_candidates = gog::scan_folders(user, vec![install_path]);
+            let gog_candidates = gog::scan_folders(user, vec![install_path.clone()]);
             if !gog_candidates.is_empty() {
                 for mut c in gog_candidates {
                     c.source = ImportSource::Heroic;

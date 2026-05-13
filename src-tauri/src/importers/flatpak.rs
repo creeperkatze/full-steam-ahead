@@ -6,16 +6,13 @@ use crate::{
 use std::process::Command;
 
 pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let output = Command::new("flatpak")
+    let stdout = Command::new("flatpak")
         .args(["list", "--app", "--columns=name,application"])
         .output()
-        .unwrap_or_else(|_| std::process::Output {
-            status: std::process::ExitStatus::from_raw(1),
-            stdout: Vec::new(),
-            stderr: Vec::new(),
-        });
+        .map(|o| o.stdout)
+        .unwrap_or_default();
 
-    let text = String::from_utf8_lossy(&output.stdout);
+    let text = String::from_utf8_lossy(&stdout);
     let candidates = text
         .lines()
         .filter_map(|line| {
