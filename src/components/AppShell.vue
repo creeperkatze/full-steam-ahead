@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Settings, X } from "@lucide/vue";
-import UiButton from "./ui/Button.vue";
 import Logo from "../assets/logo.svg?component";
+import UiButton from "./ui/Button.vue";
 
 defineProps<{
   activeStep: number;
@@ -18,8 +18,9 @@ const steps = ["Sources", "Artwork", "Review"];
 </script>
 
 <template>
-  <main class="grid min-h-screen grid-rows-[60px_1fr] bg-surface-1 text-primary">
-    <header class="grid grid-cols-[280px_1fr_auto] items-center gap-5 border-b border-border bg-surface-2 px-5">
+  <main class="flex h-screen flex-col gap-3 bg-surface-2 p-3 text-primary">
+
+    <header class="grid h-15 shrink-0 grid-cols-[280px_1fr_auto] items-center gap-5 px-2">
       <div class="flex items-center">
         <Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
       </div>
@@ -30,11 +31,7 @@ const steps = ["Sources", "Artwork", "Review"];
           :key="step"
           type="button"
           class="flex min-h-9 items-center gap-2 rounded-md border px-3 text-left text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary"
-          :class="
-            activeStep >= index
-              ? 'border-accent bg-accent-bg text-primary'
-              : 'border-border bg-surface-5'
-          "
+          :class="activeStep >= index ? 'border-accent bg-accent-bg text-primary' : 'border-border bg-surface-5'"
           @click="$emit('select-step', index)"
         >
           <b
@@ -62,12 +59,14 @@ const steps = ["Sources", "Artwork", "Review"];
       </div>
     </header>
 
-    <section class="min-w-0 px-5 pb-20 pt-4">
+    <div class="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-surface-1 px-5 py-4">
       <div v-if="error" class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-danger">
         {{ error }}
       </div>
-
       <slot />
-    </section>
+    </div>
+
+    <slot name="footer" />
+
   </main>
 </template>
