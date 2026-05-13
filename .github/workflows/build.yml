@@ -1,0 +1,104 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - ".github/workflows/build.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "index.html"
+      - "vite.config.ts"
+      - "tsconfig.json"
+      - "src/**"
+      - "src-tauri/**"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build"
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+
+  build:
+    name: Build
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - windows-latest
+          - ubuntu-latest
+        include:
+          - platform: windows-latest
+            artifact-target-name: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+          - platform: ubuntu-latest
+            artifact-target-name: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux build dependencies
+        if: contains(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build app
+        run: pnpm tauri build --bundles ${{ matrix.bundles }}
+
+      - name: Upload app bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: App bundle (${{ matrix.artifact-target-name }})
+          path: |
+            src-tauri/target/release/bundle/appimage/Full Steam Ahead_*.AppImage*
+            src-tauri/target/release/bundle/deb/Full Steam Ahead_*.deb*
+            src-tauri/target/release/bundle/msi/Full Steam Ahead_*.msi*
+            src-tauri/target/release/bundle/nsis/Full Steam Ahead_*-setup.exe*
+          if-no-files-found: error
