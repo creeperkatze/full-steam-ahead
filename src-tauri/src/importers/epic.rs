@@ -14,6 +14,8 @@ use std::{
 struct EpicPaths {
     launcher_path: PathBuf,
     manifest_folder_path: PathBuf,
+    #[cfg_attr(not(unix), allow(dead_code))]
+    compat_folder: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -51,7 +53,6 @@ impl EpicManifest {
         if self.is_managed {
             return true;
         }
-
         self.expected_dlc
             .as_ref()
             .is_some_and(|dlc| !dlc.is_empty())
@@ -68,19 +69,35 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     };
 
     let mut manifests = BTreeMap::<String, EpicManifest>::new();
-    for entry in fs::read_dir(&paths.manifest_folder_path)
-        .map_err(io_context(&paths.manifest_folder_path))?
+    for entry in
+        fs::read_dir(&paths.manifest_folder_path).map_err(io_context(&paths.manifest_folder_path))?
     {
         let entry = entry.map_err(io_context(&paths.manifest_folder_path))?;
         let path = entry.path();
-        if path.extension().and_then(|value| value.to_str()) != Some("item") {
+        if path.extension().and_then(|e| e.to_str()) != Some("item") {
             continue;
         }
-
         let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
         let Ok(manifest) = serde_json::from_str::<EpicManifest>(&raw) else {
             continue;
         };
+
+        // On Unix, translate Windows paths to host paths via dosdevices
+        #[cfg(unix)]
+        let mut manifest = manifest;
+        #[cfg(unix)]
+        if let Some(ref compat) = paths.compat_folder {
+            if let Some(translated) =
+                super::proton::translate_windows_path(compat, &manifest.manifest_location)
+            {
+                manifest.manifest_location = translated.to_string_lossy().to_string();
+            }
+            if let Some(translated) =
+                super::proton::translate_windows_path(compat, &manifest.install_location)
+            {
+                manifest.install_location = translated.to_string_lossy().to_string();
+            }
+        }
 
         if !is_installed(&manifest) || !is_launchable(&manifest) {
             continue;
@@ -108,6 +125,18 @@ fn candidate_from_manifest(
     if needs_launcher {
         tags.push("Epic Launcher".to_string());
     }
+
+    // On Unix with Proton, embed the compat path into the launch options
+    #[cfg(unix)]
+    let launch_url = if let Some(ref compat) = paths.compat_folder {
+        format!(
+            "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -'{}'",
+            compat.display(),
+            launch_url
+        )
+    } else {
+        launch_url
+    };
 
     if needs_launcher {
         launcher_candidate(
@@ -143,20 +172,69 @@ fn is_launchable(manifest: &EpicManifest) -> bool {
 }
 
 fn find_epic_paths() -> Option<EpicPaths> {
-    let manifest_folder_path =
-        manifest_location_from_registry().unwrap_or_else(default_manifest_location);
-    let launcher_path = launcher_location_from_registry().unwrap_or_else(default_launcher_location);
+    #[cfg(windows)]
+    {
+        let manifest_folder_path =
+            manifest_location_from_registry().unwrap_or_else(default_manifest_location);
+        let launcher_path =
+            launcher_location_from_registry().unwrap_or_else(default_launcher_location);
+        (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
+            launcher_path,
+            manifest_folder_path,
+            compat_folder: None,
+        })
+    }
 
-    (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
-        launcher_path,
-        manifest_folder_path,
-    })
+    #[cfg(unix)]
+    {
+        let home = std::env::var("HOME").ok()?;
+        let compat_dir = PathBuf::from(&home)
+            .join(".steam")
+            .join("steam")
+            .join("steamapps")
+            .join("compatdata");
+
+        for entry in std::fs::read_dir(compat_dir).ok()?.flatten() {
+            let binaries = entry
+                .path()
+                .join("pfx")
+                .join("drive_c")
+                .join("Program Files (x86)")
+                .join("Epic Games")
+                .join("Launcher")
+                .join("Portal")
+                .join("Binaries");
+
+            let launcher_path = ["Win64", "Win32"]
+                .iter()
+                .map(|arch| binaries.join(arch).join("EpicGamesLauncher.exe"))
+                .find(|p| p.exists())?;
+
+            let manifest_folder_path = entry
+                .path()
+                .join("pfx")
+                .join("drive_c")
+                .join("ProgramData")
+                .join("Epic")
+                .join("EpicGamesLauncher")
+                .join("Data")
+                .join("Manifests");
+
+            if manifest_folder_path.exists() {
+                return Some(EpicPaths {
+                    launcher_path,
+                    manifest_folder_path,
+                    compat_folder: Some(entry.path()),
+                });
+            }
+        }
+        None
+    }
 }
 
 #[cfg(windows)]
 fn manifest_location_from_registry() -> Option<PathBuf> {
     use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
-
     let key = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey("SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher")
         .ok()?;
@@ -165,40 +243,17 @@ fn manifest_location_from_registry() -> Option<PathBuf> {
     path.exists().then_some(path)
 }
 
-#[cfg(not(windows))]
-fn manifest_location_from_registry() -> Option<PathBuf> {
-    None
-}
-
 #[cfg(windows)]
 fn launcher_location_from_registry() -> Option<PathBuf> {
     use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
-
     let key = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey("SOFTWARE\\Classes\\com.epicgames.launcher\\shell\\open\\command")
         .ok()?;
     let command: String = key.get_value("").ok()?;
-    parse_quoted_executable(&command).filter(|path| path.exists())
+    parse_quoted_executable(&command).filter(|p| p.exists())
 }
 
-#[cfg(not(windows))]
-fn launcher_location_from_registry() -> Option<PathBuf> {
-    None
-}
-
-fn parse_quoted_executable(command: &str) -> Option<PathBuf> {
-    if let Some(rest) = command.strip_prefix('"') {
-        let end = rest.find('"')?;
-        return Some(PathBuf::from(&rest[..end]));
-    }
-
-    command
-        .split_whitespace()
-        .next()
-        .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
-}
-
+#[cfg(windows)]
 fn default_launcher_location() -> PathBuf {
     let system_drive = std::env::var("SYSTEMDRIVE").unwrap_or_else(|_| "C:".to_string());
     Path::new(&format!("{system_drive}\\"))
@@ -211,6 +266,7 @@ fn default_launcher_location() -> PathBuf {
         .join("EpicGamesLauncher.exe")
 }
 
+#[cfg(windows)]
 fn default_manifest_location() -> PathBuf {
     let program_data =
         std::env::var("PROGRAMDATA").unwrap_or_else(|_| "C:\\ProgramData".to_string());
@@ -219,4 +275,17 @@ fn default_manifest_location() -> PathBuf {
         .join("EpicGamesLauncher")
         .join("Data")
         .join("Manifests")
+}
+
+#[cfg(windows)]
+fn parse_quoted_executable(command: &str) -> Option<PathBuf> {
+    if let Some(rest) = command.strip_prefix('"') {
+        let end = rest.find('"')?;
+        return Some(PathBuf::from(&rest[..end]));
+    }
+    command
+        .split_whitespace()
+        .next()
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from)
 }

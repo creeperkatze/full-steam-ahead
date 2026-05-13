@@ -1,12 +1,31 @@
 pub mod amazon;
 pub mod epic;
-pub mod gamepass;
 pub mod gog;
 pub mod itch;
 pub mod manual;
 pub mod origin;
 pub mod playnite;
 pub mod ubisoft;
+
+// Unix-only launchers
+#[cfg(unix)]
+pub mod bottles;
+#[cfg(unix)]
+pub mod flatpak;
+#[cfg(unix)]
+pub mod heroic;
+#[cfg(unix)]
+pub mod legendary;
+#[cfg(unix)]
+pub mod lutris;
+#[cfg(unix)]
+pub mod minigalaxy;
+#[cfg(unix)]
+pub mod proton;
+
+// Windows-only launchers
+#[cfg(windows)]
+pub mod gamepass;
 
 use crate::{
     models::{ImportCandidate, ImportSource, SteamUser},
@@ -29,7 +48,8 @@ pub fn candidate_from_parts(
     tags: Vec<String>,
 ) -> ImportCandidate {
     let app_id = non_steam_app_id(&quote_path(&executable_path), &name);
-    let (matched_steam_app_id, artwork) = artwork::steam_preferred_plan(&user.grid_path, app_id, &name);
+    let (matched_steam_app_id, artwork) =
+        artwork::steam_preferred_plan(&user.grid_path, app_id, &name);
 
     ImportCandidate {
         id: format!("{source_slug}-{app_id}"),

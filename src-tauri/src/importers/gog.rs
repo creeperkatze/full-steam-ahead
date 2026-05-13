@@ -10,58 +10,78 @@ use std::{
 };
 
 pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let galaxy_path = program_data()
-        .join("GOG.com")
-        .join("Galaxy")
-        .join("config.json");
-    if !galaxy_path.exists() {
-        return Ok(Vec::new());
-    }
+    let mut all_candidates = Vec::new();
 
-    let raw = fs::read_to_string(&galaxy_path).map_err(io_context(&galaxy_path))?;
-    let Ok(config) = serde_json::from_str::<GogConfig>(&raw) else {
-        return Ok(Vec::new());
-    };
-
-    let mut roots = config.installation_paths.unwrap_or_default();
-    if roots.is_empty() {
-        if let Some(path) = config.library_path {
-            roots.push(path);
-        }
-    }
-
-    let mut candidates = Vec::new();
-    for root in roots {
-        let root = PathBuf::from(root);
-        if !root.exists() {
+    for (config_path, wine_c_drive) in find_galaxy_configs() {
+        let raw = match fs::read_to_string(&config_path) {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        let Ok(config) = serde_json::from_str::<GogConfig>(&raw) else {
             continue;
+        };
+
+        let mut roots = config.installation_paths.unwrap_or_default();
+        if roots.is_empty() {
+            if let Some(path) = config.library_path {
+                roots.push(path);
+            }
         }
-        for entry in fs::read_dir(&root).map_err(io_context(&root))?.flatten() {
-            let folder = entry.path();
-            if !folder.is_dir() {
+
+        // On Unix, translate Windows-style C:\ paths to the wine_c_drive equivalent
+        #[cfg(unix)]
+        let roots: Vec<String> = if let Some(ref wine_c) = wine_c_drive {
+            roots
+                .into_iter()
+                .flat_map(|path| translate_installation_path(&path, wine_c))
+                .collect()
+        } else {
+            roots
+        };
+
+        #[cfg(not(unix))]
+        let _ = wine_c_drive;
+
+        for root in roots {
+            let root = PathBuf::from(root);
+            if !root.exists() {
                 continue;
             }
-            let game_folder = if folder.join("game").exists() {
-                folder.join("game")
-            } else {
-                folder
-            };
-            candidates.extend(scan_gog_folder(user, &game_folder)?);
+            for entry in fs::read_dir(&root).map_err(io_context(&root))?.flatten() {
+                let folder = entry.path();
+                if !folder.is_dir() {
+                    continue;
+                }
+                let game_folder = if folder.join("game").exists() {
+                    folder.join("game")
+                } else {
+                    folder
+                };
+                all_candidates.extend(scan_gog_folder(user, &game_folder)?);
+            }
         }
     }
 
-    Ok(candidates)
+    Ok(all_candidates)
+}
+
+#[cfg(unix)]
+pub fn scan_folders(user: &SteamUser, folders: Vec<PathBuf>) -> Vec<ImportCandidate> {
+    folders
+        .into_iter()
+        .flat_map(|f| scan_gog_folder(user, &f).unwrap_or_default())
+        .collect()
 }
 
 fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
     for entry in fs::read_dir(game_folder).map_err(io_context(game_folder))?.flatten() {
         let path = entry.path();
-        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+        let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
         };
         if !file_name.starts_with("goggame-")
-            || path.extension().and_then(|ext| ext.to_str()) != Some("info")
+            || path.extension().and_then(|e| e.to_str()) != Some("info")
         {
             continue;
         }
@@ -69,37 +89,97 @@ fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<Import
         let Ok(game) = serde_json::from_str::<GogGame>(&raw) else {
             continue;
         };
-        let Some(task) = game.play_tasks.unwrap_or_default().into_iter().find(|task| {
-            task.is_primary.unwrap_or_default()
-                && task.task_type == "FileTask"
-                && matches!(task.category.as_deref(), Some("launcher") | Some("game"))
-                && task.path.is_some()
+        let Some(task) = game.play_tasks.unwrap_or_default().into_iter().find(|t| {
+            t.is_primary.unwrap_or_default()
+                && t.task_type == "FileTask"
+                && matches!(t.category.as_deref(), Some("launcher") | Some("game"))
+                && t.path.is_some()
         }) else {
             continue;
         };
-        let executable_path = game_folder.join(task.path.unwrap_or_default());
-        let start_dir = task
+
+        let exe_path = game_folder.join(task.path.unwrap_or_default());
+        let work_dir = task
             .working_dir
-            .map(|dir| game_folder.join(dir))
+            .map(|d| game_folder.join(d))
             .unwrap_or_else(|| game_folder.to_path_buf());
+
+        // On Unix, normalise backslashes left over from Windows-style path components
+        #[cfg(unix)]
+        let exe_path = PathBuf::from(exe_path.to_string_lossy().replace('\\', "/"));
+        #[cfg(unix)]
+        let work_dir = PathBuf::from(work_dir.to_string_lossy().replace('\\', "/"));
+
+        let args = task.arguments.filter(|a| !a.trim().is_empty());
         candidates.push(candidate_from_parts(
             user,
             ImportSource::Gog,
             "gog",
             game.name,
-            executable_path,
-            start_dir,
-            task.arguments.filter(|args| !args.trim().is_empty()),
+            exe_path,
+            work_dir,
+            args,
             vec!["GOG".to_string()],
         ));
     }
     Ok(candidates)
 }
 
-fn program_data() -> PathBuf {
-    std::env::var("PROGRAMDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("C:\\ProgramData"))
+fn find_galaxy_configs() -> Vec<(PathBuf, Option<PathBuf>)> {
+    #[cfg(windows)]
+    {
+        let base = std::env::var("PROGRAMDATA").unwrap_or_else(|_| "C:\\ProgramData".to_string());
+        let config = PathBuf::from(base)
+            .join("GOG.com")
+            .join("Galaxy")
+            .join("config.json");
+        vec![(config, None)]
+    }
+
+    #[cfg(unix)]
+    {
+        let mut result = Vec::new();
+        let home = match std::env::var("HOME") {
+            Ok(h) => h,
+            Err(_) => return result,
+        };
+
+        // Default PlayOnLinux / Lutris GOG Galaxy location
+        let default_drive_c = PathBuf::from(&home)
+            .join("Games")
+            .join("gog-galaxy")
+            .join("drive_c");
+        let default_config = default_drive_c
+            .join("ProgramData")
+            .join("GOG.com")
+            .join("Galaxy")
+            .join("config.json");
+        if default_config.exists() {
+            result.push((default_config, Some(default_drive_c)));
+        }
+
+        // Proton compat data prefixes
+        for prefix in super::proton::find_proton_prefixes() {
+            let drive_c = prefix.join("pfx").join("drive_c");
+            let config = drive_c
+                .join("ProgramData")
+                .join("GOG.com")
+                .join("Galaxy")
+                .join("config.json");
+            if config.exists() {
+                result.push((config, Some(drive_c)));
+            }
+        }
+
+        result
+    }
+}
+
+#[cfg(unix)]
+fn translate_installation_path(path: &str, wine_c_drive: &Path) -> Option<String> {
+    let stripped = path.strip_prefix("C:\\")?;
+    let translated = wine_c_drive.join(stripped);
+    Some(translated.to_string_lossy().replace('\\', "/"))
 }
 
 #[derive(Debug, Deserialize)]
