@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import AmazonIcon from "../assets/icons/amazon.svg";
 import EpicIcon from "../assets/icons/epic.svg";
-import GamePassIcon from "../assets/icons/game_pass.svg";
+import GamePassIcon from "../assets/icons/gamepass.svg";
 import GogIcon from "../assets/icons/gog.svg";
 import ItchIcon from "../assets/icons/itch.svg";
 import OriginIcon from "../assets/icons/origin.svg";

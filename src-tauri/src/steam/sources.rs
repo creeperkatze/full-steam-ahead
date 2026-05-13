@@ -62,7 +62,7 @@ fn scan_single_source(source: &ImportSource, user: &SteamUser) -> Vec<ImportCand
         #[cfg(windows)]
         ImportSource::UbisoftConnect => importers::ubisoft::scan(user).unwrap_or_default(),
         #[cfg(windows)]
-        ImportSource::GamePass => importers::game_pass::scan(user).unwrap_or_default(),
+        ImportSource::GamePass => importers::gamepass::scan(user).unwrap_or_default(),
         _ => vec![],
     }
 }

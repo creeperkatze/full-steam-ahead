@@ -1,6 +1,6 @@
 pub mod amazon;
 pub mod epic;
-pub mod game_pass;
+pub mod gamepass;
 pub mod gog;
 pub mod itch;
 pub mod manual;
