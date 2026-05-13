@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, Check, ChevronDown, FolderArchive, Image, Library, ListChecks } from "@lucide/vue";
+import { AlertTriangle, Check, ChevronDown, FolderArchive, Gamepad2, Image, Library, ListChecks, Save } from "@lucide/vue";
 import { computed } from "vue";
 import type { ApplyResult, PlannedChange, PreviewPlan } from "../../../types/steam";
 
@@ -8,29 +8,27 @@ const props = defineProps<{
   applyResult: ApplyResult | null;
 }>();
 
+interface ArtworkChange {
+  kind: string;
+  source: string;
+  destructive: boolean;
+}
+
 interface GameReview {
   name: string;
   shortcut?: PlannedChange;
   collections: string[];
-  artwork: Array<{
-    kind: string;
-    source: string;
-    destructive: boolean;
-  }>;
+  artwork: ArtworkChange[];
 }
 
 const games = computed(() => {
   const grouped = new Map<string, GameReview>();
 
   for (const change of props.plan?.changes ?? []) {
-    const name = gameName(change);
+    const name = change.gameName;
     if (!name) continue;
 
-    const game = grouped.get(name) ?? {
-      name,
-      collections: [],
-      artwork: []
-    };
+    const game = grouped.get(name) ?? { name, collections: [], artwork: [] };
 
     if (change.kind === "addShortcut" || change.kind === "updateShortcut") {
       game.shortcut = change;
@@ -47,40 +45,30 @@ const games = computed(() => {
     grouped.set(name, game);
   }
 
-  return Array.from(grouped.values()).sort((left, right) => left.name.localeCompare(right.name));
+  return Array.from(grouped.values()).sort((a, b) => a.name.localeCompare(b.name));
 });
 
 const summary = computed(() => {
   const changes = props.plan?.changes ?? [];
   return {
     games: games.value.length,
-    shortcuts: changes.filter((change) => change.kind === "addShortcut" || change.kind === "updateShortcut").length,
-    artwork: changes.filter((change) => change.kind === "writeArtwork").length,
-    collections: changes.filter((change) => change.kind === "updateCollections").length,
+    shortcuts: changes.filter(c => c.kind === "addShortcut" || c.kind === "updateShortcut").length,
+    artwork: changes.filter(c => c.kind === "writeArtwork").length,
+    collections: changes.filter(c => c.kind === "updateCollections").length,
     backups: props.plan?.backups.length ?? 0
   };
 });
 
 const destructiveArtworkCount = computed(
-  () => props.plan?.changes.filter((change) => change.kind === "writeArtwork" && change.destructive).length ?? 0
+  () => props.plan?.changes.filter(c => c.kind === "writeArtwork" && c.destructive).length ?? 0
 );
 
-function gameName(change: PlannedChange) {
-  if (change.kind === "addShortcut" || change.kind === "updateShortcut") {
-    return change.title.replace(/^Add shortcut for /, "").replace(/^Update shortcut for /, "");
-  }
-
-  if (change.kind === "updateCollections") {
-    const match = change.title.match(/^Add (.+) to (.+) collection$/);
-    return match?.[1] ?? "";
-  }
-
-  const match = change.title.match(/^Set \w+ artwork for (.+)$/);
-  return match?.[1] ?? "";
+function changeCount(game: GameReview) {
+  return Number(Boolean(game.shortcut)) + game.collections.length + game.artwork.length;
 }
 
 function collectionName(change: PlannedChange) {
-  const match = change.title.match(/^Add .+ to (.+) collection$/);
+  const match = change.title.match(/to (.+) collection$/);
   return match?.[1] ?? "Managed";
 }
 
@@ -95,11 +83,13 @@ function artworkSource(change: PlannedChange) {
 }
 
 function sourceLabel(source: string) {
-  if (source === "officialSteam") return "Official Steam";
-  if (source === "steamGridDb") return "SteamGridDB";
-  if (source === "localFile") return "Local file";
-  if (source === "existingCustom") return "Existing custom";
-  return source || "Selected source";
+  switch (source.toLowerCase()) {
+    case "officialsteam": return "Official Steam";
+    case "steamgriddb": return "SteamGridDB";
+    case "localfile": return "Local file";
+    case "existingcustom": return "Existing";
+    default: return source || "Unknown";
+  }
 }
 
 function titleCase(value: string) {
@@ -108,10 +98,35 @@ function titleCase(value: string) {
 </script>
 
 <template>
-  <section class="grid gap-3">
+  <!-- Success state -->
+  <section v-if="applyResult" class="grid gap-4">
+    <div class="flex flex-col items-center gap-5 rounded-xl border border-accent/30 bg-accent-bg py-14 text-center">
+      <div class="grid size-14 place-items-center rounded-full bg-accent text-accent-contrast">
+        <Check :size="28" />
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold">All done!</h1>
+        <p class="mt-1 text-secondary">Steam shortcuts and artwork have been updated.</p>
+      </div>
+      <div class="flex items-center gap-6 rounded-lg border border-border bg-surface-3 px-6 py-3">
+        <div class="text-center">
+          <strong class="block text-2xl">{{ applyResult.appliedChanges.length }}</strong>
+          <span class="text-xs text-secondary">changes applied</span>
+        </div>
+        <div class="h-10 w-px bg-border" />
+        <div class="text-center">
+          <strong class="block text-2xl">{{ applyResult.backupsCreated.length }}</strong>
+          <span class="text-xs text-secondary">backups created</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Review state -->
+  <section v-else class="grid gap-3">
     <div>
-      <h1 class="text-[26px] font-bold leading-tight">Final Review</h1>
-      <p class="text-secondary">Confirm the Steam shortcuts, artwork, and collections that will be updated.</p>
+      <h1 class="text-[26px] font-bold leading-tight">Review</h1>
+      <p class="text-secondary">Confirm the shortcuts, artwork, and collections that will be updated.</p>
     </div>
 
     <div v-if="!plan" class="grid min-h-55 place-items-center rounded-lg border border-border bg-surface-3 p-6 text-secondary">
@@ -119,33 +134,40 @@ function titleCase(value: string) {
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-5 gap-2">
-        <div class="rounded-lg border border-border bg-surface-3 p-3">
-          <span class="text-xs uppercase text-secondary">Games</span>
-          <strong class="block text-xl">{{ summary.games }}</strong>
+      <!-- Summary stats -->
+      <div class="flex flex-wrap gap-2">
+        <div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
+          <Gamepad2 :size="15" class="text-accent" />
+          <strong>{{ summary.games }}</strong>
+          <span class="text-xs text-secondary">games</span>
         </div>
-        <div class="rounded-lg border border-border bg-surface-3 p-3">
-          <span class="text-xs uppercase text-secondary">Shortcuts</span>
-          <strong class="block text-xl">{{ summary.shortcuts }}</strong>
+        <div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
+          <ListChecks :size="15" class="text-accent" />
+          <strong>{{ summary.shortcuts }}</strong>
+          <span class="text-xs text-secondary">shortcuts</span>
         </div>
-        <div class="rounded-lg border border-border bg-surface-3 p-3">
-          <span class="text-xs uppercase text-secondary">Artwork</span>
-          <strong class="block text-xl">{{ summary.artwork }}</strong>
+        <div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
+          <Image :size="15" class="text-accent" />
+          <strong>{{ summary.artwork }}</strong>
+          <span class="text-xs text-secondary">artwork</span>
         </div>
-        <div class="rounded-lg border border-border bg-surface-3 p-3">
-          <span class="text-xs uppercase text-secondary">Collections</span>
-          <strong class="block text-xl">{{ summary.collections }}</strong>
+        <div v-if="summary.collections" class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
+          <Library :size="15" class="text-accent" />
+          <strong>{{ summary.collections }}</strong>
+          <span class="text-xs text-secondary">collections</span>
         </div>
-        <div class="rounded-lg border border-border bg-surface-3 p-3">
-          <span class="text-xs uppercase text-secondary">Backups</span>
-          <strong class="block text-xl">{{ summary.backups }}</strong>
+        <div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
+          <Save :size="15" class="text-accent" />
+          <strong>{{ summary.backups }}</strong>
+          <span class="text-xs text-secondary">backups</span>
         </div>
       </div>
 
-      <div class="flex min-h-10 items-center gap-2 rounded-md border border-border bg-surface-5 px-3 py-2">
-        <Check :size="18" />
+      <!-- Notices -->
+      <div class="flex min-h-10 items-center gap-2 rounded-md border border-border bg-surface-5 px-3 py-2 text-sm">
+        <Check :size="16" class="shrink-0 text-accent" />
         <span>
-          Backups will be created before writing Steam files.
+          Backups will be created before any files are written.
           <span v-if="destructiveArtworkCount > 0" class="text-danger">
             {{ destructiveArtworkCount }} existing artwork file{{ destructiveArtworkCount === 1 ? "" : "s" }} will be replaced.
           </span>
@@ -154,95 +176,78 @@ function titleCase(value: string) {
 
       <div
         v-if="plan.warnings.length"
-        class="flex min-h-10 items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-warning"
+        class="flex min-h-10 items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-warning"
       >
-        <AlertTriangle :size="18" />
+        <AlertTriangle :size="16" class="shrink-0" />
         <span>{{ plan.warnings.join(" ") }}</span>
       </div>
 
-      <div class="grid gap-3">
+      <!-- Game list -->
+      <div class="grid gap-2">
         <article
           v-for="game in games"
           :key="game.name"
           class="overflow-hidden rounded-lg border border-border bg-surface-3"
         >
-          <header class="flex min-h-14 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
-            <strong class="min-w-0 truncate text-base">{{ game.name }}</strong>
-            <span class="shrink-0 rounded-full border border-border px-2 py-1 text-xs text-secondary">
-              {{ Number(Boolean(game.shortcut)) + game.collections.length + game.artwork.length }} updates
+          <div class="flex items-center gap-3 border-b border-border px-3 py-2.5">
+            <div class="h-4 w-0.5 shrink-0 rounded-full bg-accent" />
+            <strong class="min-w-0 flex-1 truncate">{{ game.name }}</strong>
+            <span class="shrink-0 text-xs text-secondary">{{ changeCount(game) }} change{{ changeCount(game) === 1 ? "" : "s" }}</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 px-3 py-2.5">
+            <span
+              v-if="game.shortcut"
+              class="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-5 px-2 py-1 text-xs"
+            >
+              <ListChecks :size="12" class="text-accent" />
+              Shortcut
             </span>
-          </header>
-
-          <div class="grid gap-3 p-3">
-            <div v-if="game.shortcut" class="grid grid-cols-[20px_1fr] gap-2">
-              <ListChecks :size="17" class="mt-0.5 text-accent" />
-              <div>
-                <strong class="block">Steam shortcut</strong>
-                <p class="text-secondary">{{ game.shortcut.details }}</p>
-              </div>
-            </div>
-
-            <div v-if="game.artwork.length" class="grid grid-cols-[20px_1fr] gap-2">
-              <Image :size="17" class="mt-0.5 text-accent" />
-              <div>
-                <strong class="block">Artwork</strong>
-                <div class="mt-2 flex flex-wrap gap-2">
-                  <span
-                    v-for="asset in game.artwork"
-                    :key="`${game.name}:${asset.kind}`"
-                    class="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs"
-                    :class="asset.destructive ? 'border-danger-border-muted text-danger' : 'border-border text-secondary'"
-                  >
-                    <strong class="text-primary">{{ asset.kind }}</strong>
-                    {{ asset.source }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="game.collections.length" class="grid grid-cols-[20px_1fr] gap-2">
-              <Library :size="17" class="mt-0.5 text-accent" />
-              <div>
-                <strong class="block">Collections</strong>
-                <p class="text-secondary">
-                  Add to {{ game.collections.join(", ") }}.
-                  Only app-managed collections will be changed.
-                </p>
-              </div>
-            </div>
+            <span
+              v-for="asset in game.artwork"
+              :key="`${game.name}:${asset.kind}`"
+              class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
+              :class="asset.destructive ? 'border-danger-border-muted bg-danger-bg text-danger' : 'border-border bg-surface-5'"
+            >
+              <Image :size="12" :class="asset.destructive ? 'text-danger' : 'text-accent'" />
+              <strong class="text-primary">{{ asset.kind }}</strong>
+              <span class="text-secondary">{{ asset.source }}</span>
+            </span>
+            <span
+              v-for="coll in game.collections"
+              :key="`${game.name}:coll:${coll}`"
+              class="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-5 px-2 py-1 text-xs text-secondary"
+            >
+              <Library :size="12" class="text-accent" />
+              {{ coll }}
+            </span>
           </div>
         </article>
       </div>
 
+      <!-- Backup details -->
       <details class="group rounded-lg border border-border bg-surface-3">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm">
           <span class="inline-flex items-center gap-2">
-            <FolderArchive :size="17" />
+            <FolderArchive :size="15" />
             <strong>Backup and file details</strong>
-            <span class="text-secondary">{{ plan.filesToChange.length }} files checked</span>
+            <span class="text-secondary">{{ plan.filesToChange.length }} files</span>
           </span>
-          <ChevronDown :size="16" class="transition-transform group-open:rotate-180" />
+          <ChevronDown :size="14" class="text-secondary transition-transform group-open:rotate-180" />
         </summary>
-        <div class="grid gap-3 border-t border-border p-3">
+        <div class="grid gap-3 border-t border-border p-3 text-sm">
           <div>
-            <h2 class="mb-2 text-sm font-semibold">Backups</h2>
+            <h2 class="mb-1.5 font-semibold text-secondary">Backups</h2>
             <p v-if="plan.backups.length === 0" class="text-secondary">No existing Steam files need to be backed up.</p>
             <p v-for="backup in plan.backups" :key="backup.destination" class="path-cell">
-              {{ backup.source }} -> {{ backup.destination }}
+              {{ backup.source }} → {{ backup.destination }}
             </p>
           </div>
           <div>
-            <h2 class="mb-2 text-sm font-semibold">Files to change</h2>
+            <h2 class="mb-1.5 font-semibold text-secondary">Files to change</h2>
             <p v-for="file in plan.filesToChange" :key="file" class="path-cell">{{ file }}</p>
           </div>
         </div>
       </details>
-
-      <div v-if="applyResult" class="rounded-lg border border-border bg-surface-3 p-3">
-        <h2 class="mb-2 text-base font-semibold">Applied</h2>
-        <p>{{ applyResult.appliedChanges.length }} changes applied.</p>
-        <p>{{ applyResult.backupsCreated.length }} backups created.</p>
-      </div>
     </template>
   </section>
 </template>

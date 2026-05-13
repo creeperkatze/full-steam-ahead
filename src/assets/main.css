@@ -42,6 +42,12 @@
 @layer base {
   body {
     @apply m-0 min-h-screen min-w-260 bg-surface-1 font-sans text-sm tracking-normal text-primary;
+    scrollbar-color: theme(colors.border) transparent;
+    scrollbar-width: thin;
+  }
+
+  * {
+    @apply scroll-smooth;
   }
 
   button,

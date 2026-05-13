@@ -72,6 +72,7 @@ pub fn create_preview_plan(
         changes.push(PlannedChange {
             id: format!("shortcut:{}", candidate.id),
             title: format!("Add shortcut for {}", candidate.name),
+            game_name: candidate.name.clone(),
             file: user.shortcuts_path.clone(),
             kind: ChangeKind::AddShortcut,
             destructive: false,
@@ -93,6 +94,7 @@ pub fn create_preview_plan(
                     candidate.name,
                     candidate.source.collection_name()
                 ),
+                game_name: candidate.name.clone(),
                 file: user.collections_path.clone(),
                 kind: ChangeKind::UpdateCollections,
                 destructive: false,
@@ -117,6 +119,7 @@ pub fn create_preview_plan(
             changes.push(PlannedChange {
                 id: format!("artwork:{}:{:?}", candidate.id, asset.kind),
                 title: format!("Set {:?} artwork for {}", asset.kind, candidate.name),
+                game_name: candidate.name.clone(),
                 file,
                 kind: ChangeKind::WriteArtwork,
                 destructive: asset.will_replace_existing && options.replace_existing_artwork,

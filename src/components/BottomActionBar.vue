@@ -16,8 +16,8 @@ defineEmits<{
 </script>
 
 <template>
-  <footer class="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-surface-2/95 px-5 py-3 backdrop-blur">
-    <div class="flex justify-end gap-2">
+  <footer class="fixed bottom-5 left-0 right-0 z-20 flex justify-center px-5 pointer-events-none">
+    <div class="pointer-events-auto flex items-center gap-2 rounded-xl border border-border bg-surface-2/95 px-4 py-2 shadow-lg backdrop-blur">
       <Button v-if="showBack" variant="ghost" @click="$emit('back')">
         {{ backLabel || "Back" }}
       </Button>

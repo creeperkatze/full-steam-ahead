@@ -14,14 +14,14 @@ const reviewPlan = useReviewPlan();
 const task = useTaskStatus();
 
 const nextLabel = computed(() => {
-  if (state.step.value === "review") return "Apply";
+  if (state.step.value === "review") return state.applyResult.value ? "Applied" : "Apply";
   return "Continue";
 });
 
 const nextDisabled = computed(() => {
   if (task.loading.value) return true;
   if (state.step.value === "sources") return state.selectedCandidates.value.length === 0;
-  if (state.step.value === "review") return !state.previewPlan.value;
+  if (state.step.value === "review") return !state.previewPlan.value || !!state.applyResult.value;
   return false;
 });
 

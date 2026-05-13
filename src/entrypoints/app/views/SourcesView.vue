@@ -6,6 +6,7 @@ let sourcesInitialized = false;
 import { computed, onMounted } from "vue";
 import { FolderPlus, Plus, RefreshCw, Search } from "@lucide/vue";
 import { open } from "@tauri-apps/plugin-dialog";
+import SourceCard from "../../../components/SourceCard.vue";
 import UiButton from "../../../components/ui/Button.vue";
 import { useAppState } from "../../../composables/useAppState";
 import { useTaskStatus } from "../../../composables/useTaskStatus";
@@ -45,18 +46,18 @@ const SCANNABLE_SOURCES: ScannableSource[] = [
 
 const selectedCount = computed(() => state.selectedCandidateIds.value.size);
 const steamUsers = computed(() =>
-  [...(state.install.value?.users ?? [])].sort((left, right) =>
-    steamUserName(left).localeCompare(steamUserName(right))
+  [...(state.install.value?.users ?? [])].sort((a, b) =>
+    steamUserName(a).localeCompare(steamUserName(b))
   )
 );
 
-const platformCards = computed<PlatformCard[]>(() => {
-  return SCANNABLE_SOURCES.map((source) => ({
+const platformCards = computed<PlatformCard[]>(() =>
+  SCANNABLE_SOURCES.map(source => ({
     key: source,
     title: importSourceName(source),
     candidates: candidatesFor(source)
-  })).filter((card) => card.candidates.length > 0);
-});
+  })).filter(card => card.candidates.length > 0)
+);
 
 const manualCandidates = computed(() => candidatesFor("manual"));
 const otherCards = computed(() => {
@@ -67,10 +68,7 @@ const otherCards = computed(() => {
       grouped.set(label, [...(grouped.get(label) ?? []), candidate]);
     }
   }
-  return Array.from(grouped.entries()).map(([title, candidates]) => ({
-    title,
-    candidates
-  }));
+  return Array.from(grouped.entries()).map(([title, candidates]) => ({ title, candidates }));
 });
 
 onMounted(() => {
@@ -78,7 +76,7 @@ onMounted(() => {
 });
 
 function candidatesFor(source: ImportSource) {
-  return state.candidates.value.filter((candidate) => candidate.source === source);
+  return state.candidates.value.filter(candidate => candidate.source === source);
 }
 
 function steamUserName(user: { accountName?: string | null }) {
@@ -86,15 +84,11 @@ function steamUserName(user: { accountName?: string | null }) {
 }
 
 function selectedIn(candidates: ImportCandidate[]) {
-  return candidates.filter((candidate) => state.selectedCandidateIds.value.has(candidate.id)).length;
+  return candidates.filter(c => state.selectedCandidateIds.value.has(c.id)).length;
 }
 
 function allSelected(candidates: ImportCandidate[]) {
   return candidates.length > 0 && selectedIn(candidates) === candidates.length;
-}
-
-function setPlatformEnabled(card: PlatformCard, value: boolean) {
-  setCandidatesSelected(card.candidates, value);
 }
 
 function setCandidatesSelected(candidates: ImportCandidate[], value: boolean) {
@@ -109,6 +103,7 @@ async function initializeSources() {
   if (sourcesInitialized) return;
   sourcesInitialized = true;
   await refreshSteam();
+  await scan();
 }
 
 async function refreshSteam() {
@@ -124,15 +119,12 @@ async function scan() {
   if (!state.selectedUserId.value) return;
 
   const found = await task.runTask("Scanning sources", () =>
-    api.scanSources({
-      userSteamId: state.selectedUserId.value,
-      includeSources: []
-    })
+    api.scanSources({ userSteamId: state.selectedUserId.value, includeSources: [] })
   );
   if (!found) return;
 
   state.candidates.value = mergeCandidates(state.candidates.value, found);
-  state.selectedCandidateIds.value = new Set(state.candidates.value.map((candidate) => candidate.id));
+  state.selectedCandidateIds.value = new Set(state.candidates.value.map(c => c.id));
   state.invalidatePreview();
 }
 
@@ -179,7 +171,7 @@ function toggleCandidate(id: string) {
 }
 
 function selectAll() {
-  state.selectedCandidateIds.value = new Set(state.candidates.value.map((candidate) => candidate.id));
+  state.selectedCandidateIds.value = new Set(state.candidates.value.map(c => c.id));
   state.invalidatePreview();
 }
 
@@ -189,13 +181,12 @@ function selectNone() {
 }
 
 function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[]) {
-  const map = new Map(existing.map((candidate) => [candidate.id, candidate]));
+  const map = new Map(existing.map(c => [c.id, c]));
   for (const candidate of incoming) {
     map.set(candidate.id, candidate);
   }
-  return Array.from(map.values()).sort((left, right) => left.name.localeCompare(right.name));
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
-
 </script>
 
 <template>
@@ -209,11 +200,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
           :disabled="!state.install.value?.users.length"
           @change="state.invalidatePreview()"
         >
-          <option
-          v-for="user in steamUsers"
-          :key="user.steamId"
-          :value="user.steamId"
-        >
+          <option v-for="user in steamUsers" :key="user.steamId" :value="user.steamId">
             {{ steamUserName(user) }}
           </option>
         </select>
@@ -238,91 +225,29 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
     </section>
 
     <section class="grid gap-3">
-      <article
+      <SourceCard
         v-for="card in platformCards"
         :key="card.key"
-        class="overflow-hidden rounded-lg border border-border bg-surface-3"
-      >
-        <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
-          <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              :checked="allSelected(card.candidates)"
-              @change="setPlatformEnabled(card, ($event.target as HTMLInputElement).checked)"
-            />
-            <span class="min-w-0">
-              <strong class="block truncate text-base">{{ card.title }}</strong>
-            </span>
-          </label>
-          <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
-            {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
-          </span>
-        </header>
+        :title="card.title"
+        :candidates="card.candidates"
+        :selected-ids="state.selectedCandidateIds.value"
+        @toggle="toggleCandidate"
+        @set-all="setCandidatesSelected(card.candidates, $event)"
+      />
 
-        <div class="grid max-h-80 overflow-auto">
-          <label
-            v-for="candidate in card.candidates"
-            :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 border-b border-border-muted px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface-hover"
-          >
-            <input
-              class="mt-1"
-              type="checkbox"
-              :checked="state.selectedCandidateIds.value.has(candidate.id)"
-              @change="toggleCandidate(candidate.id)"
-            />
-            <span class="min-w-0">
-              <strong class="block truncate">{{ candidate.name }}</strong>
-              <small class="path-cell block">{{ candidate.executablePath }}</small>
-              <small v-if="candidate.launchOptions" class="block text-accent">Uses launcher URL</small>
-            </span>
-          </label>
-        </div>
-      </article>
-
-      <article
+      <SourceCard
         v-for="card in otherCards"
         :key="card.title"
-        class="overflow-hidden rounded-lg border border-border bg-surface-3"
-      >
-        <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
-          <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              :checked="allSelected(card.candidates)"
-              @change="setCandidatesSelected(card.candidates, ($event.target as HTMLInputElement).checked)"
-            />
-            <span class="min-w-0">
-              <strong class="block truncate text-base">{{ card.title }}</strong>
-            </span>
-          </label>
-          <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
-            {{ selectedIn(card.candidates) }} / {{ card.candidates.length }}
-          </span>
-        </header>
-
-        <div class="grid max-h-80 overflow-auto">
-          <label
-            v-for="candidate in card.candidates"
-            :key="candidate.id"
-            class="grid cursor-pointer grid-cols-[auto_1fr] gap-x-3 border-b border-border-muted px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface-hover"
-          >
-            <input
-              class="mt-1"
-              type="checkbox"
-              :checked="state.selectedCandidateIds.value.has(candidate.id)"
-              @change="toggleCandidate(candidate.id)"
-            />
-            <span class="min-w-0">
-              <strong class="block truncate">{{ candidate.name }}</strong>
-              <small class="path-cell block">{{ candidate.executablePath }}</small>
-              <small class="block text-secondary">{{ importSourceName(candidate.source) }}</small>
-            </span>
-          </label>
-        </div>
-      </article>
+        :title="card.title"
+        :candidates="card.candidates"
+        :selected-ids="state.selectedCandidateIds.value"
+        show-source
+        @toggle="toggleCandidate"
+        @set-all="setCandidatesSelected(card.candidates, $event)"
+      />
     </section>
 
+    <!-- Manual section -->
     <section class="overflow-hidden rounded-lg border border-border bg-surface-3">
       <header class="flex items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
         <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
@@ -332,9 +257,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             :disabled="manualCandidates.length === 0"
             @change="setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)"
           />
-          <span class="min-w-0">
-            <strong class="block truncate text-base">{{ importSourceName("manual") }}</strong>
-          </span>
+          <strong class="block min-w-0 truncate text-base">{{ importSourceName("manual") }}</strong>
         </label>
         <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
           {{ selectedIn(manualCandidates) }} / {{ manualCandidates.length }}
@@ -347,13 +270,13 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             <FolderPlus :size="18" />
           </UiButton>
           <input
-            class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-3 px-2 text-primary"
             v-model="state.manualPath.value"
+            class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-3 px-2 text-primary"
             placeholder="Executable path"
           />
           <input
-            class="h-9 w-64 rounded-md border border-border bg-surface-3 px-2 text-primary"
             v-model="state.manualName.value"
+            class="h-9 w-64 rounded-md border border-border bg-surface-3 px-2 text-primary"
             placeholder="Display name"
           />
           <UiButton variant="secondary" :disabled="!state.manualPath.value" @click="addManual">
@@ -382,7 +305,10 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             </span>
           </label>
 
-          <div v-if="manualCandidates.length === 0" class="grid min-h-22 place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary">
+          <div
+            v-if="manualCandidates.length === 0"
+            class="grid min-h-22 place-items-center rounded-md border border-dashed border-border-dashed bg-surface-5 p-4 text-center text-secondary"
+          >
             No manual games added yet.
           </div>
         </div>

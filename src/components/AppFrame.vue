@@ -18,10 +18,10 @@ const steps = ["Sources", "Artwork", "Review"];
 </script>
 
 <template>
-  <main class="grid min-h-screen grid-rows-[76px_1fr] bg-surface-1 text-primary">
+  <main class="grid min-h-screen grid-rows-[60px_1fr] bg-surface-1 text-primary">
     <header class="grid grid-cols-[280px_1fr_auto] items-center gap-5 border-b border-border bg-surface-2 px-5">
       <div class="flex items-center">
-        <Logo class="h-12 w-auto" aria-label="Full Steam Ahead" />
+        <Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
       </div>
 
       <nav v-if="!settingsOpen" class="grid grid-cols-3 gap-2" aria-label="Import progress">
@@ -62,7 +62,7 @@ const steps = ["Sources", "Artwork", "Review"];
       </div>
     </header>
 
-    <section class="min-w-0 px-5 pb-24 pt-4">
+    <section class="min-w-0 px-5 pb-20 pt-4">
       <div v-if="error" class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-danger">
         {{ error }}
       </div>

@@ -210,6 +210,7 @@ pub struct BackupPlan {
 pub struct PlannedChange {
     pub id: String,
     pub title: String,
+    pub game_name: String,
     pub file: PathBuf,
     pub kind: ChangeKind,
     pub destructive: bool,

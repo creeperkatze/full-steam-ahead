@@ -114,6 +114,7 @@ export interface BackupPlan {
 export interface PlannedChange {
   id: string;
   title: string;
+  gameName: string;
   file: string;
   kind: "addShortcut" | "updateShortcut" | "writeArtwork" | "updateCollections";
   destructive: boolean;
