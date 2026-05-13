@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Full Steam Ahead",
-  "version": "0.1.0",
+  "version": "../package.json",
   "identifier": "dev.creeperkatze.full-steam-ahead",
   "build": {
     "beforeDevCommand": "pnpm dev:web",
