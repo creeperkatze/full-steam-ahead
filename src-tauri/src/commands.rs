@@ -7,7 +7,7 @@ use crate::{
     steam,
 };
 use chrono::Utc;
-use std::{collections::BTreeSet, path::PathBuf};
+use std::{collections::BTreeSet, path::{Path, PathBuf}};
 
 type CommandResult<T> = Result<T, CommandError>;
 
@@ -67,65 +67,18 @@ pub fn create_preview_plan(
     if options.write_collections {
         files.insert(user.collections_path.clone());
     }
+
     let mut changes = Vec::new();
     for candidate in &candidates {
-        changes.push(PlannedChange {
-            id: format!("shortcut:{}", candidate.id),
-            title: format!("Add shortcut for {}", candidate.name),
-            game_name: candidate.name.clone(),
-            file: user.shortcuts_path.clone(),
-            kind: ChangeKind::AddShortcut,
-            destructive: false,
-            details: format!(
-                "Create a non-Steam shortcut from {}",
-                candidate.executable_path.display()
-            ),
-        });
-
-        if options.write_collections {
-            changes.push(PlannedChange {
-                id: format!(
-                    "collection:{}:{}",
-                    candidate.source.collection_name(),
-                    candidate.id
-                ),
-                title: format!(
-                    "Add {} to {} collection",
-                    candidate.name,
-                    candidate.source.collection_name()
-                ),
-                game_name: candidate.name.clone(),
-                file: user.collections_path.clone(),
-                kind: ChangeKind::UpdateCollections,
-                destructive: false,
-                details:
-                    "Only app-managed collections will be changed; user collections are preserved."
-                        .to_string(),
-            });
-        }
-
-        let shortcut_app_id = steam::non_steam_app_id(
-            &format!("\"{}\"", candidate.executable_path.display()),
-            &candidate.name,
+        let (c, artwork_files) = candidate_changes(
+            candidate,
+            &user.shortcuts_path,
+            &user.collections_path,
+            &user.grid_path,
+            &options,
         );
-        for asset in steam::artwork::selected_artwork_assets(candidate) {
-            let file = steam::artwork::target_path(
-                &user.grid_path,
-                shortcut_app_id,
-                &asset.kind,
-                &asset.path_or_url,
-            );
-            files.insert(file.clone());
-            changes.push(PlannedChange {
-                id: format!("artwork:{}:{:?}", candidate.id, asset.kind),
-                title: format!("Set {:?} artwork for {}", asset.kind, candidate.name),
-                game_name: candidate.name.clone(),
-                file,
-                kind: ChangeKind::WriteArtwork,
-                destructive: asset.will_replace_existing && options.replace_existing_artwork,
-                details: format!("Use {:?} artwork from {:?}", asset.kind, asset.source),
-            });
-        }
+        changes.extend(c);
+        files.extend(artwork_files);
     }
 
     let backups = files
@@ -184,4 +137,74 @@ pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<Im
 #[tauri::command]
 pub fn apply_plan(request: ApplyRequest) -> CommandResult<ApplyResult> {
     steam::apply::apply_plan(request).map_err(Into::into)
+}
+
+fn candidate_changes(
+    candidate: &ImportCandidate,
+    shortcuts_path: &Path,
+    collections_path: &Path,
+    grid_path: &Path,
+    options: &ApplyOptions,
+) -> (Vec<PlannedChange>, Vec<PathBuf>) {
+    let mut changes = Vec::new();
+    let mut artwork_files = Vec::new();
+
+    changes.push(PlannedChange {
+        id: format!("shortcut:{}", candidate.id),
+        title: format!("Add shortcut for {}", candidate.name),
+        game_name: candidate.name.clone(),
+        file: shortcuts_path.to_path_buf(),
+        kind: ChangeKind::AddShortcut,
+        destructive: false,
+        details: format!(
+            "Create a non-Steam shortcut from {}",
+            candidate.executable_path.display()
+        ),
+    });
+
+    if options.write_collections {
+        changes.push(PlannedChange {
+            id: format!(
+                "collection:{}:{}",
+                candidate.source.collection_name(),
+                candidate.id
+            ),
+            title: format!(
+                "Add {} to {} collection",
+                candidate.name,
+                candidate.source.collection_name()
+            ),
+            game_name: candidate.name.clone(),
+            file: collections_path.to_path_buf(),
+            kind: ChangeKind::UpdateCollections,
+            destructive: false,
+            details: "Only app-managed collections will be changed; user collections are preserved."
+                .to_string(),
+        });
+    }
+
+    let app_id = steam::non_steam_app_id(
+        &format!("\"{}\"", candidate.executable_path.display()),
+        &candidate.name,
+    );
+    for asset in steam::artwork::selected_artwork_assets(candidate) {
+        let file =
+            steam::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
+        artwork_files.push(file.clone());
+        changes.push(PlannedChange {
+            id: format!("artwork:{}:{}", candidate.id, asset.kind.label()),
+            title: format!("Set {} artwork for {}", asset.kind.label(), candidate.name),
+            game_name: candidate.name.clone(),
+            file,
+            kind: ChangeKind::WriteArtwork,
+            destructive: asset.will_replace_existing && options.replace_existing_artwork,
+            details: format!(
+                "Use {} artwork from {}",
+                asset.kind.label(),
+                asset.source.label()
+            ),
+        });
+    }
+
+    (changes, artwork_files)
 }

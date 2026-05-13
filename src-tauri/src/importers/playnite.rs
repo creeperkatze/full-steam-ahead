@@ -1,8 +1,7 @@
 use crate::{
     error::{io_context, AppResult},
-    importers::quote_path,
+    importers::candidate_from_parts,
     models::{ImportCandidate, ImportSource, SteamUser},
-    steam::{artwork, non_steam_app_id},
 };
 use std::{fs, path::PathBuf};
 
@@ -40,24 +39,17 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         };
 
         let executable_path = PathBuf::from(action);
-        let app_id = non_steam_app_id(&quote_path(&executable_path), name);
-        let (matched_steam_app_id, artwork) =
-            artwork::steam_preferred_plan(&user.grid_path, app_id, name);
-        candidates.push(ImportCandidate {
-            id: format!("playnite-{app_id}"),
-            source: ImportSource::Playnite,
-            name: name.to_string(),
-            start_dir: executable_path
-                .parent()
-                .map(PathBuf::from)
-                .unwrap_or_default(),
+        let start_dir = executable_path.parent().map(PathBuf::from).unwrap_or_default();
+        candidates.push(candidate_from_parts(
+            user,
+            ImportSource::Playnite,
+            "playnite",
+            name.to_string(),
             executable_path,
-            launch_options: None,
-            existing_app_id: None,
-            matched_steam_app_id,
-            tags: vec!["Playnite".to_string()],
-            artwork,
-        });
+            start_dir,
+            None,
+            vec!["Playnite".to_string()],
+        ));
     }
 
     Ok(candidates)

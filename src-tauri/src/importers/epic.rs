@@ -1,8 +1,7 @@
 use crate::{
     error::{io_context, AppResult},
-    importers::quote_path,
+    importers::{candidate_from_parts, launcher_candidate},
     models::{ImportCandidate, ImportSource, SteamUser},
-    steam::{artwork, non_steam_app_id},
 };
 use serde::Deserialize;
 use std::{
@@ -102,35 +101,36 @@ fn candidate_from_manifest(
     manifest: EpicManifest,
 ) -> ImportCandidate {
     let needs_launcher = manifest.needs_launcher();
-    let launch_options = needs_launcher.then(|| manifest.launch_url());
-    let executable_path = if needs_launcher {
-        paths.launcher_path.clone()
-    } else {
-        manifest.executable_path()
-    };
-    let start_dir = executable_path
-        .parent()
-        .map(PathBuf::from)
-        .unwrap_or_default();
-    let app_id = non_steam_app_id(&quote_path(&executable_path), &manifest.display_name);
+    let name = manifest.display_name.clone();
+    let launch_url = manifest.launch_url();
+    let exe = manifest.executable_path();
     let mut tags = vec!["Epic".to_string()];
     if needs_launcher {
         tags.push("Epic Launcher".to_string());
     }
-    let (matched_steam_app_id, artwork) =
-        artwork::steam_preferred_plan(&user.grid_path, app_id, &manifest.display_name);
 
-    ImportCandidate {
-        id: format!("epic-{app_id}"),
-        source: ImportSource::Epic,
-        name: manifest.display_name,
-        executable_path,
-        start_dir,
-        launch_options,
-        existing_app_id: None,
-        matched_steam_app_id,
-        tags,
-        artwork,
+    if needs_launcher {
+        launcher_candidate(
+            user,
+            ImportSource::Epic,
+            "epic",
+            name,
+            paths.launcher_path.clone(),
+            launch_url,
+            tags,
+        )
+    } else {
+        let start_dir = exe.parent().map(PathBuf::from).unwrap_or_default();
+        candidate_from_parts(
+            user,
+            ImportSource::Epic,
+            "epic",
+            name,
+            exe,
+            start_dir,
+            None,
+            tags,
+        )
     }
 }
 

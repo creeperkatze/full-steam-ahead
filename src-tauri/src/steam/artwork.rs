@@ -6,7 +6,13 @@ use serde::Deserialize;
 use std::{
     fs,
     path::{Path, PathBuf},
+    sync::OnceLock,
 };
+
+fn http_client() -> &'static reqwest::blocking::Client {
+    static CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
+    CLIENT.get_or_init(reqwest::blocking::Client::new)
+}
 
 #[derive(Debug, Deserialize)]
 struct StoreSearchResponse {
@@ -263,7 +269,9 @@ fn store_item_asset_specs(steam_app_id: u32) -> Option<Vec<(ArtworkKind, String)
         "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json={}",
         encode_query(&request.to_string())
     );
-    let item = reqwest::blocking::get(url)
+    let item = http_client()
+        .get(url)
+        .send()
         .ok()?
         .error_for_status()
         .ok()?
@@ -307,31 +315,7 @@ fn store_item_asset_specs(steam_app_id: u32) -> Option<Vec<(ArtworkKind, String)
         assets.logo_2x.as_deref().or(assets.logo.as_deref()),
     );
 
-    if !specs.iter().any(|(kind, _url)| *kind == ArtworkKind::Logo) {
-        push_store_asset(
-            &mut specs,
-            ArtworkKind::Logo,
-            &assets.asset_url_format,
-            known_library_logo_2x(steam_app_id),
-        );
-    }
-
-    if !specs.iter().any(|(kind, _url)| *kind == ArtworkKind::Logo) {
-        push_reachable_store_asset(
-            &mut specs,
-            ArtworkKind::Logo,
-            &assets.asset_url_format,
-            "logo_2x.png",
-        );
-    }
-    if !specs.iter().any(|(kind, _url)| *kind == ArtworkKind::Logo) {
-        push_reachable_store_asset(
-            &mut specs,
-            ArtworkKind::Logo,
-            &assets.asset_url_format,
-            "logo.png",
-        );
-    }
+    fill_logo_fallback(&mut specs, &assets.asset_url_format, steam_app_id);
 
     if let Some(icon_hash) = assets.community_icon.filter(|hash| {
         hash.len() == 40 && hash.chars().all(|character| character.is_ascii_hexdigit())
@@ -351,6 +335,22 @@ fn known_library_logo_2x(steam_app_id: u32) -> Option<&'static str> {
     match steam_app_id {
         3_089_420 => Some("331e53ee4e0e2dea265f3da1226c9de4dc05f72c/logo_2x.png"),
         _ => None,
+    }
+}
+
+fn fill_logo_fallback(specs: &mut Vec<(ArtworkKind, String)>, asset_url_format: &str, steam_app_id: u32) {
+    if specs.iter().any(|(kind, _)| *kind == ArtworkKind::Logo) {
+        return;
+    }
+    push_store_asset(specs, ArtworkKind::Logo, asset_url_format, known_library_logo_2x(steam_app_id));
+    if specs.iter().any(|(kind, _)| *kind == ArtworkKind::Logo) {
+        return;
+    }
+    for filename in ["logo_2x.png", "logo.png"] {
+        push_reachable_store_asset(specs, ArtworkKind::Logo, asset_url_format, filename);
+        if specs.iter().any(|(kind, _)| *kind == ArtworkKind::Logo) {
+            return;
+        }
     }
 }
 
@@ -385,7 +385,7 @@ fn store_asset_url(asset_url_format: &str, filename: &str) -> String {
 }
 
 fn reachable_url(url: &str) -> bool {
-    reqwest::blocking::Client::new()
+    http_client()
         .head(url)
         .send()
         .and_then(|response| response.error_for_status().map(|_| ()))
@@ -394,7 +394,9 @@ fn reachable_url(url: &str) -> bool {
 
 fn community_icon_url(steam_app_id: u32) -> Option<String> {
     let url = format!("https://store.steampowered.com/app/{steam_app_id}/");
-    let html = reqwest::blocking::get(url)
+    let html = http_client()
+        .get(url)
+        .send()
         .ok()?
         .error_for_status()
         .ok()?
@@ -416,7 +418,7 @@ fn community_icon_url(steam_app_id: u32) -> Option<String> {
 fn find_steam_app_id(game_name: &str) -> Option<u32> {
     let term = encode_query(game_name);
     let url = format!("https://store.steampowered.com/api/storesearch/?term={term}&l=en&cc=US");
-    let response = reqwest::blocking::get(url).ok()?.error_for_status().ok()?;
+    let response = http_client().get(url).send().ok()?.error_for_status().ok()?;
     let search = response.json::<StoreSearchResponse>().ok()?;
     search
         .items
@@ -457,7 +459,9 @@ fn encode_query(value: &str) -> String {
 }
 
 fn download_asset(url: &str, target: &Path) -> AppResult<()> {
-    let response = reqwest::blocking::get(url)
+    let response = http_client()
+        .get(url)
+        .send()
         .map_err(|error| AppError::Message(format!("request failed for {url}: {error}")))?
         .error_for_status()
         .map_err(|error| AppError::Message(format!("request failed for {url}: {error}")))?;

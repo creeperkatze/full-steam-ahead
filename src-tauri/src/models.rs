@@ -178,6 +178,18 @@ pub enum ArtworkKind {
     Icon,
 }
 
+impl ArtworkKind {
+    pub fn label(&self) -> &'static str {
+        match self {
+            ArtworkKind::Header => "header",
+            ArtworkKind::Capsule => "capsule",
+            ArtworkKind::Hero => "hero",
+            ArtworkKind::Logo => "logo",
+            ArtworkKind::Icon => "icon",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ArtworkSource {
@@ -185,6 +197,17 @@ pub enum ArtworkSource {
     OfficialSteam,
     SteamGridDb,
     LocalFile,
+}
+
+impl ArtworkSource {
+    pub fn label(&self) -> &'static str {
+        match self {
+            ArtworkSource::ExistingCustom => "existingCustom",
+            ArtworkSource::OfficialSteam => "officialSteam",
+            ArtworkSource::SteamGridDb => "steamGridDb",
+            ArtworkSource::LocalFile => "localFile",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
