@@ -2,9 +2,11 @@
 import { computed } from "vue";
 import { importSourceName } from "../helpers/sourceNames";
 import type { ImportCandidate } from "../types";
+import SourceIcon from "./SourceIcon.vue";
 
 const props = defineProps<{
   title: string;
+  source?: string;
   candidates: ImportCandidate[];
   selectedIds: Set<string>;
   showSource?: boolean;
@@ -33,6 +35,7 @@ const allSelected = computed(() =>
           :checked="allSelected"
           @change="emit('set-all', ($event.target as HTMLInputElement).checked)"
         />
+        <SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />
         <strong class="block min-w-0 truncate text-base">{{ title }}</strong>
       </label>
       <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">

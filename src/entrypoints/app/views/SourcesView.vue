@@ -4,6 +4,7 @@ import { Check, FolderPlus, Loader2, Plus, RefreshCw, Search } from "@lucide/vue
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import SourceCard from "../../../components/SourceCard.vue";
+import SourceIcon from "../../../components/SourceIcon.vue";
 import UiButton from "../../../components/ui/Button.vue";
 import { useAppState } from "../../../composables/useAppState";
 import { useTaskStatus } from "../../../composables/useTaskStatus";
@@ -322,6 +323,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
             <Loader2 v-else-if="s.status === 'scanning'" :size="14" class="animate-spin text-accent" />
             <div v-else class="size-3.5 rounded-full border border-border-muted" />
           </div>
+          <SourceIcon :source="s.key" class="size-4 shrink-0" />
           <span
             class="flex-1 text-sm"
             :class="s.status === 'pending' ? 'text-secondary' : 'text-primary font-medium'"
@@ -383,6 +385,7 @@ function mergeCandidates(existing: ImportCandidate[], incoming: ImportCandidate[
           v-for="card in platformCards"
           :key="card.key"
           :title="card.title"
+          :source="card.key"
           :candidates="card.candidates"
           :selected-ids="state.selectedCandidateIds.value"
           @toggle="toggleCandidate"
