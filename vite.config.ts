@@ -4,7 +4,24 @@ import tailwindcss from "@tailwindcss/vite";
 import svgLoader from "vite-svg-loader";
 
 export default defineConfig({
-  plugins: [vue(), svgLoader(), tailwindcss()],
+  plugins: [
+    vue(),
+    svgLoader({
+      svgoConfig: {
+        plugins: [
+          {
+            name: "preset-default",
+            params: {
+              overrides: {
+                cleanupIds: false,
+              },
+            },
+          },
+        ],
+      },
+    }),
+    tailwindcss(),
+  ],
   clearScreen: false,
   server: {
     port: 1420,

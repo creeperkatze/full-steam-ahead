@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator 24.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
 	<!ENTITY ns_extend "http://ns.adobe.com/Extensibility/1.0/">
@@ -14,9 +14,9 @@
 	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1020.5 1020.5"
 	 style="enable-background:new 0 0 1020.5 1020.5;" xml:space="preserve">
 <style type="text/css">
-	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:url(#SVGID_1_);}
-	.st1{fill:url(#SVGID_2_);}
-	.st2{fill:url(#SVGID_3_);}
+	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:url(#gog-SVGID_1_);}
+	.st1{fill:url(#gog-SVGID_2_);}
+	.st2{fill:url(#gog-SVGID_3_);}
 </style>
 <switch>
 	<foreignObject requiredExtensions="&ns_ai;" x="0" y="0" width="1" height="1">
@@ -25,7 +25,7 @@
 	</foreignObject>
 	<g i:extraneous="self">
 		<g id="Layer_1">
-			<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="162.2521" y1="137.0718" x2="858.2151" y2="883.4008">
+			<linearGradient id="gog-SVGID_1_" gradientUnits="userSpaceOnUse" x1="162.2521" y1="137.0718" x2="858.2151" y2="883.4008">
 				<stop  offset="5.000000e-02" style="stop-color:#CB00EB"/>
 				<stop  offset="0.2183" style="stop-color:#B200E4"/>
 				<stop  offset="0.5166" style="stop-color:#8A00DA"/>
@@ -37,7 +37,7 @@
 		</g>
 		<g id="Layer_2">
 			<g>
-				<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="162.252" y1="137.0718" x2="858.2151" y2="883.4008">
+				<linearGradient id="gog-SVGID_2_" gradientUnits="userSpaceOnUse" x1="162.252" y1="137.0718" x2="858.2151" y2="883.4008">
 					<stop  offset="0" style="stop-color:#C967DA"/>
 					<stop  offset="1" style="stop-color:#8F23CD"/>
 				</linearGradient>
@@ -49,7 +49,7 @@
 					c281.8,0,510.2-228.4,510.2-510.2S792,0,510.2,0L510.2,0z"/>
 			</g>
 			<g>
-				<linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="293.9332" y1="278.2824" x2="726.5341" y2="742.1901">
+				<linearGradient id="gog-SVGID_3_" gradientUnits="userSpaceOnUse" x1="293.9332" y1="278.2824" x2="726.5341" y2="742.1901">
 					<stop  offset="5.000000e-02" style="stop-color:#D033F3"/>
 					<stop  offset="0.9" style="stop-color:#8824DB"/>
 				</linearGradient>
