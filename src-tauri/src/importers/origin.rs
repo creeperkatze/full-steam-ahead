@@ -52,6 +52,7 @@ fn program_data() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from("C:\\ProgramData"))
 }
 
+#[cfg(windows)]
 fn origin_launcher_path() -> Option<PathBuf> {
     use winreg::{enums::HKEY_CLASSES_ROOT, RegKey};
 
@@ -61,6 +62,11 @@ fn origin_launcher_path() -> Option<PathBuf> {
         .get_value("")
         .ok()?;
     parse_quoted_executable(&command).filter(|path| path.exists())
+}
+
+#[cfg(not(windows))]
+fn origin_launcher_path() -> Option<PathBuf> {
+    None
 }
 
 fn parse_quoted_executable(command: &str) -> Option<PathBuf> {

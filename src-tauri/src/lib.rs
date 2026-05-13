@@ -2,6 +2,7 @@ mod commands;
 mod error;
 mod importers;
 mod models;
+mod process;
 mod steam;
 
 use commands::{

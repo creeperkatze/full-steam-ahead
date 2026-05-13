@@ -153,6 +153,7 @@ fn find_epic_paths() -> Option<EpicPaths> {
     })
 }
 
+#[cfg(windows)]
 fn manifest_location_from_registry() -> Option<PathBuf> {
     use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
@@ -164,6 +165,12 @@ fn manifest_location_from_registry() -> Option<PathBuf> {
     path.exists().then_some(path)
 }
 
+#[cfg(not(windows))]
+fn manifest_location_from_registry() -> Option<PathBuf> {
+    None
+}
+
+#[cfg(windows)]
 fn launcher_location_from_registry() -> Option<PathBuf> {
     use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
@@ -172,6 +179,11 @@ fn launcher_location_from_registry() -> Option<PathBuf> {
         .ok()?;
     let command: String = key.get_value("").ok()?;
     parse_quoted_executable(&command).filter(|path| path.exists())
+}
+
+#[cfg(not(windows))]
+fn launcher_location_from_registry() -> Option<PathBuf> {
+    None
 }
 
 fn parse_quoted_executable(command: &str) -> Option<PathBuf> {

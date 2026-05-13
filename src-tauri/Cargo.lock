@@ -849,6 +849,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "thiserror 1.0.69",
  "walkdir",
+ "windows-sys 0.61.2",
  "winreg 0.52.0",
 ]
 

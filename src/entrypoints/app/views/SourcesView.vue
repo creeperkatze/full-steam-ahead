@@ -118,10 +118,6 @@ async function refreshSteam() {
   state.install.value = detected;
   state.selectedUserId.value = detected.users[0]?.steamId ?? "";
   state.invalidatePreview();
-
-  if (state.selectedUserId.value) {
-    await scan();
-  }
 }
 
 async function scan() {

@@ -1,11 +1,11 @@
 use crate::{
     error::{io_context, AppError, AppResult},
     models::{ApplyRequest, ApplyResult},
+    process,
     steam::{artwork, collections, detect, shortcuts, sources},
 };
 use std::{
     fs,
-    process::Command,
     thread::sleep,
     time::{Duration, Instant},
 };
@@ -55,10 +55,7 @@ pub fn apply_plan(request: ApplyRequest) -> AppResult<ApplyResult> {
     }
 
     if request.options.restart_steam {
-        let steam_exe = install.install_path.join("steam.exe");
-        if steam_exe.exists() {
-            let _ = Command::new(steam_exe).spawn();
-        }
+        let _ = process::restart_steam(&install.install_path);
     }
 
     Ok(ApplyResult {
@@ -73,13 +70,10 @@ fn stop_steam() -> AppResult<()> {
         return Ok(());
     }
 
-    let output = Command::new("taskkill")
-        .args(["/F", "/T", "/IM", "steam.exe"])
-        .output()
-        .map_err(|source| AppError::Io {
-            path: "taskkill".into(),
-            source,
-        })?;
+    let output = process::stop_steam().map_err(|source| AppError::Io {
+        path: process::steam_process_name().into(),
+        source,
+    })?;
 
     if !output.status.success() && is_steam_running() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -104,9 +98,5 @@ fn stop_steam() -> AppResult<()> {
 }
 
 fn is_steam_running() -> bool {
-    Command::new("tasklist")
-        .args(["/FI", "IMAGENAME eq steam.exe"])
-        .output()
-        .map(|output| String::from_utf8_lossy(&output.stdout).contains("steam.exe"))
-        .unwrap_or(false)
+    process::is_process_running(process::steam_process_name())
 }

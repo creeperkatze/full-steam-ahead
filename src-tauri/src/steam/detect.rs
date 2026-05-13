@@ -1,10 +1,10 @@
 use crate::{
     error::{io_context, AppError, AppResult},
     models::{SteamInstallation, SteamUser},
+    process,
 };
 use serde::Deserialize;
-use std::{fs, path::PathBuf, process::Command};
-use winreg::{enums::HKEY_CURRENT_USER, RegKey};
+use std::{fs, path::PathBuf};
 
 const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 
@@ -68,10 +68,54 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
 }
 
 fn find_steam_install_path() -> Option<PathBuf> {
+    platform_steam_install_path().or_else(common_steam_install_path)
+}
+
+#[cfg(windows)]
+fn platform_steam_install_path() -> Option<PathBuf> {
+    use winreg::{enums::HKEY_CURRENT_USER, RegKey};
+
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     let key = hkcu.open_subkey("Software\\Valve\\Steam").ok()?;
     let path: String = key.get_value("SteamPath").ok()?;
     Some(PathBuf::from(path.replace('/', "\\")))
+}
+
+#[cfg(target_os = "macos")]
+fn platform_steam_install_path() -> Option<PathBuf> {
+    dirs::home_dir().map(|home| {
+        home.join("Library")
+            .join("Application Support")
+            .join("Steam")
+    })
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn platform_steam_install_path() -> Option<PathBuf> {
+    dirs::home_dir().and_then(|home| {
+        [
+            home.join(".steam").join("steam"),
+            home.join(".local").join("share").join("Steam"),
+            home.join(".var")
+                .join("app")
+                .join("com.valvesoftware.Steam")
+                .join(".steam")
+                .join("steam"),
+        ]
+        .into_iter()
+        .find(|path| path.exists())
+    })
+}
+
+#[cfg(not(any(windows, unix)))]
+fn platform_steam_install_path() -> Option<PathBuf> {
+    None
+}
+
+fn common_steam_install_path() -> Option<PathBuf> {
+    dirs::data_dir()
+        .map(|data| data.join("Steam"))
+        .filter(|path| path.exists())
 }
 
 fn read_login_users(install_path: &std::path::Path) -> Option<LoginUsers> {
@@ -157,9 +201,5 @@ fn quoted_tokens(line: &str) -> Vec<String> {
 }
 
 fn is_steam_running() -> bool {
-    Command::new("tasklist")
-        .args(["/FI", "IMAGENAME eq steam.exe"])
-        .output()
-        .map(|output| String::from_utf8_lossy(&output.stdout).contains("steam.exe"))
-        .unwrap_or(false)
+    process::is_process_running(process::steam_process_name())
 }

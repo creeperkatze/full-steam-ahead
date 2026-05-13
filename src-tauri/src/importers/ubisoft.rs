@@ -5,6 +5,7 @@ use crate::{
 };
 use std::path::{Path, PathBuf};
 
+#[cfg(windows)]
 pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
@@ -57,6 +58,11 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     }
 
     Ok(candidates)
+}
+
+#[cfg(not(windows))]
+pub fn scan(_user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
+    Ok(Vec::new())
 }
 
 fn launcher_from_dir(launcher_dir: &Path) -> Option<PathBuf> {

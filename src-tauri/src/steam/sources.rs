@@ -13,19 +13,19 @@ pub fn scan_sources(user: &SteamUser, request: &ScanRequest) -> AppResult<Vec<Im
     let mut candidates = Vec::new();
     let enabled_sources = enabled_sources(request);
 
-    if enabled_sources.contains(&ImportSource::Playnite) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::Playnite) {
         candidates.extend(importers::playnite::scan(user)?);
     }
 
-    if enabled_sources.contains(&ImportSource::Epic) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::Epic) {
         candidates.extend(importers::epic::scan(user)?);
     }
 
-    if enabled_sources.contains(&ImportSource::Amazon) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::Amazon) {
         candidates.extend(importers::amazon::scan(user)?);
     }
 
-    if enabled_sources.contains(&ImportSource::Gog) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::Gog) {
         candidates.extend(importers::gog::scan(user)?);
     }
 
@@ -33,15 +33,15 @@ pub fn scan_sources(user: &SteamUser, request: &ScanRequest) -> AppResult<Vec<Im
         candidates.extend(importers::itch::scan(user)?);
     }
 
-    if enabled_sources.contains(&ImportSource::Origin) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::Origin) {
         candidates.extend(importers::origin::scan(user)?);
     }
 
-    if enabled_sources.contains(&ImportSource::UbisoftConnect) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::UbisoftConnect) {
         candidates.extend(importers::ubisoft::scan(user)?);
     }
 
-    if enabled_sources.contains(&ImportSource::GamePass) {
+    if cfg!(windows) && enabled_sources.contains(&ImportSource::GamePass) {
         candidates.extend(importers::game_pass::scan(user)?);
     }
 

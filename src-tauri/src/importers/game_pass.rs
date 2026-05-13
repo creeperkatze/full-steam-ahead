@@ -2,18 +2,21 @@ use crate::{
     error::{AppError, AppResult},
     importers::launcher_candidate,
     models::{ImportCandidate, ImportSource, SteamUser},
+    process,
 };
 use serde::Deserialize;
 use std::{path::Path, process::Command};
 
 pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let output = Command::new("powershell")
-        .args(["/NoProfile", "/Command", GAME_PASS_SCRIPT])
-        .output()
-        .map_err(|source| AppError::Io {
-            path: "powershell".into(),
-            source,
-        })?;
+    let output = process::command_output_no_window(Command::new("powershell").args([
+        "/NoProfile",
+        "/Command",
+        GAME_PASS_SCRIPT,
+    ]))
+    .map_err(|source| AppError::Io {
+        path: "powershell".into(),
+        source,
+    })?;
     if !output.status.success() {
         return Ok(Vec::new());
     }
@@ -43,7 +46,11 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
                 "gamepass",
                 app.display_name,
                 explorer.clone(),
-                format!("shell:AppsFolder\\{}!{}", app.family_name, app.kind.as_ref()),
+                format!(
+                    "shell:AppsFolder\\{}!{}",
+                    app.family_name,
+                    app.kind.as_ref()
+                ),
                 vec!["Game Pass".to_string()],
             )
         })
