@@ -375,4 +375,13 @@ mod tests {
     fn parse_quoted_exe_empty_returns_none() {
         assert_eq!(parse_quoted_executable(""), None);
     }
+
+    #[test]
+    fn executable_path_joins_location_and_exe() {
+        let m = test_manifest();
+        assert_eq!(
+            m.executable_path(),
+            PathBuf::from("/games/test/Binaries/Win64/game.exe")
+        );
+    }
 }

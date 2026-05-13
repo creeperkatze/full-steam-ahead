@@ -209,6 +209,16 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn deeply_nested_path() {
+        let wine_c = Path::new("/prefix");
+        let result =
+            translate_installation_path(r"C:\Games\Publisher\Studio\Title\v2", wine_c).unwrap();
+        assert!(result.ends_with("Games/Publisher/Studio/Title/v2"));
+        assert!(!result.contains('\\'));
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn backslashes_converted_to_forward_slashes() {
         let wine_c = Path::new("/prefix");
         let result = translate_installation_path(r"C:\Games\Studio\MyGame", wine_c).unwrap();

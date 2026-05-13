@@ -323,6 +323,28 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn split_with_no_markers_returns_single_section() {
+        let buffer = b"just some config data with no version marker";
+        let sections = split_config_sections(buffer);
+        assert_eq!(sections.len(), 1);
+        assert_eq!(sections[0], "just some config data with no version marker");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn parse_game_config_without_denuvo_returns_empty() {
+        let section = "
+            executables:
+            online:
+            - shortcut_name: My Game
+              register: HKEY_LOCAL_MACHINE\\SOFTWARE\\Ubisoft\\Launcher\\Installs\\1\\InstallDir
+            offline:
+        ";
+        assert!(parse_game_configs(section).is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn parse_game_config_stops_at_offline() {
         let section = "
             online:

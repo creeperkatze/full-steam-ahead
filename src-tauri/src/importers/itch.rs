@@ -206,6 +206,14 @@ mod tests {
         assert!(entries.is_empty());
     }
 
+    #[test]
+    fn parse_entry_with_empty_candidates() {
+        let data = b"{\"basePath\":\"/game\",\"totalSize\":0,\"candidates\":[]}";
+        let (_, entries) = parse_butler_db(data).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert!(entries[0].paths.is_empty());
+    }
+
     #[cfg(not(unix))]
     #[test]
     fn executable_by_extension() {

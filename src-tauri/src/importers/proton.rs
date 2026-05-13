@@ -68,4 +68,18 @@ mod tests {
     fn too_short_path_returns_none() {
         assert_eq!(translate_windows_path(Path::new("/prefix"), "C:"), None);
     }
+
+    #[test]
+    fn path_with_spaces_in_components() {
+        let result = translate_windows_path(
+            Path::new("/prefix"),
+            r"C:\Program Files (x86)\Epic Games\launcher.exe",
+        );
+        assert_eq!(
+            result,
+            Some(PathBuf::from(
+                "/prefix/pfx/dosdevices/c:/Program Files (x86)/Epic Games/launcher.exe"
+            ))
+        );
+    }
 }
