@@ -9,7 +9,7 @@ import type {
   SteamUser
 } from "../types";
 
-export type FlowStep = "start" | "sources" | "artwork" | "review";
+export type FlowStep = "start" | "sources" | "artwork" | "review" | "done";
 export type ScanPhase = "idle" | "scanning" | "done";
 
 const step = ref<FlowStep>("start");

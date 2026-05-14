@@ -23,18 +23,19 @@ const activeStepIndex = computed(() => {
   if (state.step.value === "sources") return 1;
   if (state.step.value === "artwork") return 2;
   if (state.step.value === "review") return 3;
+  if (state.step.value === "done") return 4;
   return 0;
 });
 
 const nextLabel = computed(() => {
-  if (state.step.value === "review") return state.applyResult.value ? "Applied" : "Apply";
+  if (state.step.value === "review") return "Apply";
   return "Continue";
 });
 
 const nextDisabled = computed(() => {
   if (task.loading.value) return true;
   if (state.step.value === "sources") return state.selectedCandidates.value.length === 0;
-  if (state.step.value === "review") return !state.previewPlan.value || !!state.applyResult.value;
+  if (state.step.value === "review") return !state.previewPlan.value;
   return false;
 });
 
@@ -75,6 +76,10 @@ async function goToStepIndex(index: number) {
     }
     await reviewPlan.createPreview();
   }
+
+  if (index === 4 && state.applyResult.value) {
+    state.step.value = "done";
+  }
 }
 
 function goBack() {
@@ -84,6 +89,8 @@ function goBack() {
     state.step.value = "sources";
   } else if (state.step.value === "review") {
     state.step.value = "artwork";
+  } else if (state.step.value === "done") {
+    state.step.value = "review";
   }
 }
 
@@ -109,6 +116,7 @@ async function goNext() {
     return;
   }
 
+  state.step.value = "done";
   await reviewPlan.applyPreview();
 }
 </script>
@@ -147,7 +155,7 @@ async function goNext() {
           </template>
 
           <!-- All other steps -->
-          <UiButton v-else :disabled="nextDisabled" @click="goNext">
+          <UiButton v-else-if="state.step.value !== 'done'" :disabled="nextDisabled" @click="goNext">
             {{ nextLabel }}
             <template #icon>
               <Check v-if="state.step.value === 'review'" :size="18" />

@@ -14,7 +14,7 @@ defineEmits<{
   "toggle-settings": [];
 }>();
 
-const steps = ["Start", "Sources", "Artwork", "Review"];
+const steps = ["Start", "Sources", "Artwork", "Review", "Done"];
 </script>
 
 <template>
@@ -25,7 +25,7 @@ const steps = ["Start", "Sources", "Artwork", "Review"];
         <Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
       </div>
 
-      <nav v-if="!settingsOpen" class="grid grid-cols-4 gap-2" aria-label="Import progress">
+      <nav v-if="!settingsOpen" class="grid grid-cols-5 gap-2" aria-label="Import progress">
         <button
           v-for="(step, index) in steps"
           :key="step"
