@@ -77,9 +77,6 @@ async function goToStepIndex(index: number) {
     await reviewPlan.createPreview();
   }
 
-  if (index === 4 && state.applyResult.value) {
-    state.step.value = "done";
-  }
 }
 
 function goBack() {
