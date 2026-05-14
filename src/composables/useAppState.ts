@@ -9,12 +9,12 @@ import type {
   SteamUser
 } from "../types";
 
-export type FlowStep = "sources" | "artwork" | "review";
+export type FlowStep = "start" | "sources" | "artwork" | "review";
 export type ScanPhase = "idle" | "scanning" | "done";
 
 const savedSettings = loadSettings();
 
-const step = ref<FlowStep>("sources");
+const step = ref<FlowStep>("start");
 const scanPhase = ref<ScanPhase>("idle");
 const install = ref<SteamInstallation | null>(null);
 const selectedUserId = ref("");

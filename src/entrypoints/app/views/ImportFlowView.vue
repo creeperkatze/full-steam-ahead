@@ -4,6 +4,7 @@ import { useReviewPlan } from "../../../composables/useReviewPlan";
 import ArtworkView from "./ArtworkView.vue";
 import ReviewView from "./ReviewView.vue";
 import SourcesView from "./SourcesView.vue";
+import StartView from "./StartView.vue";
 
 const state = useAppState();
 const reviewPlan = useReviewPlan();
@@ -11,7 +12,9 @@ const reviewPlan = useReviewPlan();
 
 <template>
   <div class="flex flex-1 flex-col gap-3">
-    <SourcesView v-if="state.step.value === 'sources'" />
+    <StartView v-if="state.step.value === 'start'" />
+
+    <SourcesView v-else-if="state.step.value === 'sources'" />
 
     <ArtworkView v-else-if="state.step.value === 'artwork'" />
 
