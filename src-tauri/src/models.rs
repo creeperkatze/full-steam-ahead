@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -141,7 +141,39 @@ pub struct ImportCandidate {
     pub tags: Vec<String>,
     pub artwork: ArtworkPlan,
     pub url_scheme: Option<String>,
+    /// Launcher executable path, set only when the game also has a direct `executable_path`.
     pub launcher_path: Option<PathBuf>,
+    /// Whether to launch via `url_scheme` + `launcher_path` instead of the direct `executable_path`.
+    pub use_url_launch: bool,
+}
+
+impl ImportCandidate {
+    pub fn effective_executable(&self) -> &Path {
+        if self.use_url_launch {
+            self.launcher_path.as_deref().unwrap_or(&self.executable_path)
+        } else {
+            &self.executable_path
+        }
+    }
+
+    pub fn effective_start_dir(&self) -> &Path {
+        if self.use_url_launch {
+            self.launcher_path
+                .as_deref()
+                .and_then(|p| p.parent())
+                .unwrap_or(&self.start_dir)
+        } else {
+            &self.start_dir
+        }
+    }
+
+    pub fn effective_launch_options(&self) -> Option<&str> {
+        if self.use_url_launch {
+            self.url_scheme.as_deref().or(self.launch_options.as_deref())
+        } else {
+            self.launch_options.as_deref()
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

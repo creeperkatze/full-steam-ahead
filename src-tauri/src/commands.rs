@@ -149,6 +149,7 @@ fn candidate_changes(
     let mut changes = Vec::new();
     let mut artwork_files = Vec::new();
 
+    let exe = candidate.effective_executable();
     changes.push(PlannedChange {
         id: format!("shortcut:{}", candidate.id),
         title: format!("Add shortcut for {}", candidate.name),
@@ -156,10 +157,7 @@ fn candidate_changes(
         file: shortcuts_path.to_path_buf(),
         kind: ChangeKind::AddShortcut,
         destructive: false,
-        details: format!(
-            "Create a non-Steam shortcut from {}",
-            candidate.executable_path.display()
-        ),
+        details: format!("Create a non-Steam shortcut from {}", exe.display()),
     });
 
     if options.write_collections {
@@ -184,7 +182,7 @@ fn candidate_changes(
     }
 
     let app_id = steam::non_steam_app_id(
-        &format!("\"{}\"", candidate.executable_path.display()),
+        &format!("\"{}\"", exe.display()),
         &candidate.name,
     );
     for asset in steam::artwork::selected_artwork_assets(candidate) {

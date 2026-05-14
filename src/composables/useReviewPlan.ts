@@ -15,7 +15,7 @@ export function useReviewPlan() {
     if (!state.selectedUserId.value) return false;
 
     const plan = await task.runTask("Creating preview", () =>
-      api.createPreviewPlan(state.selectedUserId.value, state.effectiveCandidates.value, state.options.value)
+      api.createPreviewPlan(state.selectedUserId.value, state.selectedCandidates.value, state.options.value)
     );
     if (!plan) return false;
 
@@ -34,7 +34,7 @@ export function useReviewPlan() {
     });
 
     const result = await task.runTask("Applying changes", () =>
-      api.applyPlan(state.previewPlan.value!, state.effectiveCandidates.value, state.options.value)
+      api.applyPlan(state.previewPlan.value!, state.selectedCandidates.value, state.options.value)
     );
 
     unlisten();

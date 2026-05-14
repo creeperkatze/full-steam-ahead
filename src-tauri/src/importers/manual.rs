@@ -33,6 +33,7 @@ pub fn candidate(request: ManualImportRequest) -> ImportCandidate {
         artwork: artwork::preserve_existing_plan(Path::new(""), app_id),
         url_scheme: None,
         launcher_path: None,
+        use_url_launch: false,
     }
 }
 

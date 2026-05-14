@@ -115,14 +115,15 @@ fn enabled_sources(request: &ScanRequest) -> Vec<ImportSource> {
 }
 
 pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) -> ShortcutEntry {
+    let exe = candidate.effective_executable();
     ShortcutEntry {
-        app_id: non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name),
+        app_id: non_steam_app_id(&quote_path(exe), &candidate.name),
         app_name: candidate.name.clone(),
-        exe: quote_path(&candidate.executable_path),
-        start_dir: quote_path(&candidate.start_dir),
+        exe: quote_path(exe),
+        start_dir: quote_path(candidate.effective_start_dir()),
         icon: shortcut_icon(candidate, grid_path),
         shortcut_path: String::new(),
-        launch_options: candidate.launch_options.clone().unwrap_or_default(),
+        launch_options: candidate.effective_launch_options().unwrap_or("").to_string(),
         is_hidden: false,
         allow_desktop_config: true,
         allow_overlay: true,
