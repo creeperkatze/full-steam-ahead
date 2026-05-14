@@ -150,7 +150,7 @@ fn candidate_from_manifest(
         )
     } else {
         let start_dir = exe.parent().map(PathBuf::from).unwrap_or_default();
-        candidate_from_parts(
+        let mut candidate = candidate_from_parts(
             user,
             ImportSource::Epic,
             "epic",
@@ -159,7 +159,10 @@ fn candidate_from_manifest(
             start_dir,
             None,
             tags,
-        )
+        );
+        candidate.url_scheme = Some(launch_url);
+        candidate.launcher_path = Some(paths.launcher_path.clone());
+        candidate
     }
 }
 

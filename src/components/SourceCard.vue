@@ -2,9 +2,13 @@
 import { computed } from "vue";
 import { importSourceName } from "../helpers/sourceNames";
 import type { ImportCandidate } from "../types";
+import { useAppState } from "../composables/useAppState";
 import GameIcon from "./GameIcon.vue";
 import SourceIcon from "./SourceIcon.vue";
 import ItemRow from "./ui/ItemRow.vue";
+import Toggle from "./ui/Toggle.vue";
+
+const state = useAppState();
 
 const props = defineProps<{
   title: string;
@@ -64,7 +68,18 @@ const allSelected = computed(() =>
         <small v-if="showSource" class="block text-secondary">{{ importSourceName(candidate.source) }}</small>
 
         <template #trailing>
-          <small v-if="candidate.launchOptions && !showSource" class="shrink-0 text-accent">URL</small>
+          <div
+            v-if="candidate.urlScheme && !showSource"
+            class="flex shrink-0 items-center gap-1.5"
+            :title="!candidate.launcherPath ? 'This game can only be launched via its URL scheme' : undefined"
+          >
+            <span class="text-xs text-secondary">Via Launcher</span>
+            <Toggle
+              :model-value="state.usesUrlLaunch(candidate)"
+              :disabled="!candidate.launcherPath"
+              @update:model-value="state.toggleUrlLaunch(candidate.id)"
+            />
+          </div>
         </template>
       </ItemRow>
     </div>

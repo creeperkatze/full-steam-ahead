@@ -27,6 +27,8 @@ export interface ImportCandidate {
   matchedSteamAppId?: number | null;
   tags: string[];
   artwork: ArtworkPlan;
+  urlScheme?: string | null;
+  launcherPath?: string | null;
 }
 
 export interface ManualImportRequest {

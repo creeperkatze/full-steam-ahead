@@ -9,6 +9,12 @@ import type {
   SteamUser
 } from "../types";
 
+function applyUrlLaunchOverride(candidate: ImportCandidate, useUrl: boolean): ImportCandidate {
+  if (!useUrl || !candidate.urlScheme) return candidate;
+  const exe = candidate.launcherPath ?? candidate.executablePath;
+  return { ...candidate, executablePath: exe, launchOptions: candidate.urlScheme };
+}
+
 export type FlowStep = "sources" | "artwork" | "review";
 export type ScanPhase = "idle" | "scanning" | "done";
 
@@ -41,9 +47,29 @@ const selectedUser = computed<SteamUser | undefined>(() =>
   install.value?.users.find((user) => user.steamId === selectedUserId.value)
 );
 
+const urlLaunchIds = ref<Set<string>>(new Set());
+
 const selectedCandidates = computed(() =>
   candidates.value.filter((candidate) => selectedCandidateIds.value.has(candidate.id))
 );
+
+const effectiveCandidates = computed(() =>
+  selectedCandidates.value.map(c => applyUrlLaunchOverride(c, usesUrlLaunch(c)))
+);
+
+function usesUrlLaunch(candidate: ImportCandidate): boolean {
+  if (!candidate.urlScheme) return false;
+  if (!candidate.launcherPath) return true;
+  return urlLaunchIds.value.has(candidate.id);
+}
+
+function toggleUrlLaunch(id: string) {
+  const next = new Set(urlLaunchIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  urlLaunchIds.value = next;
+  invalidatePreview();
+}
 
 function invalidatePreview() {
   previewPlan.value = null;
@@ -72,6 +98,9 @@ export function useAppState() {
     options,
     selectedUser,
     selectedCandidates,
+    effectiveCandidates,
+    usesUrlLaunch,
+    toggleUrlLaunch,
     invalidatePreview
   };
 }

@@ -140,6 +140,8 @@ pub struct ImportCandidate {
     pub matched_steam_app_id: Option<u32>,
     pub tags: Vec<String>,
     pub artwork: ArtworkPlan,
+    pub url_scheme: Option<String>,
+    pub launcher_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

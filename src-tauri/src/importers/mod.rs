@@ -64,6 +64,8 @@ pub fn candidate_from_parts(
         matched_steam_app_id,
         tags,
         artwork,
+        url_scheme: None,
+        launcher_path: None,
     }
 }
 
@@ -77,14 +79,16 @@ pub fn launcher_candidate(
     tags: Vec<String>,
 ) -> ImportCandidate {
     let start_dir = launcher_path.parent().map(PathBuf::from).unwrap_or_default();
-    candidate_from_parts(
+    let mut candidate = candidate_from_parts(
         user,
         source,
         source_slug,
         name,
         launcher_path,
         start_dir,
-        Some(launch_url),
+        Some(launch_url.clone()),
         tags,
-    )
+    );
+    candidate.url_scheme = Some(launch_url);
+    candidate
 }

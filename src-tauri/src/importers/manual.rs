@@ -31,6 +31,8 @@ pub fn candidate(request: ManualImportRequest) -> ImportCandidate {
         matched_steam_app_id: None,
         tags: request.tags,
         artwork: artwork::preserve_existing_plan(Path::new(""), app_id),
+        url_scheme: None,
+        launcher_path: None,
     }
 }
 
