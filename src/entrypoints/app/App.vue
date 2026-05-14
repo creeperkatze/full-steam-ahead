@@ -140,7 +140,7 @@ async function goNext() {
               <template #icon><Search :size="16" /></template>
             </UiButton>
             <UiButton v-else :disabled="scanDisabled" @click="doScan">
-              Scan for games
+              Scan
               <template #icon><Search :size="16" /></template>
             </UiButton>
             <UiButton v-if="state.scanPhase.value === 'done'" @click="continueToSources">
