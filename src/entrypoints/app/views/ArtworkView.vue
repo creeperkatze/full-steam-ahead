@@ -162,15 +162,6 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
 
 <template>
   <section class="grid gap-3">
-    <div class="flex items-center rounded-lg border border-border bg-surface-3 p-3">
-      <div class="flex min-w-0 items-center gap-3">
-        <h1 class="text-xl font-bold leading-tight">Artwork</h1>
-        <span class="rounded-md border border-border bg-surface-5 px-2 py-1 text-xs text-secondary">
-          {{ selectedCount() }} games
-        </span>
-      </div>
-    </div>
-
     <div
       v-if="state.selectedCandidates.value.length === 0"
       class="grid min-h-55 place-items-center rounded-lg border border-dashed border-border-dashed bg-surface-3 p-6 text-secondary"

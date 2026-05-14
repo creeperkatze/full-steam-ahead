@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, FolderPlus, Loader2, Plus, RefreshCw, Search } from "@lucide/vue";
+import { Check, FolderPlus, Loader2, Plus, Search } from "@lucide/vue";
 import { computed, onMounted } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import SourceCard from "../../../components/SourceCard.vue";
@@ -15,7 +15,7 @@ import type { ImportCandidate, ImportSource } from "../../../types";
 
 const state = useAppState();
 const task = useTaskStatus();
-const { sourceStates } = useScanSources();
+const { sourceStates, scan } = useScanSources();
 
 interface PlatformCard {
   key: string;
@@ -275,10 +275,7 @@ function selectNone() {
         <div class="flex gap-2">
           <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectAll">All</UiButton>
           <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectNone">None</UiButton>
-          <UiButton size="icon" variant="ghost" title="Detect Steam again" :disabled="task.loading.value" @click="refreshSteam">
-            <RefreshCw :size="16" />
-          </UiButton>
-          <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="$emit('rescan')">
+          <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="scan">
             Re-scan
             <template #icon><Search :size="16" /></template>
           </UiButton>
