@@ -1,5 +1,6 @@
 use crate::{
     error::{AppError, CommandError},
+    importers::quote_path,
     models::{
         ApplyOptions, ApplyRequest, ApplyResult, BackupPlan, ChangeKind, ImportCandidate,
         ManualImportRequest, PlannedChange, PreviewPlan, ScanRequest, SteamInstallation,
@@ -7,7 +8,10 @@ use crate::{
     steam,
 };
 use chrono::Utc;
-use std::{collections::BTreeSet, path::{Path, PathBuf}};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    path::{Path, PathBuf},
+};
 
 type CommandResult<T> = Result<T, CommandError>;
 
@@ -68,6 +72,9 @@ pub fn create_preview_plan(
         files.insert(user.collections_path.clone());
     }
 
+    let existing_shortcuts = steam::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_default();
+    let existing_collection_app_ids = steam::collections::existing_managed_app_ids(&user.collections_path);
+
     let mut changes = Vec::new();
     for candidate in &candidates {
         let (c, artwork_files) = candidate_changes(
@@ -76,6 +83,8 @@ pub fn create_preview_plan(
             &user.collections_path,
             &user.grid_path,
             &options,
+            &existing_shortcuts,
+            &existing_collection_app_ids,
         );
         changes.extend(c);
         files.extend(artwork_files);
@@ -145,37 +154,41 @@ fn candidate_changes(
     collections_path: &Path,
     grid_path: &Path,
     options: &ApplyOptions,
+    existing_shortcuts: &[crate::models::ShortcutEntry],
+    existing_collection_app_ids: &HashMap<String, HashSet<u32>>,
 ) -> (Vec<PlannedChange>, Vec<PathBuf>) {
     let mut changes = Vec::new();
     let mut artwork_files = Vec::new();
 
     let exe = candidate.effective_executable();
+    let quoted_exe = quote_path(exe);
+    let shortcut_exists = steam::shortcuts::shortcut_exists(existing_shortcuts, &candidate.name, &quoted_exe);
     changes.push(PlannedChange {
         id: format!("shortcut:{}", candidate.id),
-        title: format!("Add shortcut for {}", candidate.name),
+        title: format!("{} shortcut for {}", if shortcut_exists { "Update" } else { "Add" }, candidate.name),
         game_name: candidate.name.clone(),
         file: shortcuts_path.to_path_buf(),
-        kind: ChangeKind::AddShortcut,
+        kind: if shortcut_exists { ChangeKind::UpdateShortcut } else { ChangeKind::AddShortcut },
         destructive: false,
         details: format!("Create a non-Steam shortcut from {}", exe.display()),
     });
 
     if options.write_collections {
+        let collection_name = candidate.source.collection_name();
+        let app_id = steam::non_steam_app_id(
+            &format!("\"{}\"", candidate.executable_path.display()),
+            &candidate.name,
+        );
+        let already_in_collection = existing_collection_app_ids
+            .get(&collection_name)
+            .is_some_and(|ids| ids.contains(&app_id));
         changes.push(PlannedChange {
-            id: format!(
-                "collection:{}:{}",
-                candidate.source.collection_name(),
-                candidate.id
-            ),
-            title: format!(
-                "Add {} to {} collection",
-                candidate.name,
-                candidate.source.collection_name()
-            ),
+            id: format!("collection:{}:{}", collection_name, candidate.id),
+            title: format!("Add {} to {} collection", candidate.name, collection_name),
             game_name: candidate.name.clone(),
             file: collections_path.to_path_buf(),
             kind: ChangeKind::UpdateCollections,
-            destructive: false,
+            destructive: already_in_collection,
             details: "Only app-managed collections will be changed; user collections are preserved."
                 .to_string(),
         });

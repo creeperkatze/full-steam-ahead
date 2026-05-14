@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { AlertTriangle, Check, ChevronDown, FolderArchive, Gamepad2, Image, Library, ListChecks, Loader2, Save } from "@lucide/vue";
+import { Check, ChevronDown, FolderArchive, Gamepad2, Image, Library, ListChecks, Loader2, Save } from "@lucide/vue";
 import { computed } from "vue";
+import GameIcon from "../../../components/GameIcon.vue";
+import ItemRow from "../../../components/ui/ItemRow.vue";
+import { useAppState } from "../../../composables/useAppState";
 import type { ApplyProgressEvent, ApplyResult, PlannedChange, PreviewPlan } from "../../../types";
+
+const state = useAppState();
 
 const props = defineProps<{
   plan: PreviewPlan | null;
@@ -15,10 +20,15 @@ interface ArtworkChange {
   destructive: boolean;
 }
 
+interface CollectionChange {
+  name: string;
+  destructive: boolean;
+}
+
 interface GameReview {
   name: string;
   shortcut?: PlannedChange;
-  collections: string[];
+  collections: CollectionChange[];
   artwork: ArtworkChange[];
 }
 
@@ -34,7 +44,7 @@ const games = computed(() => {
     if (change.kind === "addShortcut" || change.kind === "updateShortcut") {
       game.shortcut = change;
     } else if (change.kind === "updateCollections") {
-      game.collections.push(collectionName(change));
+      game.collections.push({ name: collectionName(change), destructive: change.destructive });
     } else if (change.kind === "writeArtwork") {
       game.artwork.push({
         kind: artworkKind(change),
@@ -49,6 +59,10 @@ const games = computed(() => {
   return Array.from(grouped.values()).sort((a, b) => a.name.localeCompare(b.name));
 });
 
+const candidateByName = computed(() =>
+  new Map(state.candidates.value.map(c => [c.name, c]))
+);
+
 const summary = computed(() => {
   const changes = props.plan?.changes ?? [];
   return {
@@ -59,10 +73,6 @@ const summary = computed(() => {
     backups: props.plan?.backups.length ?? 0
   };
 });
-
-const destructiveArtworkCount = computed(
-  () => props.plan?.changes.filter(c => c.kind === "writeArtwork" && c.destructive).length ?? 0
-);
 
 function changeCount(game: GameReview) {
   return Number(Boolean(game.shortcut)) + game.collections.length + game.artwork.length;
@@ -143,12 +153,7 @@ function titleCase(value: string) {
 
   <!-- Review state -->
   <section v-else class="grid gap-3">
-    <div>
-      <h1 class="text-[26px] font-bold leading-tight">Review</h1>
-      <p class="text-secondary">Confirm the shortcuts, artwork, and collections that will be updated.</p>
-    </div>
-
-    <div v-if="!plan" class="grid min-h-55 place-items-center rounded-lg border border-border bg-surface-3 p-6 text-secondary">
+<div v-if="!plan" class="grid min-h-55 place-items-center rounded-lg border border-border bg-surface-3 p-6 text-secondary">
       Preparing preview...
     </div>
 
@@ -182,63 +187,61 @@ function titleCase(value: string) {
         </div>
       </div>
 
-      <!-- Notices -->
-      <div class="flex min-h-10 items-center gap-2 rounded-md border border-border bg-surface-5 px-3 py-2 text-sm">
-        <Check :size="16" class="shrink-0 text-accent" />
-        <span>
-          Backups will be created before any files are written.
-          <span v-if="destructiveArtworkCount > 0" class="text-danger">
-            {{ destructiveArtworkCount }} existing artwork file{{ destructiveArtworkCount === 1 ? "" : "s" }} will be replaced.
-          </span>
-        </span>
-      </div>
-
-      <div
-        v-if="plan.warnings.length"
-        class="flex min-h-10 items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-warning"
-      >
-        <AlertTriangle :size="16" class="shrink-0" />
-        <span>{{ plan.warnings.join(" ") }}</span>
-      </div>
-
       <!-- Game list -->
       <div class="grid gap-2">
         <article
           v-for="game in games"
           :key="game.name"
-          class="overflow-hidden rounded-lg border border-border bg-surface-3"
+          class="overflow-hidden rounded-xl border border-border"
         >
-          <div class="flex items-center gap-3 border-b border-border px-3 py-2.5">
-            <div class="h-4 w-0.5 shrink-0 rounded-full bg-accent" />
-            <strong class="min-w-0 flex-1 truncate">{{ game.name }}</strong>
-            <span class="shrink-0 text-xs text-secondary">{{ changeCount(game) }} change{{ changeCount(game) === 1 ? "" : "s" }}</span>
-          </div>
-          <div class="flex flex-wrap gap-1.5 px-3 py-2.5">
-            <span
-              v-if="game.shortcut"
-              class="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-5 px-2 py-1 text-xs"
-            >
-              <ListChecks :size="12" class="text-accent" />
-              Shortcut
+          <div class="flex items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
+            <GameIcon v-if="candidateByName.get(game.name)" :candidate="candidateByName.get(game.name)!" :size="20" />
+            <strong class="min-w-0 flex-1 truncate text-base">{{ game.name }}</strong>
+            <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
+              {{ changeCount(game) }} change{{ changeCount(game) === 1 ? "" : "s" }}
             </span>
-            <span
+          </div>
+
+          <div class="grid gap-1.5 bg-surface-3 p-2">
+            <ItemRow v-if="game.shortcut">
+              <template #leading>
+                <ListChecks :size="15" class="text-accent" />
+              </template>
+              Steam entry
+              <template #trailing>
+                <span v-if="game.shortcut.kind === 'addShortcut'" class="shrink-0 text-xs text-accent">New</span>
+                <span v-else class="shrink-0 text-xs text-secondary">Update</span>
+              </template>
+            </ItemRow>
+
+            <ItemRow
               v-for="asset in game.artwork"
               :key="`${game.name}:${asset.kind}`"
-              class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
-              :class="asset.destructive ? 'border-danger-border-muted bg-danger-bg text-danger' : 'border-border bg-surface-5'"
             >
-              <Image :size="12" :class="asset.destructive ? 'text-danger' : 'text-accent'" />
-              <strong class="text-primary">{{ asset.kind }}</strong>
-              <span class="text-secondary">{{ asset.source }}</span>
-            </span>
-            <span
+              <template #leading>
+                <Image :size="15" class="text-accent" />
+              </template>
+              <strong>{{ asset.kind }}</strong>
+              <span class="text-secondary"> · {{ asset.source }}</span>
+              <template #trailing>
+                <span v-if="asset.destructive" class="shrink-0 text-xs text-secondary">Update</span>
+                <span v-else class="shrink-0 text-xs text-accent">New</span>
+              </template>
+            </ItemRow>
+
+            <ItemRow
               v-for="coll in game.collections"
-              :key="`${game.name}:coll:${coll}`"
-              class="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-5 px-2 py-1 text-xs text-secondary"
+              :key="`${game.name}:coll:${coll.name}`"
             >
-              <Library :size="12" class="text-accent" />
-              {{ coll }}
-            </span>
+              <template #leading>
+                <Library :size="15" class="text-accent" />
+              </template>
+              {{ coll.name }}
+              <template #trailing>
+                <span v-if="coll.destructive" class="shrink-0 text-xs text-secondary">Use existing</span>
+                <span v-else class="shrink-0 text-xs text-accent">New</span>
+              </template>
+            </ItemRow>
           </div>
         </article>
       </div>

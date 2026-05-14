@@ -3,10 +3,10 @@ use crate::{
     models::ImportCandidate,
     steam::non_steam_app_id,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap, HashSet},
     fs,
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
@@ -138,6 +138,34 @@ fn managed_collection_id(source: &str) -> String {
     )
 }
 
+pub fn existing_managed_app_ids(path: &Path) -> HashMap<String, HashSet<u32>> {
+    if !path.exists() {
+        return HashMap::new();
+    }
+    let raw = match fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(_) => return HashMap::new(),
+    };
+    let entries = match parse_cloud_collections(&raw, path) {
+        Ok((entries, _)) => entries,
+        Err(_) => return HashMap::new(),
+    };
+    let mut result = HashMap::new();
+    for (key, value) in entries {
+        if !is_managed_key(&key) {
+            continue;
+        }
+        let Some(value_str) = value.get("value").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let Ok(coll) = serde_json::from_str::<SteamCollectionValue>(value_str) else {
+            continue;
+        };
+        result.insert(coll.name, coll.added.into_iter().collect());
+    }
+    result
+}
+
 fn current_timestamp() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -145,7 +173,7 @@ fn current_timestamp() -> u64 {
         .as_secs()
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct SteamCollectionValue {
     id: String,
     name: String,
