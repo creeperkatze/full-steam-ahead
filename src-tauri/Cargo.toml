@@ -29,6 +29,23 @@ tauri-plugin-dialog = "2.0.0"
 thiserror = "1"
 walkdir = "2"
 
+[lints.clippy]
+bool_to_int_with_if = "warn"
+cloned_instead_of_copied = "warn"
+dbg_macro = "warn"
+explicit_iter_loop = "warn"
+filter_map_next = "warn"
+flat_map_option = "warn"
+manual_assert = "warn"
+manual_let_else = "warn"
+match_bool = "warn"
+needless_collect = "warn"
+redundant_clone = "warn"
+redundant_type_annotations = "warn"
+todo = "warn"
+uninlined_format_args = "warn"
+unnested_or_patterns = "warn"
+
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Diagnostics_ToolHelp"] }
 winreg = "0.52"
