@@ -60,6 +60,9 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
 
+      - name: Add Cargo to PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Install macOS universal targets
         if: contains(matrix.platform, 'macos')
         run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
