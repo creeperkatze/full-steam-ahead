@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
-  ApplyOptions,
   ApplyResult,
   ImportCandidate,
   ManualImportRequest,
+  Options,
   PreviewPlan,
   ScanRequest,
   ShortcutEntry,
@@ -20,8 +20,11 @@ export const api = {
   createPreviewPlan: (
     userSteamId: string,
     candidates: ImportCandidate[],
-    options: ApplyOptions
+    options: Options
   ) => invoke<PreviewPlan>("create_preview_plan", { userSteamId, candidates, options }),
-  applyPlan: (plan: PreviewPlan, candidates: ImportCandidate[], options: ApplyOptions) =>
-    invoke<ApplyResult>("apply_plan", { request: { plan, candidates, options } })
+  applyPlan: (plan: PreviewPlan, candidates: ImportCandidate[], options: Options) =>
+    invoke<ApplyResult>("apply_plan", { request: { plan, candidates, options } }),
+  loadSettings: () => invoke<Pick<Options, "stopSteam" | "restartSteam">>("load_settings"),
+  saveSettings: (settings: Pick<Options, "stopSteam" | "restartSteam">) =>
+    invoke<void>("save_settings", { settings }),
 };

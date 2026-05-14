@@ -288,17 +288,22 @@ pub enum ChangeKind {
 pub struct ApplyRequest {
     pub plan: PreviewPlan,
     pub candidates: Vec<ImportCandidate>,
-    pub options: ApplyOptions,
+    pub options: Options,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ApplyOptions {
+pub struct Options {
     pub stop_steam: bool,
     pub restart_steam: bool,
     pub replace_existing_artwork: bool,
-    pub write_collections: bool,
-    pub use_legacy_collections_fallback: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct UserSettings {
+    pub stop_steam: bool,
+    pub restart_steam: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

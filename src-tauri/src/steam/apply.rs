@@ -24,7 +24,7 @@ pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -
         + 1 // backups
         + artwork_steps
         + 1 // shortcuts
-        + usize::from(request.options.write_collections)
+        + 1 // collections
         + usize::from(request.options.restart_steam);
     let mut current = 0usize;
 
@@ -80,11 +80,9 @@ pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -
     shortcuts::append_missing(&mut existing, additions);
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
-    if request.options.write_collections {
-        current += 1;
-        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Updating collections".into(), current, total });
-        collections::update_modern_collections(&user.collections_path, &request.candidates)?;
-    }
+    current += 1;
+    let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Updating collections".into(), current, total });
+    collections::update_modern_collections(&user.collections_path, &request.candidates)?;
 
     if request.options.restart_steam {
         current += 1;

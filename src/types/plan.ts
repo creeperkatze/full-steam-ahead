@@ -1,9 +1,7 @@
-export interface ApplyOptions {
+export interface Options {
   stopSteam: boolean;
   restartSteam: boolean;
   replaceExistingArtwork: boolean;
-  writeCollections: boolean;
-  useLegacyCollectionsFallback: boolean;
 }
 
 export interface PreviewPlan {

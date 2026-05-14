@@ -1,7 +1,7 @@
 import { computed, ref, watch } from "vue";
-import { loadSettings, saveSettings } from "../helpers/settings";
+import { api } from "../helpers/api";
 import type {
-  ApplyOptions,
+  Options,
   ApplyResult,
   ImportCandidate,
   PreviewPlan,
@@ -11,8 +11,6 @@ import type {
 
 export type FlowStep = "start" | "sources" | "artwork" | "review";
 export type ScanPhase = "idle" | "scanning" | "done";
-
-const savedSettings = loadSettings();
 
 const step = ref<FlowStep>("start");
 const scanPhase = ref<ScanPhase>("idle");
@@ -25,13 +23,16 @@ const applyResult = ref<ApplyResult | null>(null);
 const customArtwork = ref<Record<string, string>>({});
 const manualPath = ref("");
 const manualName = ref("");
-const options = ref<ApplyOptions>(savedSettings.options);
-options.value.replaceExistingArtwork = true;
+const options = ref<Options>({
+  stopSteam: false,
+  restartSteam: false,
+  replaceExistingArtwork: true,
+});
 
 watch(
   options,
   () => {
-    persistSettings();
+    api.saveSettings({ stopSteam: options.value.stopSteam, restartSteam: options.value.restartSteam });
     invalidatePreview();
   },
   { deep: true }
@@ -63,10 +64,13 @@ function invalidatePreview() {
   applyResult.value = null;
 }
 
-function persistSettings() {
-  saveSettings({
-    options: options.value
-  });
+async function loadSettingsFromDisk() {
+  try {
+    const saved = await api.loadSettings();
+    options.value = { ...options.value, ...saved };
+  } catch {
+    // keep defaults
+  }
 }
 
 export function useAppState() {
@@ -87,6 +91,7 @@ export function useAppState() {
     selectedCandidates,
     usesUrlLaunch,
     toggleUrlLaunch,
-    invalidatePreview
+    invalidatePreview,
+    loadSettingsFromDisk,
   };
 }

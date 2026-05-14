@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowRight, Check, Search } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter, useRoute, RouterView } from "vue-router";
 import AppShell from "../../components/AppShell.vue";
 import UiButton from "../../components/ui/Button.vue";
@@ -12,6 +12,8 @@ import { useTaskStatus } from "../../composables/useTaskStatus";
 const router = useRouter();
 const route = useRoute();
 const state = useAppState();
+
+onMounted(() => state.loadSettingsFromDisk());
 const reviewPlan = useReviewPlan();
 const task = useTaskStatus();
 const { scan } = useScanSources();
