@@ -92,7 +92,7 @@ fn managed_collection_entry(source: &str, app_ids: &[u32]) -> (String, Value) {
     let id = managed_collection_id(source);
     let key = format!("user-collections.{id}");
     let value = SteamCollectionValue {
-        id: id,
+        id,
         name: source.to_string(),
         added: app_ids.to_vec(),
         removed: Vec::new(),
@@ -142,13 +142,11 @@ pub fn existing_managed_app_ids(path: &Path) -> HashMap<String, HashSet<u32>> {
     if !path.exists() {
         return HashMap::new();
     }
-    let raw = match fs::read_to_string(path) {
-        Ok(raw) => raw,
-        Err(_) => return HashMap::new(),
+    let Ok(raw) = fs::read_to_string(path) else {
+        return HashMap::new();
     };
-    let entries = match parse_cloud_collections(&raw, path) {
-        Ok((entries, _)) => entries,
-        Err(_) => return HashMap::new(),
+    let Ok((entries, _)) = parse_cloud_collections(&raw, path) else {
+        return HashMap::new();
     };
     let mut result = HashMap::new();
     for (key, value) in entries {

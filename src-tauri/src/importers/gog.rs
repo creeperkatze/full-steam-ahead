@@ -13,9 +13,8 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     let mut all_candidates = Vec::new();
 
     for (config_path, wine_c_drive) in find_galaxy_configs() {
-        let raw = match fs::read_to_string(&config_path) {
-            Ok(r) => r,
-            Err(_) => continue,
+        let Ok(raw) = fs::read_to_string(&config_path) else {
+            continue;
         };
         let Ok(config) = serde_json::from_str::<GogConfig>(&raw) else {
             continue;
