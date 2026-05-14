@@ -52,17 +52,20 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
 }
 
 fn find_paths() -> AppResult<(PathBuf, PathBuf)> {
-    let local = std::env::var("LOCALAPPDATA").map_err(|_| {
-        AppError::Message("LOCALAPPDATA not set".to_string())
-    })?;
-    let launcher = Path::new(&local).join("Playnite").join("Playnite.DesktopApp.exe");
+    let local = std::env::var("LOCALAPPDATA")
+        .map_err(|_| AppError::Message("LOCALAPPDATA not set".to_string()))?;
+    let launcher = Path::new(&local)
+        .join("Playnite")
+        .join("Playnite.DesktopApp.exe");
     if !launcher.exists() {
         return Err(AppError::Message("Playnite is not installed".to_string()));
     }
-    let appdata = std::env::var("APPDATA").map_err(|_| {
-        AppError::Message("APPDATA not set".to_string())
-    })?;
-    let db = Path::new(&appdata).join("Playnite").join("library").join("games.db");
+    let appdata =
+        std::env::var("APPDATA").map_err(|_| AppError::Message("APPDATA not set".to_string()))?;
+    let db = Path::new(&appdata)
+        .join("Playnite")
+        .join("library")
+        .join("games.db");
     Ok((launcher, db))
 }
 
@@ -82,7 +85,7 @@ fn parse_game(i: &[u8]) -> IResult<&[u8], GameEntry> {
     let (i, prefix_and_id) = take_until("\\")(i)?;
     let id_bytes = prefix_and_id
         .split(|b| *b == 0_u8)
-        .last()
+        .next_back()
         .unwrap_or_default();
     let id = String::from_utf8_lossy(id_bytes).to_string();
 
@@ -97,7 +100,14 @@ fn parse_game(i: &[u8]) -> IResult<&[u8], GameEntry> {
     let (i, name_bytes) = take_while(|b| b != 0)(i)?;
     let name = String::from_utf8_lossy(name_bytes).to_string();
 
-    IResult::Ok((i, GameEntry { id, name, installed }))
+    IResult::Ok((
+        i,
+        GameEntry {
+            id,
+            name,
+            installed,
+        },
+    ))
 }
 
 #[cfg(test)]

@@ -20,7 +20,11 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         return Ok(Vec::new());
     };
     let Some(launcher_path) = local_app_data()
-        .map(|path| path.join("Amazon Games").join("App").join("Amazon Games.exe"))
+        .map(|path| {
+            path.join("Amazon Games")
+                .join("App")
+                .join("Amazon Games.exe")
+        })
         .filter(|path| path.exists())
     else {
         return Ok(Vec::new());

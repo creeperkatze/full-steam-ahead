@@ -33,8 +33,7 @@ fn scan_windows(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         return Ok(Vec::new());
     };
 
-    let Ok(installs) =
-        hklm.open_subkey("SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher\\Installs")
+    let Ok(installs) = hklm.open_subkey("SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher\\Installs")
     else {
         return Ok(Vec::new());
     };
@@ -127,9 +126,7 @@ fn scan_unix(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
             let icon = data_dir.join(game.icon_image).to_string_lossy().to_string();
             let id = game
                 .register
-                .strip_prefix(
-                    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Ubisoft\\Launcher\\Installs\\",
-                )
+                .strip_prefix("HKEY_LOCAL_MACHINE\\SOFTWARE\\Ubisoft\\Launcher\\Installs\\")
                 .unwrap_or_default()
                 .strip_suffix("\\InstallDir")
                 .unwrap_or_default()
@@ -267,7 +264,11 @@ fn parse_game_configs(section: &str) -> Vec<GameConfig<'_>> {
             continue;
         }
         if line == "denuvo: yes" {
-            results.push(GameConfig { icon_image, shortcut_name, register });
+            results.push(GameConfig {
+                icon_image,
+                shortcut_name,
+                register,
+            });
         }
     }
     results

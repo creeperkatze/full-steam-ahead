@@ -19,7 +19,10 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
 
     let mut candidates = Vec::new();
 
-    let epic_json = heroic_config_dir.join("legendaryConfig").join("legendary").join("installed.json");
+    let epic_json = heroic_config_dir
+        .join("legendaryConfig")
+        .join("legendary")
+        .join("installed.json");
     candidates.extend(scan_epic_games(user, &epic_json, &install_mode));
 
     let gog_json = heroic_config_dir.join("gog_store").join("installed.json");
@@ -84,7 +87,9 @@ struct HeroicEpicGame {
 
 impl HeroicEpicGame {
     fn is_installed(&self) -> bool {
-        Path::new(&self.install_path).join(&self.executable).exists()
+        Path::new(&self.install_path)
+            .join(&self.executable)
+            .exists()
     }
 }
 

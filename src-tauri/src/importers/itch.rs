@@ -82,12 +82,16 @@ fn read_title_gz(path: &Path) -> Option<String> {
     let mut decoder = GzDecoder::new(bytes.as_slice());
     let mut s = String::new();
     decoder.read_to_string(&mut s).ok()?;
-    serde_json::from_str::<Receipt>(&s).ok().map(|r| r.game.title)
+    serde_json::from_str::<Receipt>(&s)
+        .ok()
+        .map(|r| r.game.title)
 }
 
 fn read_title_plain(path: &Path) -> Option<String> {
     let s = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str::<Receipt>(&s).ok().map(|r| r.game.title)
+    serde_json::from_str::<Receipt>(&s)
+        .ok()
+        .map(|r| r.game.title)
 }
 
 #[cfg(unix)]

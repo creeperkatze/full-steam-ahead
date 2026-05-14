@@ -26,7 +26,10 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     }
 
     let mut candidates = Vec::new();
-    for entry in fs::read_dir(&local_content).map_err(io_context(&local_content))?.flatten() {
+    for entry in fs::read_dir(&local_content)
+        .map_err(io_context(&local_content))?
+        .flatten()
+    {
         let game_folder = entry.path();
         if !game_folder.is_dir() {
             continue;

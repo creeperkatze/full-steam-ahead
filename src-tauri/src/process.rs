@@ -72,12 +72,12 @@ pub fn is_process_running(process_name: &str) -> bool {
 pub fn stop_steam() -> std::io::Result<Output> {
     #[cfg(windows)]
     {
-        return command_output_no_window(Command::new("taskkill").args([
+        command_output_no_window(Command::new("taskkill").args([
             "/F",
             "/T",
             "/IM",
             steam_process_name(),
-        ]));
+        ]))
     }
 
     #[cfg(not(windows))]

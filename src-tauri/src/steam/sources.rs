@@ -123,7 +123,10 @@ pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) ->
         start_dir: quote_path(candidate.effective_start_dir()),
         icon: shortcut_icon(candidate, grid_path),
         shortcut_path: String::new(),
-        launch_options: candidate.effective_launch_options().unwrap_or("").to_string(),
+        launch_options: candidate
+            .effective_launch_options()
+            .unwrap_or("")
+            .to_string(),
         is_hidden: false,
         allow_desktop_config: true,
         allow_overlay: true,
@@ -147,8 +150,7 @@ fn shortcut_icon(candidate: &ImportCandidate, grid_path: &Path) -> String {
     let icon_path = match asset.source {
         ArtworkSource::ExistingCustom => Path::new(&asset.path_or_url).to_path_buf(),
         ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb | ArtworkSource::LocalFile => {
-            let app_id =
-                non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
+            let app_id = non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
             artwork::target_path(grid_path, app_id, &ArtworkKind::Icon, &asset.path_or_url)
         }
     };

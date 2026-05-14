@@ -196,7 +196,8 @@ impl LoginUser {
 fn quoted_tokens(line: &str) -> Vec<String> {
     line.split('"')
         .enumerate()
-        .filter_map(|(index, part)| (index % 2 == 1).then(|| part.to_string()))
+        .filter(|&(index, part)| (index % 2 == 1))
+        .map(|(index, part)| part.to_string())
         .collect()
 }
 

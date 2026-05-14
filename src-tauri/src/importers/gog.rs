@@ -75,7 +75,10 @@ pub fn scan_folders(user: &SteamUser, folders: Vec<PathBuf>) -> Vec<ImportCandid
 
 fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
-    for entry in fs::read_dir(game_folder).map_err(io_context(game_folder))?.flatten() {
+    for entry in fs::read_dir(game_folder)
+        .map_err(io_context(game_folder))?
+        .flatten()
+    {
         let path = entry.path();
         let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
@@ -92,7 +95,7 @@ fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<Import
         let Some(task) = game.play_tasks.unwrap_or_default().into_iter().find(|t| {
             t.is_primary.unwrap_or_default()
                 && t.task_type == "FileTask"
-                && matches!(t.category.as_deref(), Some("launcher") | Some("game"))
+                && matches!(t.category.as_deref(), Some("launcher" | "game"))
                 && t.path.is_some()
         }) else {
             continue;
@@ -204,7 +207,10 @@ mod tests {
     #[test]
     fn non_c_drive_returns_none() {
         let wine_c = Path::new("/home/user/drive_c");
-        assert_eq!(translate_installation_path(r"D:\Games\Witcher 3", wine_c), None);
+        assert_eq!(
+            translate_installation_path(r"D:\Games\Witcher 3", wine_c),
+            None
+        );
     }
 
     #[cfg(unix)]

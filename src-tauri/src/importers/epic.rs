@@ -69,8 +69,8 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     };
 
     let mut manifests = BTreeMap::<String, EpicManifest>::new();
-    for entry in
-        fs::read_dir(&paths.manifest_folder_path).map_err(io_context(&paths.manifest_folder_path))?
+    for entry in fs::read_dir(&paths.manifest_folder_path)
+        .map_err(io_context(&paths.manifest_folder_path))?
     {
         let entry = entry.map_err(io_context(&paths.manifest_folder_path))?;
         let path = entry.path();
@@ -359,7 +359,9 @@ mod tests {
         let cmd = r#""C:\Program Files (x86)\Epic Games\launcher.exe" --flag"#;
         assert_eq!(
             parse_quoted_executable(cmd),
-            Some(PathBuf::from(r"C:\Program Files (x86)\Epic Games\launcher.exe"))
+            Some(PathBuf::from(
+                r"C:\Program Files (x86)\Epic Games\launcher.exe"
+            ))
         );
     }
 

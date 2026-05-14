@@ -12,7 +12,10 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     }
 
     let game_folders: Vec<PathBuf> = std::fs::read_dir(&games_dir)
-        .map_err(|e| crate::error::AppError::Io { path: games_dir, source: e })?
+        .map_err(|e| crate::error::AppError::Io {
+            path: games_dir,
+            source: e,
+        })?
         .flatten()
         .map(|e| e.path())
         .filter(|p| p.is_dir())

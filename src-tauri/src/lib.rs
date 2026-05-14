@@ -6,8 +6,8 @@ mod process;
 mod steam;
 
 use commands::{
-    apply_plan, create_manual_candidate, create_preview_plan, detect_steam,
-    load_settings, read_shortcuts_for_user, save_settings, scan_sources,
+    apply_plan, create_manual_candidate, create_preview_plan, detect_steam, load_settings,
+    read_shortcuts_for_user, save_settings, scan_sources,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

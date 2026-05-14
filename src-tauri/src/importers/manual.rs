@@ -17,7 +17,7 @@ pub fn candidate(request: ManualImportRequest) -> ImportCandidate {
     let start_dir = executable_path
         .parent()
         .map(PathBuf::from)
-        .unwrap_or_else(PathBuf::new);
+        .unwrap_or_default();
     let app_id = non_steam_app_id(&quote_path(&executable_path), &name);
 
     ImportCandidate {

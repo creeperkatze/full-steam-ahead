@@ -343,11 +343,20 @@ fn known_library_logo_2x(steam_app_id: u32) -> Option<&'static str> {
     }
 }
 
-fn fill_logo_fallback(specs: &mut Vec<(ArtworkKind, String)>, asset_url_format: &str, steam_app_id: u32) {
+fn fill_logo_fallback(
+    specs: &mut Vec<(ArtworkKind, String)>,
+    asset_url_format: &str,
+    steam_app_id: u32,
+) {
     if specs.iter().any(|(kind, _)| *kind == ArtworkKind::Logo) {
         return;
     }
-    push_store_asset(specs, ArtworkKind::Logo, asset_url_format, known_library_logo_2x(steam_app_id));
+    push_store_asset(
+        specs,
+        ArtworkKind::Logo,
+        asset_url_format,
+        known_library_logo_2x(steam_app_id),
+    );
     if specs.iter().any(|(kind, _)| *kind == ArtworkKind::Logo) {
         return;
     }
@@ -423,7 +432,12 @@ fn community_icon_url(steam_app_id: u32) -> Option<String> {
 fn find_steam_app_id(game_name: &str) -> Option<u32> {
     let term = encode_query(game_name);
     let url = format!("https://store.steampowered.com/api/storesearch/?term={term}&l=en&cc=US");
-    let response = http_client().get(url).send().ok()?.error_for_status().ok()?;
+    let response = http_client()
+        .get(url)
+        .send()
+        .ok()?
+        .error_for_status()
+        .ok()?;
     let search = response.json::<StoreSearchResponse>().ok()?;
     search
         .items

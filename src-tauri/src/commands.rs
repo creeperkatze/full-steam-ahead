@@ -1,11 +1,9 @@
-use tauri::Manager;
 use crate::{
-    error::{AppError, CommandError, io_context},
+    error::{io_context, AppError, CommandError},
     importers::quote_path,
     models::{
-        Options, ApplyRequest, ApplyResult, BackupPlan, ChangeKind, ImportCandidate,
-        ManualImportRequest, PlannedChange, PreviewPlan, ScanRequest, SteamInstallation,
-        UserSettings,
+        ApplyRequest, ApplyResult, BackupPlan, ChangeKind, ImportCandidate, ManualImportRequest,
+        Options, PlannedChange, PreviewPlan, ScanRequest, SteamInstallation, UserSettings,
     },
     steam,
 };
@@ -15,6 +13,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
+use tauri::Manager;
 
 type CommandResult<T> = Result<T, CommandError>;
 
@@ -38,7 +37,10 @@ pub fn read_shortcuts_for_user(
 }
 
 #[tauri::command]
-pub fn scan_sources(app: tauri::AppHandle, request: ScanRequest) -> CommandResult<Vec<ImportCandidate>> {
+pub fn scan_sources(
+    app: tauri::AppHandle,
+    request: ScanRequest,
+) -> CommandResult<Vec<ImportCandidate>> {
     let install = steam::detect::detect_steam()?;
     let user = install
         .users
@@ -77,8 +79,10 @@ pub fn create_preview_plan(
     files.insert(user.shortcuts_path.clone());
     files.insert(user.collections_path.clone());
 
-    let existing_shortcuts = steam::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_default();
-    let existing_collection_app_ids = steam::collections::existing_managed_app_ids(&user.collections_path);
+    let existing_shortcuts =
+        steam::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_default();
+    let existing_collection_app_ids =
+        steam::collections::existing_managed_app_ids(&user.collections_path);
 
     let mut changes = Vec::new();
     for candidate in &candidates {
@@ -156,9 +160,10 @@ pub fn save_settings(app: tauri::AppHandle, settings: UserSettings) -> CommandRe
 }
 
 fn settings_path(app: &tauri::AppHandle) -> CommandResult<PathBuf> {
-    let base = app.path().app_data_dir().map_err(|_| {
-        AppError::Message("Could not resolve app data directory.".to_string())
-    })?;
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| AppError::Message("Could not resolve app data directory.".to_string()))?;
     Ok(base
         .parent()
         .unwrap_or(&base)
@@ -200,13 +205,22 @@ fn candidate_changes(
 
     let exe = candidate.effective_executable();
     let quoted_exe = quote_path(exe);
-    let shortcut_exists = steam::shortcuts::shortcut_exists(existing_shortcuts, &candidate.name, &quoted_exe);
+    let shortcut_exists =
+        steam::shortcuts::shortcut_exists(existing_shortcuts, &candidate.name, &quoted_exe);
     changes.push(PlannedChange {
         id: format!("shortcut:{}", candidate.id),
-        title: format!("{} shortcut for {}", if shortcut_exists { "Update" } else { "Add" }, candidate.name),
+        title: format!(
+            "{} shortcut for {}",
+            if shortcut_exists { "Update" } else { "Add" },
+            candidate.name
+        ),
         game_name: candidate.name.clone(),
         file: shortcuts_path.to_path_buf(),
-        kind: if shortcut_exists { ChangeKind::UpdateShortcut } else { ChangeKind::AddShortcut },
+        kind: if shortcut_exists {
+            ChangeKind::UpdateShortcut
+        } else {
+            ChangeKind::AddShortcut
+        },
         destructive: false,
         details: format!("Create a non-Steam shortcut from {}", exe.display()),
     });
@@ -230,13 +244,9 @@ fn candidate_changes(
             .to_string(),
     });
 
-    let app_id = steam::non_steam_app_id(
-        &format!("\"{}\"", exe.display()),
-        &candidate.name,
-    );
+    let app_id = steam::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
     for asset in steam::artwork::selected_artwork_assets(candidate) {
-        let file =
-            steam::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
+        let file = steam::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
         artwork_files.push(file.clone());
         changes.push(PlannedChange {
             id: format!("artwork:{}:{}", candidate.id, asset.kind.label()),

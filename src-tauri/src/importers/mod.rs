@@ -9,9 +9,9 @@ pub mod ubisoft;
 #[cfg(windows)]
 pub mod amazon;
 #[cfg(windows)]
-pub mod playnite;
-#[cfg(windows)]
 pub mod gamepass;
+#[cfg(windows)]
+pub mod playnite;
 
 // Unix-only launchers
 #[cfg(unix)]
@@ -79,7 +79,10 @@ pub fn launcher_candidate(
     launch_url: String,
     tags: Vec<String>,
 ) -> ImportCandidate {
-    let start_dir = launcher_path.parent().map(PathBuf::from).unwrap_or_default();
+    let start_dir = launcher_path
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_default();
     let mut candidate = candidate_from_parts(
         user,
         source,

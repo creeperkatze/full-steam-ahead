@@ -11,7 +11,10 @@ use std::{
 };
 use tauri::Emitter;
 
-pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -> AppResult<ApplyResult> {
+pub fn apply_plan_with_progress(
+    app: &tauri::AppHandle,
+    request: ApplyRequest,
+) -> AppResult<ApplyResult> {
     let install = detect::detect_steam()?;
     let user = install
         .users
@@ -30,12 +33,26 @@ pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -
 
     if request.options.stop_steam {
         current += 1;
-        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Stopping Steam".into(), current, total });
+        let _ = app.emit(
+            "apply-progress",
+            ApplyProgressEvent {
+                step: "Stopping Steam".into(),
+                current,
+                total,
+            },
+        );
         stop_steam()?;
     }
 
     current += 1;
-    let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Creating backups".into(), current, total });
+    let _ = app.emit(
+        "apply-progress",
+        ApplyProgressEvent {
+            step: "Creating backups".into(),
+            current,
+            total,
+        },
+    );
     let mut backups_created = Vec::new();
     for backup in &request.plan.backups {
         if !backup.source.exists() {
@@ -53,23 +70,43 @@ pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -
 
     if request.candidates.is_empty() {
         current += 1;
-        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Applying artwork".into(), current, total });
+        let _ = app.emit(
+            "apply-progress",
+            ApplyProgressEvent {
+                step: "Applying artwork".into(),
+                current,
+                total,
+            },
+        );
     } else {
         for candidate in &request.candidates {
             current += 1;
-            let _ = app.emit("apply-progress", ApplyProgressEvent {
-                step: format!("Downloading artwork for {}", candidate.name),
-                current,
-                total,
-            });
-            let candidate_skipped =
-                artwork::apply_candidate_artwork(&user.grid_path, candidate, request.options.replace_existing_artwork)?;
+            let _ = app.emit(
+                "apply-progress",
+                ApplyProgressEvent {
+                    step: format!("Downloading artwork for {}", candidate.name),
+                    current,
+                    total,
+                },
+            );
+            let candidate_skipped = artwork::apply_candidate_artwork(
+                &user.grid_path,
+                candidate,
+                request.options.replace_existing_artwork,
+            )?;
             skipped_changes.extend(candidate_skipped);
         }
     }
 
     current += 1;
-    let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Updating shortcuts".into(), current, total });
+    let _ = app.emit(
+        "apply-progress",
+        ApplyProgressEvent {
+            step: "Updating shortcuts".into(),
+            current,
+            total,
+        },
+    );
     let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
     let additions = request
         .candidates
@@ -81,12 +118,26 @@ pub fn apply_plan_with_progress(app: &tauri::AppHandle, request: ApplyRequest) -
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
     current += 1;
-    let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Updating collections".into(), current, total });
+    let _ = app.emit(
+        "apply-progress",
+        ApplyProgressEvent {
+            step: "Updating collections".into(),
+            current,
+            total,
+        },
+    );
     collections::update_modern_collections(&user.collections_path, &request.candidates)?;
 
     if request.options.restart_steam {
         current += 1;
-        let _ = app.emit("apply-progress", ApplyProgressEvent { step: "Restarting Steam".into(), current, total });
+        let _ = app.emit(
+            "apply-progress",
+            ApplyProgressEvent {
+                step: "Restarting Steam".into(),
+                current,
+                total,
+            },
+        );
         let _ = process::restart_steam(&install.install_path);
     }
 

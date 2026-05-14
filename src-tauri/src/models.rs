@@ -150,7 +150,9 @@ pub struct ImportCandidate {
 impl ImportCandidate {
     pub fn effective_executable(&self) -> &Path {
         if self.use_url_launch {
-            self.launcher_path.as_deref().unwrap_or(&self.executable_path)
+            self.launcher_path
+                .as_deref()
+                .unwrap_or(&self.executable_path)
         } else {
             &self.executable_path
         }
@@ -169,7 +171,9 @@ impl ImportCandidate {
 
     pub fn effective_launch_options(&self) -> Option<&str> {
         if self.use_url_launch {
-            self.url_scheme.as_deref().or(self.launch_options.as_deref())
+            self.url_scheme
+                .as_deref()
+                .or(self.launch_options.as_deref())
         } else {
             self.launch_options.as_deref()
         }

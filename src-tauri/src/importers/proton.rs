@@ -27,10 +27,19 @@ pub fn find_proton_prefixes() -> Vec<PathBuf> {
 
 /// Translate a Windows-style path (e.g. `C:\Foo\Bar`) to a host path via the
 /// `dosdevices` symlink tree inside the given Proton compat prefix.
-pub fn translate_windows_path(compat_folder: &std::path::Path, windows_path: &str) -> Option<PathBuf> {
+pub fn translate_windows_path(
+    compat_folder: &std::path::Path,
+    windows_path: &str,
+) -> Option<PathBuf> {
     let drive = windows_path.get(0..2).map(|d| d.to_lowercase())?;
     let rest = windows_path.get(3..)?.replace('\\', "/");
-    Some(compat_folder.join("pfx").join("dosdevices").join(drive).join(rest))
+    Some(
+        compat_folder
+            .join("pfx")
+            .join("dosdevices")
+            .join(drive)
+            .join(rest),
+    )
 }
 
 #[cfg(test)]
