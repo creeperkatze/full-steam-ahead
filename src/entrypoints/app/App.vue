@@ -131,15 +131,10 @@ async function goNext() {
           <!-- Start view: scan button, plus continue when results exist -->
           <template v-if="state.step.value === 'start'">
             <UiButton
-              v-if="state.scanPhase.value === 'done'"
-              variant="ghost"
+              :variant="state.scanPhase.value === 'done' ? 'ghost' : undefined"
               :disabled="scanDisabled"
               @click="doScan"
             >
-              Scan again
-              <template #icon><Search :size="16" /></template>
-            </UiButton>
-            <UiButton v-else :disabled="scanDisabled" @click="doScan">
               Scan
               <template #icon><Search :size="16" /></template>
             </UiButton>
