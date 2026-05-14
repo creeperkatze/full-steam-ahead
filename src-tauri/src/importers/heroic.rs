@@ -10,9 +10,8 @@ use std::{
 };
 
 pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let home = match std::env::var("HOME") {
-        Ok(h) => h,
-        Err(_) => return Ok(Vec::new()),
+    let Ok(home) = std::env::var("HOME") else {
+        return Ok(Vec::new());
     };
 
     let (install_mode, heroic_config_dir) = detect_install_mode(&home);

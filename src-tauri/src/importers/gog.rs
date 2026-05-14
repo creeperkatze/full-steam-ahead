@@ -32,7 +32,7 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         let roots: Vec<String> = if let Some(ref wine_c) = wine_c_drive {
             roots
                 .into_iter()
-                .flat_map(|path| translate_installation_path(&path, wine_c))
+                .filter_map(|path| translate_installation_path(&path, wine_c))
                 .collect()
         } else {
             roots
@@ -141,9 +141,8 @@ fn find_galaxy_configs() -> Vec<(PathBuf, Option<PathBuf>)> {
     #[cfg(unix)]
     {
         let mut result = Vec::new();
-        let home = match std::env::var("HOME") {
-            Ok(h) => h,
-            Err(_) => return result,
+        let Ok(home) = std::env::var("HOME") else {
+            return result;
         };
 
         // Default PlayOnLinux / Lutris GOG Galaxy location

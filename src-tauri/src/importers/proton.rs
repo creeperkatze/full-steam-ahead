@@ -2,9 +2,8 @@ use std::path::PathBuf;
 
 /// Returns all Proton compat-data prefix paths found under the default Steam location.
 pub fn find_proton_prefixes() -> Vec<PathBuf> {
-    let home = match std::env::var("HOME") {
-        Ok(h) => h,
-        Err(_) => return Vec::new(),
+    let Ok(home) = std::env::var("HOME") else {
+        return Vec::new();
     };
     let compat_dir = PathBuf::from(&home)
         .join(".steam")
