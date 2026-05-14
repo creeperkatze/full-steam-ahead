@@ -1,3 +1,4 @@
+use tauri::Manager;
 use crate::{
     error::{AppError, CommandError},
     importers::quote_path,
@@ -48,6 +49,7 @@ pub fn scan_sources(app: tauri::AppHandle, request: ScanRequest) -> CommandResul
 
 #[tauri::command]
 pub fn create_preview_plan(
+    app: tauri::AppHandle,
     user_steam_id: String,
     candidates: Vec<ImportCandidate>,
     options: ApplyOptions,
@@ -59,11 +61,14 @@ pub fn create_preview_plan(
         .find(|user| user.steam_id == user_steam_id)
         .ok_or_else(|| AppError::UserNotFound(user_steam_id.clone()))?;
 
-    let backup_root = user
-        .shortcuts_path
+    let app_data_dir = app.path().app_data_dir().map_err(|_| {
+        AppError::Message("Could not resolve app data directory for backups.".to_string())
+    })?;
+    let backup_root = app_data_dir
         .parent()
-        .unwrap_or(&user.shortcuts_path)
-        .join("full-steam-ahead-backups")
+        .unwrap_or(&app_data_dir)
+        .join("Full Steam Ahead")
+        .join("backups")
         .join(Utc::now().format("%Y%m%d-%H%M%S").to_string());
 
     let mut files = BTreeSet::<PathBuf>::new();

@@ -106,6 +106,12 @@ function sourceLabel(source: string) {
 function titleCase(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
+
+function fileName(path: string) {
+  const lastSep = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return lastSep >= 0 ? path.slice(lastSep + 1) : path;
+}
+
 </script>
 
 <template>
@@ -247,27 +253,24 @@ function titleCase(value: string) {
       </div>
 
       <!-- Backup details -->
-      <details class="group rounded-lg border border-border bg-surface-3">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm">
+      <details class="group overflow-hidden rounded-xl border border-border">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-transparent bg-surface-4 px-3 py-2.5 text-sm group-open:border-border">
           <span class="inline-flex items-center gap-2">
             <FolderArchive :size="15" />
-            <strong>Backup and file details</strong>
-            <span class="text-secondary">{{ plan.filesToChange.length }} files</span>
+            <strong>Backups</strong>
           </span>
-          <ChevronDown :size="14" class="text-secondary transition-transform group-open:rotate-180" />
+          <span class="flex items-center gap-2">
+            <span class="rounded-md border border-border px-2 py-1 text-xs text-secondary">{{ plan.backups.length }} files</span>
+            <ChevronDown :size="14" class="text-secondary transition-transform group-open:rotate-180" />
+          </span>
         </summary>
-        <div class="grid gap-3 border-t border-border p-3 text-sm">
-          <div>
-            <h2 class="mb-1.5 font-semibold text-secondary">Backups</h2>
-            <p v-if="plan.backups.length === 0" class="text-secondary">No existing Steam files need to be backed up.</p>
-            <p v-for="backup in plan.backups" :key="backup.destination" class="path-cell">
-              {{ backup.source }} → {{ backup.destination }}
-            </p>
-          </div>
-          <div>
-            <h2 class="mb-1.5 font-semibold text-secondary">Files to change</h2>
-            <p v-for="file in plan.filesToChange" :key="file" class="path-cell">{{ file }}</p>
-          </div>
+        <div class="grid gap-1.5 bg-surface-3 p-2">
+          <ItemRow v-for="backup in plan.backups" :key="backup.destination">
+            <template #leading>
+              <FolderArchive :size="14" class="shrink-0 text-accent" />
+            </template>
+            <span class="truncate">{{ fileName(backup.source) }}</span>
+          </ItemRow>
         </div>
       </details>
     </template>
