@@ -3,6 +3,7 @@ import { ImagePlus, RotateCcw } from "@lucide/vue";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ref } from "vue";
+import GameIcon from "../../../components/GameIcon.vue";
 import UiButton from "../../../components/ui/Button.vue";
 import { useAppState } from "../../../composables/useAppState";
 import type { ArtworkAsset, ArtworkKind, ImportCandidate } from "../../../types";
@@ -176,7 +177,10 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
         class="overflow-hidden rounded-lg border border-border bg-surface-3"
       >
         <header class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 px-3 py-2">
-          <strong class="min-w-0 truncate text-base">{{ candidate.name }}</strong>
+          <div class="flex min-w-0 items-center gap-2">
+            <GameIcon :candidate="candidate" :size="20" />
+            <strong class="min-w-0 truncate text-base">{{ candidate.name }}</strong>
+          </div>
           <span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
             {{ selectedSlotCount(candidate) }} / {{ slots.length }} selected
           </span>

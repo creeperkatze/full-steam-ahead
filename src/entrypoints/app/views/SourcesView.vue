@@ -2,6 +2,7 @@
 import { Check, FolderPlus, Loader2, Plus, Search } from "@lucide/vue";
 import { computed, onMounted } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
+import GameIcon from "../../../components/GameIcon.vue";
 import SourceCard from "../../../components/SourceCard.vue";
 import SourceIcon from "../../../components/SourceIcon.vue";
 import ItemRow from "../../../components/ui/ItemRow.vue";
@@ -277,7 +278,7 @@ function selectNone() {
           <UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectNone">None</UiButton>
           <UiButton variant="secondary" :disabled="task.loading.value || !state.selectedUser.value" @click="scan">
             Re-scan
-            <template #icon><Search :size="16" /></template>
+            <template #icon><Search :size="20" /></template>
           </UiButton>
         </div>
       </section>
@@ -339,7 +340,7 @@ function selectNone() {
             />
             <UiButton variant="secondary" :disabled="!state.manualPath.value" @click="addManual">
               Add
-              <template #icon><Plus :size="16" /></template>
+              <template #icon><Plus :size="20" /></template>
             </UiButton>
           </div>
 
@@ -355,6 +356,7 @@ function selectNone() {
                 :checked="state.selectedCandidateIds.value.has(candidate.id)"
                 @change="toggleCandidate(candidate.id)"
               />
+              <GameIcon :candidate="candidate" :size="20" />
             </template>
             <strong class="block truncate">{{ candidate.name }}</strong>
             <small class="block text-secondary/70">{{ candidate.executablePath }}</small>

@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { importSourceName } from "../helpers/sourceNames";
 import type { ImportCandidate } from "../types";
+import GameIcon from "./GameIcon.vue";
 import SourceIcon from "./SourceIcon.vue";
 import ItemRow from "./ui/ItemRow.vue";
 
@@ -55,6 +56,7 @@ const allSelected = computed(() =>
             :checked="selectedIds.has(candidate.id)"
             @change="emit('toggle', candidate.id)"
           />
+          <GameIcon :candidate="candidate" :size="20" />
         </template>
 
         <strong class="block truncate">{{ candidate.name }}</strong>
