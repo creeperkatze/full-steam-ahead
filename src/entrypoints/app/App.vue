@@ -165,7 +165,10 @@ async function goNext() {
 						</template>
 					</UiButton>
 
-					<UiButton v-else-if="state.step.value === 'done'" @click="invoke('close_app')">
+					<UiButton
+						v-else-if="state.step.value === 'done' && !task.loading.value"
+						@click="invoke('close_app')"
+					>
 						Close
 						<template #icon><X :size="16" /></template>
 					</UiButton>
