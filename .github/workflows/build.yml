@@ -93,6 +93,6 @@ jobs:
           tagName: ${{ inputs.tag || github.ref_name }}
           releaseName: ${{ inputs.tag || github.ref_name }}
           releaseDraft: true
-          assetNamePattern: '[name]-[version]-[platform]-[arch][setup][ext]'
+          assetNamePattern: 'full-steam-ahead-[version]-[platform]-[arch][setup][ext]'
           args: ${{ matrix.args }}
           uploadPlainBinary: ${{ matrix.uploadPlainBinary }}
