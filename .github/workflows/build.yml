@@ -9,10 +9,17 @@ on:
       tag:
         description: "Tag to build"
         required: false
+      draft:
+        description: "Publish as draft"
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -27,26 +34,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - windows-latest
-          - ubuntu-latest
-          - macos-latest
         include:
           - platform: windows-latest
-            artifact-target-name: x86_64-pc-windows-msvc
-            bundles: nsis,msi
-            bundle-path: src-tauri/target/release/bundle
-            tauri-target: ""
+            args: --bundles nsis,msi
+            uploadPlainBinary: true
           - platform: ubuntu-latest
-            artifact-target-name: x86_64-unknown-linux-gnu
-            bundles: deb,appimage,rpm
-            bundle-path: src-tauri/target/release/bundle
-            tauri-target: ""
+            args: --bundles deb,appimage,rpm
+            uploadPlainBinary: true
           - platform: macos-latest
-            artifact-target-name: universal-apple-darwin
-            bundles: dmg
-            bundle-path: src-tauri/target/universal-apple-darwin/release/bundle
-            tauri-target: --target universal-apple-darwin
+            args: --target universal-apple-darwin --bundles dmg
+            uploadPlainBinary: false
 
     runs-on: ${{ matrix.platform }}
 
@@ -56,12 +53,6 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
-
-      - name: Add Cargo to PATH
-        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install macOS universal targets
         if: contains(matrix.platform, 'macos')
@@ -73,16 +64,6 @@ jobs:
           workspaces: src-tauri -> target
           cache-on-failure: true
 
-      - name: Install Linux build dependencies
-        if: contains(matrix.platform, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            patchelf
-
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: 9
@@ -93,42 +74,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build app
-        run: pnpm tauri build --bundles ${{ matrix.bundles }} ${{ matrix.tauri-target }}
-
-      - name: Package standalone app
-        if: runner.os != 'macOS'
-        shell: bash
-        run: |
-          mkdir -p standalone
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            cp "src-tauri/target/release/Full Steam Ahead.exe" "standalone/Full Steam Ahead.exe"
-          elif [ -f "src-tauri/target/release/Full Steam Ahead" ]; then
-            cp "src-tauri/target/release/Full Steam Ahead" "standalone/Full Steam Ahead"
-          else
-            cp "src-tauri/target/release/full-steam-ahead" "standalone/full-steam-ahead"
-          fi
-
-      - name: Upload app bundles
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Build and release
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: App bundle (${{ matrix.artifact-target-name }})
-          path: |
-            ${{ matrix.bundle-path }}/appimage/Full Steam Ahead_*.AppImage*
-            ${{ matrix.bundle-path }}/deb/Full Steam Ahead_*.deb*
-            ${{ matrix.bundle-path }}/msi/Full Steam Ahead_*.msi*
-            ${{ matrix.bundle-path }}/nsis/Full Steam Ahead_*-setup.exe*
-            ${{ matrix.bundle-path }}/rpm/Full Steam Ahead_*.rpm*
-            ${{ matrix.bundle-path }}/dmg/Full Steam Ahead_*.dmg*
-          if-no-files-found: error
-
-      - name: Upload standalone app
-        if: runner.os != 'macOS'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: Standalone app (${{ matrix.artifact-target-name }})
-          path: standalone/*
-          if-no-files-found: error
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: "Full Steam Ahead __VERSION__"
+          releaseDraft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft == 'true' }}
+          generateReleaseNotes: true
+          args: ${{ matrix.args }}
+          uploadPlainBinary: ${{ matrix.uploadPlainBinary }}
