@@ -31,7 +31,14 @@ onMounted(async () => {
 	<main class="flex h-screen flex-col gap-3 bg-surface-2 p-3 text-primary">
 		<header class="grid h-15 shrink-0 grid-cols-[280px_1fr_auto] items-center gap-5">
 			<div class="flex items-center">
-				<Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
+				<button
+					type="button"
+					class="cursor-pointer rounded opacity-90 transition-opacity hover:opacity-100"
+					title="View on GitHub"
+					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead')"
+				>
+					<Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
+				</button>
 			</div>
 
 			<nav v-if="!settingsOpen" class="grid grid-cols-5 gap-2" aria-label="Import progress">
