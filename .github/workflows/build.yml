@@ -9,10 +9,6 @@ on:
       tag:
         description: "Tag to build"
         required: false
-      draft:
-        description: "Publish as draft"
-        type: boolean
-        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -95,8 +91,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ inputs.tag || github.ref_name }}
-          releaseName: "Full Steam Ahead __VERSION__"
-          releaseDraft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft == 'true' }}
-          generateReleaseNotes: true
+          releaseName: ${{ inputs.tag || github.ref_name }}
+          releaseDraft: true
           args: ${{ matrix.args }}
           uploadPlainBinary: ${{ matrix.uploadPlainBinary }}
