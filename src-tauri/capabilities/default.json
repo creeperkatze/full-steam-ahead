@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default desktop capabilities for Full Steam Ahead.",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default"]
+  "permissions": ["core:default", "dialog:default", "opener:default"]
 }

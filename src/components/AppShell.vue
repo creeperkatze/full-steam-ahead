@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { Settings, X } from '@lucide/vue'
+import { Settings, Star, X } from '@lucide/vue'
+import { getVersion } from '@tauri-apps/api/app'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { onMounted, ref } from 'vue'
 
+import KofiIcon from '../assets/icons/kofi.svg?component'
 import Logo from '../assets/logo.svg?component'
 import UiButton from './ui/Button.vue'
 
@@ -16,6 +20,11 @@ defineEmits<{
 }>()
 
 const steps = ['Start', 'Sources', 'Artwork', 'Review', 'Done']
+
+const version = ref('')
+onMounted(async () => {
+	version.value = await getVersion().catch(() => '')
+})
 </script>
 
 <template>
@@ -79,6 +88,29 @@ const steps = ['Start', 'Sources', 'Artwork', 'Review', 'Done']
 			<slot />
 		</div>
 
-		<slot name="footer" />
+		<div class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-end gap-3">
+			<span class="text-sm text-secondary">v{{ version }}</span>
+			<div class="flex items-center gap-2">
+				<slot name="footer" />
+			</div>
+			<div class="flex items-center justify-end gap-3">
+				<button
+					type="button"
+					class="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-[#FF5E5B] transition-colors hover:text-[#ff8e8c]"
+					@click="openUrl('https://ko-fi.com/creeperkatze')"
+				>
+					<KofiIcon class="size-4" aria-hidden="true" />
+					<span>Support</span>
+				</button>
+				<button
+					type="button"
+					class="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-yellow-500 transition-colors hover:text-yellow-300"
+					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead')"
+				>
+					<Star class="size-4 shrink-0" aria-hidden="true" />
+					<span>On GitHub</span>
+				</button>
+			</div>
+		</div>
 	</main>
 </template>
