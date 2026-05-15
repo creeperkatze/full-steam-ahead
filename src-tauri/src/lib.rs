@@ -6,8 +6,8 @@ mod process;
 mod steam;
 
 use commands::{
-    apply_plan, create_manual_candidate, create_preview_plan, detect_steam, load_settings,
-    read_shortcuts_for_user, save_settings, scan_sources,
+    apply_plan, close_app, create_manual_candidate, create_preview_plan, detect_steam,
+    load_settings, read_shortcuts_for_user, save_settings, scan_sources,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,6 +24,7 @@ pub fn run() {
             apply_plan,
             load_settings,
             save_settings,
+            close_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Full Steam Ahead");

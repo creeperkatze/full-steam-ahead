@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ArrowRight, Check, Search } from '@lucide/vue'
+import { ArrowRight, Check, Search, X } from '@lucide/vue'
+import { invoke } from '@tauri-apps/api/core'
 import { computed, onMounted } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
@@ -162,6 +163,11 @@ async function goNext() {
 							<Check v-if="state.step.value === 'review'" :size="18" />
 							<ArrowRight v-else :size="16" />
 						</template>
+					</UiButton>
+
+					<UiButton v-else-if="state.step.value === 'done'" @click="invoke('close_app')">
+						Close
+						<template #icon><X :size="16" /></template>
 					</UiButton>
 				</div>
 			</div>

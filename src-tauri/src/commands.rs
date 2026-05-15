@@ -265,3 +265,8 @@ fn candidate_changes(
 
     (changes, artwork_files)
 }
+
+#[tauri::command]
+pub fn close_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
