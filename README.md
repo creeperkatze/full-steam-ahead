@@ -9,6 +9,9 @@ A desktop app to import games from other launchers into Steam as non-Steam short
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/F1F11WYJU3)
 
+> [!NOTE]
+> Full Steam Ahead builds on the work of [BoilR](https://github.com/PhilipK/BoilR). The supported platforms and much of the importer logic originated there. If you're looking for an alternative, check it out.
+
 ## 🚀 Installation
 
 Download the latest release for your platform from the [Releases page](https://github.com/creeperkatze/full-steam-ahead/releases).
