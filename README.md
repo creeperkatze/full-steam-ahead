@@ -20,13 +20,27 @@ Prefer to build from source? See [Building from source](#-building-from-source) 
 
 ## ✨ Features
 
-### Multi-platform scanning
+### Platforms
 
 Automatically detects installed games from a wide range of launchers and platforms:
 
-- **Cross-platform:** Epic Games, GOG, itch.io, EA App / Origin, Ubisoft Connect
-- **Windows:** Amazon Games, Xbox Game Pass, Playnite
-- **Linux:** Bottles, Flatpak, Heroic, Legendary, Lutris, MiniGalaxy, Proton
+| Platform | Windows | macOS | Linux |
+|---|---|---|---|
+| Epic Games | ✅ | ✅ | ✅ |
+| GOG | ✅ | ❌ | ✅ |
+| itch.io | ✅ | ✅ | ✅ |
+| EA App / Origin | ✅ | - | ✅ |
+| Ubisoft Connect | ✅ | - | ✅ |
+| Amazon Games | ✅ | - | - |
+| Xbox Game Pass | ✅ | - | - |
+| Playnite | ✅ | - | - |
+| Bottles | - | - | ✅ |
+| Flatpak | - | - | ✅ |
+| Heroic | ❌ | ❌ | ✅ |
+| Legendary | ❌ | ❌ | ✅ |
+| Lutris | - | - | ✅ |
+| MiniGalaxy | - | - | ✅ |
+| Proton | - | - | ✅ |
 
 ### Artwork management
 

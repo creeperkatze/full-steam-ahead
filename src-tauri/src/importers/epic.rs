@@ -82,10 +82,10 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
             continue;
         };
 
-        // On Unix, translate Windows paths to host paths via dosdevices
-        #[cfg(unix)]
+        // On Linux via Proton, translate Windows paths to host paths via dosdevices
+        #[cfg(all(unix, not(target_os = "macos")))]
         let mut manifest = manifest;
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "macos")))]
         if let Some(ref compat) = paths.compat_folder {
             if let Some(translated) =
                 super::proton::translate_windows_path(compat, &manifest.manifest_location)
@@ -126,8 +126,8 @@ fn candidate_from_manifest(
         tags.push("Epic Launcher".to_string());
     }
 
-    // On Unix with Proton, embed the compat path into the launch options
-    #[cfg(unix)]
+    // On Linux with Proton, embed the compat path into the launch options
+    #[cfg(all(unix, not(target_os = "macos")))]
     let launch_url = if let Some(ref compat) = paths.compat_folder {
         format!(
             "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -'{}'",
@@ -188,7 +188,19 @@ fn find_epic_paths() -> Option<EpicPaths> {
         })
     }
 
-    #[cfg(unix)]
+    #[cfg(target_os = "macos")]
+    {
+        let home = std::env::var("HOME").ok()?;
+        let manifest_folder_path = macos_manifest_location(&home);
+        let launcher_path = macos_launcher_location();
+        (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
+            launcher_path,
+            manifest_folder_path,
+            compat_folder: None,
+        })
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
     {
         let home = std::env::var("HOME").ok()?;
         let compat_dir = PathBuf::from(&home)
@@ -278,6 +290,26 @@ fn default_manifest_location() -> PathBuf {
         .join("EpicGamesLauncher")
         .join("Data")
         .join("Manifests")
+}
+
+#[cfg(target_os = "macos")]
+fn macos_manifest_location(home: &str) -> PathBuf {
+    PathBuf::from(home)
+        .join("Library")
+        .join("Application Support")
+        .join("Epic")
+        .join("EpicGamesLauncher")
+        .join("Data")
+        .join("Manifests")
+}
+
+#[cfg(target_os = "macos")]
+fn macos_launcher_location() -> PathBuf {
+    PathBuf::from("/Applications")
+        .join("Epic Games Launcher.app")
+        .join("Contents")
+        .join("MacOS")
+        .join("EpicGamesLauncher")
 }
 
 #[cfg(windows)]
@@ -379,6 +411,28 @@ mod tests {
     #[test]
     fn parse_quoted_exe_empty_returns_none() {
         assert_eq!(parse_quoted_executable(""), None);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_manifest_path_uses_library_support() {
+        assert_eq!(
+            macos_manifest_location("/Users/test"),
+            PathBuf::from(
+                "/Users/test/Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests"
+            )
+        );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_launcher_path_points_to_applications() {
+        assert_eq!(
+            macos_launcher_location(),
+            PathBuf::from(
+                "/Applications/Epic Games Launcher.app/Contents/MacOS/EpicGamesLauncher"
+            )
+        );
     }
 
     #[test]
