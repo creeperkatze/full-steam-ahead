@@ -88,12 +88,6 @@ pnpm install
 pnpm dev
 ```
 
-To run the frontend only (without Tauri):
-
-```bash
-pnpm dev:web
-```
-
 ## 🤝 Contributing
 
 Contributions are always welcome!
