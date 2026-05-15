@@ -429,9 +429,7 @@ mod tests {
     fn macos_launcher_path_points_to_applications() {
         assert_eq!(
             macos_launcher_location(),
-            PathBuf::from(
-                "/Applications/Epic Games Launcher.app/Contents/MacOS/EpicGamesLauncher"
-            )
+            PathBuf::from("/Applications/Epic Games Launcher.app/Contents/MacOS/EpicGamesLauncher")
         );
     }
 
