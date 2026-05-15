@@ -1,6 +1,6 @@
 # <img src=".github/assets/logo.png" alt="Full Steam Ahead" height="100">
 
-A desktop app to import games from other launchers into Steam as non-Steam shortcuts, with artwork, collections, and automatic Steam restart.
+A desktop app to import games from other launchers into Steam
 
 ![GitHub Branch Check Runs](https://img.shields.io/github/check-runs/creeperkatze/full-steam-ahead/main?labelColor=0d143c)
 ![GitHub Issues](https://img.shields.io/github/issues/creeperkatze/full-steam-ahead?labelColor=0d143c)
