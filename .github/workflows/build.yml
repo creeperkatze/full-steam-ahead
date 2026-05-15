@@ -86,7 +86,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build and release
