@@ -100,11 +100,15 @@ pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
     }
 }
 
+pub struct ArtworkSkip {
+    pub change_id: String,
+}
+
 pub fn apply_candidate_artwork(
     grid_path: &Path,
     candidate: &ImportCandidate,
     replace_existing: bool,
-) -> AppResult<Vec<String>> {
+) -> AppResult<Vec<ArtworkSkip>> {
     let shortcut_app_id = crate::steam::non_steam_app_id(
         &format!("\"{}\"", candidate.executable_path.display()),
         &candidate.name,
@@ -115,10 +119,9 @@ pub fn apply_candidate_artwork(
         let target = target_path(grid_path, shortcut_app_id, &asset.kind, &asset.path_or_url);
         if target.exists() && !replace_existing && asset.source != ArtworkSource::LocalFile {
             tracing::debug!(kind = ?asset.kind, game = %candidate.name, "Preserving existing artwork");
-            skipped.push(format!(
-                "Preserved existing {:?} artwork for {}",
-                asset.kind, candidate.name
-            ));
+            skipped.push(ArtworkSkip {
+                change_id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
+            });
             continue;
         }
 
@@ -127,20 +130,18 @@ pub fn apply_candidate_artwork(
                 tracing::debug!(kind = ?asset.kind, game = %candidate.name, url = %asset.path_or_url, "Downloading artwork");
                 if let Err(error) = download_asset(&asset.path_or_url, &target) {
                     tracing::warn!(kind = ?asset.kind, game = %candidate.name, %error, "Artwork download failed");
-                    skipped.push(format!(
-                        "Could not download {:?} artwork for {}: {}",
-                        asset.kind, candidate.name, error
-                    ));
+                    skipped.push(ArtworkSkip {
+                        change_id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
+                    });
                 }
             }
             ArtworkSource::LocalFile => {
                 let source = Path::new(&asset.path_or_url);
                 if let Err(error) = fs::copy(source, &target).map_err(io_context(&target)) {
                     tracing::warn!(kind = ?asset.kind, game = %candidate.name, %error, "Artwork copy failed");
-                    skipped.push(format!(
-                        "Could not copy {:?} artwork for {}: {}",
-                        asset.kind, candidate.name, error
-                    ));
+                    skipped.push(ArtworkSkip {
+                        change_id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
+                    });
                 }
             }
             ArtworkSource::ExistingCustom => {}

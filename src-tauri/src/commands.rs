@@ -68,7 +68,6 @@ pub fn create_preview_plan(
     info!(
         changes = plan.changes.len(),
         backups = plan.backups.len(),
-        warnings = plan.warnings.len(),
         "Preview plan created"
     );
     Ok(plan)
@@ -119,13 +118,9 @@ pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult
     if let Ok(ref r) = result {
         info!(
             applied = r.applied_changes.len(),
-            skipped = r.skipped_changes.len(),
             backups = r.backups_created.len(),
             "Plan applied"
         );
-        for msg in &r.skipped_changes {
-            warn!(reason = %msg, "Change skipped");
-        }
     }
     result
 }

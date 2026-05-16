@@ -53,9 +53,11 @@ export interface ArtworkPlan {
 
 export type ArtworkKind = 'header' | 'capsule' | 'hero' | 'logo' | 'icon'
 
+export type ArtworkSource = 'existingCustom' | 'officialSteam' | 'steamGridDb' | 'localFile'
+
 export interface ArtworkAsset {
 	kind: ArtworkKind
 	pathOrUrl: string
-	source: 'existingCustom' | 'officialSteam' | 'steamGridDb' | 'localFile'
+	source: ArtworkSource
 	willReplaceExisting: boolean
 }

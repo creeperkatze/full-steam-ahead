@@ -9,7 +9,6 @@ export interface PreviewPlan {
 	changes: PlannedChange[]
 	filesToChange: string[]
 	backups: BackupPlan[]
-	warnings: string[]
 	requiresSteamRestart: boolean
 }
 
@@ -18,18 +17,20 @@ export interface BackupPlan {
 	destination: string
 }
 
+import type { ArtworkKind, ArtworkSource } from './import'
+
 export interface PlannedChange {
 	id: string
-	title: string
 	gameName: string
 	file: string
 	kind: 'addShortcut' | 'updateShortcut' | 'writeArtwork' | 'updateCollections'
 	destructive: boolean
-	details: string
+	artworkSource: ArtworkSource | null
+	artworkKind: ArtworkKind | null
+	collectionName: string | null
 }
 
 export interface ApplyResult {
 	appliedChanges: PlannedChange[]
 	backupsCreated: string[]
-	skippedChanges: string[]
 }

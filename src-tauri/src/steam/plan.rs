@@ -54,26 +54,11 @@ pub fn build_preview_plan(
         })
         .collect::<Vec<_>>();
 
-    let mut warnings = Vec::new();
-    if candidates.is_empty() {
-        warnings.push(
-            "No import candidates selected; applying this plan will not change shortcuts."
-                .to_string(),
-        );
-    }
-    if options.stop_steam || options.restart_steam {
-        warnings.push(
-            "Steam process control is opt-in. Review open downloads or cloud sync before applying."
-                .to_string(),
-        );
-    }
-
     Ok(PreviewPlan {
         user_steam_id: user.steam_id.clone(),
         changes,
         files_to_change: files.into_iter().collect(),
         backups,
-        warnings,
         requires_steam_restart: options.stop_steam || options.restart_steam,
     })
 }
@@ -100,11 +85,6 @@ fn candidate_changes(
         let shortcut_exists = existing_shortcut.is_some();
         changes.push(PlannedChange {
             id: format!("shortcut:{}", candidate.id),
-            title: format!(
-                "{} shortcut for {}",
-                if shortcut_exists { "Update" } else { "Add" },
-                candidate.name
-            ),
             game_name: candidate.name.clone(),
             file: shortcuts_path.to_path_buf(),
             kind: if shortcut_exists {
@@ -113,7 +93,9 @@ fn candidate_changes(
                 ChangeKind::AddShortcut
             },
             destructive: false,
-            details: format!("Create a non-Steam shortcut from {}", exe.display()),
+            artwork_source: None,
+            artwork_kind: None,
+            collection_name: None,
         });
     }
 
@@ -133,13 +115,13 @@ fn candidate_changes(
         });
     changes.push(PlannedChange {
         id: format!("collection:{}:{}", collection_name, candidate.id),
-        title: format!("Add {} to {} collection", candidate.name, collection_name),
         game_name: candidate.name.clone(),
         file: collections_path.to_path_buf(),
         kind: ChangeKind::UpdateCollections,
         destructive: already_in_collection,
-        details: "Only app-managed collections will be changed; user collections are preserved."
-            .to_string(),
+        artwork_source: None,
+        artwork_kind: None,
+        collection_name: Some(collection_name),
     });
 
     let app_id = super::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
@@ -166,17 +148,14 @@ fn candidate_changes(
         }
 
         changes.push(PlannedChange {
-            id: format!("artwork:{}:{}", candidate.id, asset.kind.label()),
-            title: format!("Set {} artwork for {}", asset.kind.label(), candidate.name),
+            id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
             game_name: candidate.name.clone(),
             file,
             kind: ChangeKind::WriteArtwork,
             destructive: asset.will_replace_existing,
-            details: format!(
-                "Use {} artwork from {}",
-                asset.kind.label(),
-                asset.source.label()
-            ),
+            artwork_source: Some(asset.source.clone()),
+            artwork_kind: Some(asset.kind.clone()),
+            collection_name: None,
         });
     }
 

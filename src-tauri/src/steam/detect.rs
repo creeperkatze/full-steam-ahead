@@ -28,6 +28,17 @@ pub fn find_user(steam_id: &str) -> AppResult<SteamUser> {
         .ok_or_else(|| AppError::UserNotFound(steam_id.to_string()))
 }
 
+pub fn find_user_with_install(steam_id: &str) -> AppResult<(SteamUser, PathBuf)> {
+    let install = detect_steam()?;
+    let install_path = install.install_path.clone();
+    let user = install
+        .users
+        .into_iter()
+        .find(|u| u.steam_id == steam_id)
+        .ok_or_else(|| AppError::UserNotFound(steam_id.to_string()))?;
+    Ok((user, install_path))
+}
+
 pub fn detect_steam() -> AppResult<SteamInstallation> {
     let install_path = find_steam_install_path().ok_or(AppError::SteamNotFound)?;
     tracing::debug!(path = %install_path.display(), "Steam installation found");

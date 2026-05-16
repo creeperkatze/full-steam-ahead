@@ -1,10 +1,11 @@
 use crate::{
     error::{io_context, AppError, AppResult},
-    models::{ApplyProgressEvent, ApplyRequest, ApplyResult},
+    models::{ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep},
     process,
     steam::{artwork, collections, detect, shortcuts, sources},
 };
 use std::{
+    collections::HashSet,
     fs,
     thread::sleep,
     time::{Duration, Instant},
@@ -22,12 +23,7 @@ pub fn apply_plan_with_progress(
         "Applying plan"
     );
 
-    let install = detect::detect_steam()?;
-    let user = install
-        .users
-        .into_iter()
-        .find(|user| user.steam_id == request.plan.user_steam_id)
-        .ok_or_else(|| AppError::UserNotFound(request.plan.user_steam_id.clone()))?;
+    let (user, install_path) = detect::find_user_with_install(&request.plan.user_steam_id)?;
 
     let artwork_steps = request.candidates.len().max(1);
     let total = usize::from(request.options.stop_steam)
@@ -43,7 +39,7 @@ pub fn apply_plan_with_progress(
         let _ = app.emit(
             "apply-progress",
             ApplyProgressEvent {
-                step: "Stopping Steam".into(),
+                step: ApplyStep::StoppingSteam,
                 current,
                 total,
             },
@@ -57,7 +53,7 @@ pub fn apply_plan_with_progress(
     let _ = app.emit(
         "apply-progress",
         ApplyProgressEvent {
-            step: "Creating backups".into(),
+            step: ApplyStep::CreatingBackups,
             current,
             total,
         },
@@ -76,14 +72,14 @@ pub fn apply_plan_with_progress(
     }
 
     fs::create_dir_all(&user.grid_path).map_err(io_context(&user.grid_path))?;
-    let mut skipped_changes = Vec::new();
+    let mut skipped_change_ids = HashSet::new();
 
     if request.candidates.is_empty() {
         current += 1;
         let _ = app.emit(
             "apply-progress",
             ApplyProgressEvent {
-                step: "Applying artwork".into(),
+                step: ApplyStep::ApplyingArtwork { game_name: None },
                 current,
                 total,
             },
@@ -94,7 +90,9 @@ pub fn apply_plan_with_progress(
             let _ = app.emit(
                 "apply-progress",
                 ApplyProgressEvent {
-                    step: format!("Downloading artwork for {}", candidate.name),
+                    step: ApplyStep::ApplyingArtwork {
+                        game_name: Some(candidate.name.clone()),
+                    },
                     current,
                     total,
                 },
@@ -104,7 +102,9 @@ pub fn apply_plan_with_progress(
                 candidate,
                 request.options.replace_existing_artwork,
             )?;
-            skipped_changes.extend(candidate_skipped);
+            for skip in candidate_skipped {
+                skipped_change_ids.insert(skip.change_id);
+            }
         }
     }
 
@@ -112,7 +112,7 @@ pub fn apply_plan_with_progress(
     let _ = app.emit(
         "apply-progress",
         ApplyProgressEvent {
-            step: "Updating shortcuts".into(),
+            step: ApplyStep::UpdatingShortcuts,
             current,
             total,
         },
@@ -131,7 +131,7 @@ pub fn apply_plan_with_progress(
     let _ = app.emit(
         "apply-progress",
         ApplyProgressEvent {
-            step: "Updating collections".into(),
+            step: ApplyStep::UpdatingCollections,
             current,
             total,
         },
@@ -143,19 +143,25 @@ pub fn apply_plan_with_progress(
         let _ = app.emit(
             "apply-progress",
             ApplyProgressEvent {
-                step: "Restarting Steam".into(),
+                step: ApplyStep::RestartingSteam,
                 current,
                 total,
             },
         );
         tracing::info!("Restarting Steam");
-        let _ = process::restart_steam(&install.install_path);
+        let _ = process::restart_steam(&install_path);
     }
 
+    let applied_changes = request
+        .plan
+        .changes
+        .into_iter()
+        .filter(|c| !skipped_change_ids.contains(&c.id))
+        .collect();
+
     Ok(ApplyResult {
-        applied_changes: request.plan.changes,
+        applied_changes,
         backups_created,
-        skipped_changes,
     })
 }
 

@@ -43,11 +43,14 @@ const games = computed(() => {
 		if (change.kind === 'addShortcut' || change.kind === 'updateShortcut') {
 			game.shortcut = change
 		} else if (change.kind === 'updateCollections') {
-			game.collections.push({ name: collectionName(change), destructive: change.destructive })
+			game.collections.push({
+				name: change.collectionName ?? 'Managed',
+				destructive: change.destructive,
+			})
 		} else if (change.kind === 'writeArtwork') {
 			game.artwork.push({
-				kind: artworkKind(change),
-				source: artworkSource(change),
+				kind: titleCase(change.artworkKind ?? 'artwork'),
+				source: sourceLabel(change.artworkSource ?? ''),
 				destructive: change.destructive,
 			})
 		}
@@ -74,21 +77,6 @@ const summary = computed(() => {
 
 function changeCount(game: GameReview) {
 	return Number(Boolean(game.shortcut)) + game.collections.length + game.artwork.length
-}
-
-function collectionName(change: PlannedChange) {
-	const match = change.title.match(/to (.+) collection$/)
-	return match?.[1] ?? 'Managed'
-}
-
-function artworkKind(change: PlannedChange) {
-	const match = change.title.match(/^Set (\w+) artwork/)
-	return titleCase(match?.[1] ?? 'Artwork')
-}
-
-function artworkSource(change: PlannedChange) {
-	const match = change.details.match(/from (\w+)/)
-	return sourceLabel(match?.[1] ?? '')
 }
 
 function sourceLabel(source: string) {

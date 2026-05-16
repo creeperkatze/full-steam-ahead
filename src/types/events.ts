@@ -4,8 +4,16 @@ export interface ScanProgressEvent {
 	found: number
 }
 
+export type ApplyStep =
+	| { kind: 'stoppingSteam' }
+	| { kind: 'creatingBackups' }
+	| { kind: 'applyingArtwork'; gameName: string | null }
+	| { kind: 'updatingShortcuts' }
+	| { kind: 'updatingCollections' }
+	| { kind: 'restartingSteam' }
+
 export interface ApplyProgressEvent {
-	step: string
+	step: ApplyStep
 	current: number
 	total: number
 }

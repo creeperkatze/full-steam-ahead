@@ -1,12 +1,29 @@
 <script setup lang="ts">
 import { Check, Loader2 } from '@lucide/vue'
 
-import type { ApplyProgressEvent, ApplyResult } from '../../../types'
+import type { ApplyProgressEvent, ApplyResult, ApplyStep } from '../../../types'
 
 defineProps<{
 	applyResult: ApplyResult | null
 	applyProgress: ApplyProgressEvent | null
 }>()
+
+function stepLabel(step: ApplyStep): string {
+	switch (step.kind) {
+		case 'stoppingSteam':
+			return 'Stopping Steam'
+		case 'creatingBackups':
+			return 'Creating backups'
+		case 'applyingArtwork':
+			return step.gameName ? `Downloading artwork for ${step.gameName}` : 'Applying artwork'
+		case 'updatingShortcuts':
+			return 'Updating shortcuts'
+		case 'updatingCollections':
+			return 'Updating collections'
+		case 'restartingSteam':
+			return 'Restarting Steam'
+	}
+}
 </script>
 
 <template>
@@ -19,7 +36,7 @@ defineProps<{
 			<div class="w-full max-w-sm">
 				<div class="mb-3 flex items-center gap-3">
 					<Loader2 :size="18" class="shrink-0 animate-spin text-accent" />
-					<strong class="min-w-0 flex-1 truncate">{{ applyProgress.step }}</strong>
+					<strong class="min-w-0 flex-1 truncate">{{ stepLabel(applyProgress.step) }}</strong>
 					<span class="shrink-0 text-xs text-secondary"
 						>{{ applyProgress.current }} / {{ applyProgress.total }}</span
 					>

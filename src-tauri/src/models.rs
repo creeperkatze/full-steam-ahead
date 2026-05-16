@@ -215,7 +215,7 @@ pub enum ArtworkKind {
 }
 
 impl ArtworkKind {
-    pub fn label(&self) -> &'static str {
+    pub fn slug(&self) -> &'static str {
         match self {
             ArtworkKind::Header => "header",
             ArtworkKind::Capsule => "capsule",
@@ -235,17 +235,6 @@ pub enum ArtworkSource {
     LocalFile,
 }
 
-impl ArtworkSource {
-    pub fn label(&self) -> &'static str {
-        match self {
-            ArtworkSource::ExistingCustom => "existingCustom",
-            ArtworkSource::OfficialSteam => "officialSteam",
-            ArtworkSource::SteamGridDb => "steamGridDb",
-            ArtworkSource::LocalFile => "localFile",
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPlan {
@@ -253,7 +242,6 @@ pub struct PreviewPlan {
     pub changes: Vec<PlannedChange>,
     pub files_to_change: Vec<PathBuf>,
     pub backups: Vec<BackupPlan>,
-    pub warnings: Vec<String>,
     pub requires_steam_restart: bool,
 }
 
@@ -268,12 +256,13 @@ pub struct BackupPlan {
 #[serde(rename_all = "camelCase")]
 pub struct PlannedChange {
     pub id: String,
-    pub title: String,
     pub game_name: String,
     pub file: PathBuf,
     pub kind: ChangeKind,
     pub destructive: bool,
-    pub details: String,
+    pub artwork_source: Option<ArtworkSource>,
+    pub artwork_kind: Option<ArtworkKind>,
+    pub collection_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -313,7 +302,6 @@ pub struct UserSettings {
 pub struct ApplyResult {
     pub applied_changes: Vec<PlannedChange>,
     pub backups_created: Vec<PathBuf>,
-    pub skipped_changes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -325,9 +313,20 @@ pub struct ScanProgressEvent {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "kind")]
+pub enum ApplyStep {
+    StoppingSteam,
+    CreatingBackups,
+    ApplyingArtwork { game_name: Option<String> },
+    UpdatingShortcuts,
+    UpdatingCollections,
+    RestartingSteam,
+}
+
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplyProgressEvent {
-    pub step: String,
+    pub step: ApplyStep,
     pub current: usize,
     pub total: usize,
 }
