@@ -28,7 +28,8 @@ pub struct CommandError {
 
 impl From<AppError> for CommandError {
     fn from(value: AppError) -> Self {
-        tracing::error!(error = %value, "Command failed");
+        let span_trace = tracing_error::SpanTrace::capture();
+        tracing::error!(error = %value, span_trace = %span_trace, "Command failed");
         Self {
             message: value.to_string(),
         }

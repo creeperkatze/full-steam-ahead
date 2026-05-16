@@ -23,7 +23,7 @@ fn init_logging() -> WorkerGuard {
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+        .unwrap_or_else(|_| EnvFilter::new("full_steam_ahead_lib=info"));
 
     let stderr_layer = if cfg!(debug_assertions) {
         Some(fmt::layer().with_writer(std::io::stderr))
@@ -35,6 +35,7 @@ fn init_logging() -> WorkerGuard {
         .with(filter)
         .with(fmt::layer().with_writer(non_blocking).with_ansi(false))
         .with(stderr_layer)
+        .with(tracing_error::ErrorLayer::default())
         .init();
 
     guard

@@ -208,7 +208,7 @@ pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<Im
 }
 
 #[tauri::command]
-#[instrument(skip(app), fields(user = %request.plan.user_steam_id, candidates = request.candidates.len()))]
+#[instrument(skip(app, request), fields(user = %request.plan.user_steam_id, candidates = request.candidates.len()))]
 pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult<ApplyResult> {
     let result = steam::apply::apply_plan_with_progress(&app, request).map_err(Into::into);
     if let Ok(ref r) = result {
