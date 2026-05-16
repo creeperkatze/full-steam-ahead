@@ -34,3 +34,10 @@ export interface ApplyResult {
 	appliedChanges: PlannedChange[]
 	backupsCreated: string[]
 }
+
+export interface BackupInfo {
+	id: string
+	createdAt: string
+	fileCount: number
+	sizeBytes: number
+}

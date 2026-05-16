@@ -1,8 +1,9 @@
 use crate::{
+    backups,
     error::{io_context, AppError, CommandError},
     models::{
-        ApplyRequest, ApplyResult, ImportCandidate, ManualImportRequest, Options, PreviewPlan,
-        ScanRequest, ShortcutEntry, SteamInstallation, UserSettings,
+        ApplyRequest, ApplyResult, BackupInfo, ImportCandidate, ManualImportRequest, Options,
+        PreviewPlan, ScanRequest, ShortcutEntry, SteamInstallation, UserSettings,
     },
     steam,
 };
@@ -130,4 +131,19 @@ pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult
 pub fn close_app(app: tauri::AppHandle) {
     info!("Application closing");
     app.exit(0);
+}
+
+#[tauri::command]
+#[instrument]
+pub fn list_backups() -> CommandResult<Vec<BackupInfo>> {
+    backups::list().map_err(Into::into)
+}
+
+#[tauri::command]
+#[instrument(fields(backup = %backup_id, user = %user_steam_id))]
+pub fn restore_backup(backup_id: String, user_steam_id: String) -> CommandResult<usize> {
+    let user = steam::detect::find_user(&user_steam_id)?;
+    let restored = backups::restore(&backup_id, &user)?;
+    info!(backup_id, restored, "Backup restored via command");
+    Ok(restored)
 }

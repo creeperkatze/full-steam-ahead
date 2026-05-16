@@ -304,6 +304,15 @@ pub struct ApplyResult {
     pub backups_created: Vec<PathBuf>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupInfo {
+    pub id: String,
+    pub created_at: String,
+    pub file_count: usize,
+    pub size_bytes: u64,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanProgressEvent {

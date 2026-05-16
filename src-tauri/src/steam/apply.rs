@@ -1,4 +1,5 @@
 use crate::{
+    backups,
     error::{io_context, AppError, AppResult},
     models::{ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep},
     process,
@@ -69,6 +70,9 @@ pub fn apply_plan_with_progress(
         fs::copy(&backup.source, &backup.destination).map_err(io_context(&backup.destination))?;
         tracing::debug!(src = %backup.source.display(), dst = %backup.destination.display(), "Backup created");
         backups_created.push(backup.destination.clone());
+    }
+    if let Some(backup_dir) = backups_created.first().and_then(|p| p.parent()) {
+        backups::write_manifest(backup_dir, &request.plan.backups);
     }
 
     fs::create_dir_all(&user.grid_path).map_err(io_context(&user.grid_path))?;

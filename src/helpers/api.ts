@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 import type {
 	ApplyResult,
+	BackupInfo,
 	ImportCandidate,
 	ManualImportRequest,
 	Options,
@@ -25,4 +26,7 @@ export const api = {
 	loadSettings: () => invoke<Pick<Options, 'stopSteam' | 'restartSteam'>>('load_settings'),
 	saveSettings: (settings: Pick<Options, 'stopSteam' | 'restartSteam'>) =>
 		invoke<void>('save_settings', { settings }),
+	listBackups: () => invoke<BackupInfo[]>('list_backups'),
+	restoreBackup: (backupId: string, userSteamId: string) =>
+		invoke<number>('restore_backup', { backupId, userSteamId }),
 }
