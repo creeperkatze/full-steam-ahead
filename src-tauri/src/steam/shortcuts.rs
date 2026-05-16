@@ -386,7 +386,10 @@ mod tests {
     #[test]
     fn append_adds_new_shortcut() {
         let mut existing = Vec::new();
-        append_missing(&mut existing, vec![make_shortcut("New Game", "\"new.exe\"")]);
+        append_missing(
+            &mut existing,
+            vec![make_shortcut("New Game", "\"new.exe\"")],
+        );
         assert_eq!(existing.len(), 1);
         assert_eq!(existing[0].app_name, "New Game");
     }

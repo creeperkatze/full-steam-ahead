@@ -417,7 +417,12 @@ mod tests {
 
     #[test]
     fn shortcut_unchanged_when_all_fields_match() {
-        let candidate = make_candidate("game.exe", "C:\\Games", Some("--flag"), vec!["Epic".to_string()]);
+        let candidate = make_candidate(
+            "game.exe",
+            "C:\\Games",
+            Some("--flag"),
+            vec!["Epic".to_string()],
+        );
         let shortcut = make_shortcut_matching(&candidate);
         assert!(shortcut_is_unchanged(&shortcut, &candidate));
     }
