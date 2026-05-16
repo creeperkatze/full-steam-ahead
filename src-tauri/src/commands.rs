@@ -203,24 +203,31 @@ fn candidate_changes(
     let mut artwork_files = Vec::new();
 
     let exe = candidate.effective_executable();
-    let shortcut_exists = steam::shortcuts::shortcut_exists(existing_shortcuts, &candidate.name);
-    changes.push(PlannedChange {
-        id: format!("shortcut:{}", candidate.id),
-        title: format!(
-            "{} shortcut for {}",
-            if shortcut_exists { "Update" } else { "Add" },
-            candidate.name
-        ),
-        game_name: candidate.name.clone(),
-        file: shortcuts_path.to_path_buf(),
-        kind: if shortcut_exists {
-            ChangeKind::UpdateShortcut
-        } else {
-            ChangeKind::AddShortcut
-        },
-        destructive: false,
-        details: format!("Create a non-Steam shortcut from {}", exe.display()),
-    });
+
+    let existing_shortcut = existing_shortcuts
+        .iter()
+        .find(|s| s.app_name.eq_ignore_ascii_case(&candidate.name));
+    let shortcut_unchanged = existing_shortcut.is_some_and(|s| shortcut_is_unchanged(s, candidate));
+    if !shortcut_unchanged {
+        let shortcut_exists = existing_shortcut.is_some();
+        changes.push(PlannedChange {
+            id: format!("shortcut:{}", candidate.id),
+            title: format!(
+                "{} shortcut for {}",
+                if shortcut_exists { "Update" } else { "Add" },
+                candidate.name
+            ),
+            game_name: candidate.name.clone(),
+            file: shortcuts_path.to_path_buf(),
+            kind: if shortcut_exists {
+                ChangeKind::UpdateShortcut
+            } else {
+                ChangeKind::AddShortcut
+            },
+            destructive: false,
+            details: format!("Create a non-Steam shortcut from {}", exe.display()),
+        });
+    }
 
     let collection_name = candidate.source.collection_name();
     let already_in_collection = existing_collection_app_ids
@@ -249,15 +256,34 @@ fn candidate_changes(
 
     let app_id = steam::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
     for asset in steam::artwork::selected_artwork_assets(candidate) {
+        let is_official_steam = asset.source == crate::models::ArtworkSource::OfficialSteam;
+
+        // Skip if apply would skip it too (file exists, replace disabled, not a local override)
+        if asset.will_replace_existing
+            && !options.replace_existing_artwork
+            && !is_official_steam
+            && asset.source != crate::models::ArtworkSource::LocalFile
+        {
+            continue;
+        }
+
         let file = steam::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
-        artwork_files.push(file.clone());
+        if asset.will_replace_existing {
+            artwork_files.push(file.clone());
+        }
+
+        // Official Steam artwork re-downloads the same content
+        if is_official_steam && asset.will_replace_existing {
+            continue;
+        }
+
         changes.push(PlannedChange {
             id: format!("artwork:{}:{}", candidate.id, asset.kind.label()),
             title: format!("Set {} artwork for {}", asset.kind.label(), candidate.name),
             game_name: candidate.name.clone(),
             file,
             kind: ChangeKind::WriteArtwork,
-            destructive: asset.will_replace_existing && options.replace_existing_artwork,
+            destructive: asset.will_replace_existing,
             details: format!(
                 "Use {} artwork from {}",
                 asset.kind.label(),
@@ -267,6 +293,19 @@ fn candidate_changes(
     }
 
     (changes, artwork_files)
+}
+
+fn shortcut_is_unchanged(
+    existing: &crate::models::ShortcutEntry,
+    candidate: &ImportCandidate,
+) -> bool {
+    let exe = format!("\"{}\"", candidate.effective_executable().display());
+    let start_dir = format!("\"{}\"", candidate.effective_start_dir().display());
+    let launch_options = candidate.effective_launch_options().unwrap_or("");
+    existing.exe == exe
+        && existing.start_dir == start_dir
+        && existing.launch_options == launch_options
+        && existing.tags == candidate.tags
 }
 
 #[tauri::command]
