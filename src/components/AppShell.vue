@@ -130,14 +130,14 @@ onMounted(async () => {
 		<div class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-end gap-3">
 			<div class="flex min-w-0 items-center gap-2">
 				<span class="shrink-0 text-sm text-secondary">v{{ version }}</span>
-				<span v-if="updateChecking" class="flex min-w-0 items-center gap-1 text-xs text-secondary">
+				<span v-if="updateChecking" class="flex min-w-0 items-center gap-1 text-sm text-secondary">
 					<Loader2 class="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
 					<span class="truncate">Checking for updates</span>
 				</span>
 				<button
 					v-else-if="isLatest"
 					type="button"
-					class="flex min-w-0 cursor-pointer items-center gap-1 text-xs text-green-500 transition-colors hover:text-green-400"
+					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-green-500 transition-colors hover:text-green-400"
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
 				>
 					<CheckCircle2 class="size-3.5 shrink-0" aria-hidden="true" />
@@ -146,7 +146,7 @@ onMounted(async () => {
 				<button
 					v-else-if="latestVersion"
 					type="button"
-					class="flex min-w-0 cursor-pointer items-center gap-1 text-xs text-yellow-500 transition-colors hover:text-yellow-400"
+					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-yellow-500 transition-colors hover:text-yellow-400"
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
 				>
 					<Clock class="size-3.5 shrink-0" aria-hidden="true" />
