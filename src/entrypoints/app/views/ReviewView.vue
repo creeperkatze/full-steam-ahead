@@ -201,9 +201,9 @@ function fileName(path: string) {
 							{{ coll.name }}
 							<template #trailing>
 								<span v-if="coll.destructive" class="shrink-0 text-xs text-secondary"
-									>Use existing</span
+									>Already added</span
 								>
-								<span v-else class="shrink-0 text-xs text-accent">New</span>
+								<span v-else class="shrink-0 text-xs text-accent">Add</span>
 							</template>
 						</ItemRow>
 					</div>
