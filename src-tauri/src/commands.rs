@@ -223,13 +223,18 @@ fn candidate_changes(
     });
 
     let collection_name = candidate.source.collection_name();
-    let collection_app_id = steam::non_steam_app_id(
-        &format!("\"{}\"", candidate.effective_executable().display()),
-        &candidate.name,
-    );
     let already_in_collection = existing_collection_app_ids
         .get(&collection_name)
-        .is_some_and(|ids| ids.contains(&collection_app_id));
+        .is_some_and(|ids| {
+            // Check both the effective exe and the raw exe path so that games previously
+            // imported without Via Launcher are still recognised after the toggle changes.
+            [candidate.effective_executable(), &candidate.executable_path]
+                .iter()
+                .any(|p| {
+                    let id = steam::non_steam_app_id(&format!("\"{}\"", p.display()), &candidate.name);
+                    ids.contains(&id)
+                })
+        });
     changes.push(PlannedChange {
         id: format!("collection:{}:{}", collection_name, candidate.id),
         title: format!("Add {} to {} collection", candidate.name, collection_name),
