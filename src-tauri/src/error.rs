@@ -28,6 +28,7 @@ pub struct CommandError {
 
 impl From<AppError> for CommandError {
     fn from(value: AppError) -> Self {
+        tracing::error!(error = %value, "Command failed");
         Self {
             message: value.to_string(),
         }

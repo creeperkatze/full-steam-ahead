@@ -22,6 +22,8 @@ struct LoginUser {
 
 pub fn detect_steam() -> AppResult<SteamInstallation> {
     let install_path = find_steam_install_path().ok_or(AppError::SteamNotFound)?;
+    tracing::debug!(path = %install_path.display(), "Steam installation found");
+
     let userdata = install_path.join("userdata");
     let login_users = read_login_users(&install_path);
     let mut users = Vec::new();
@@ -59,6 +61,7 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
     }
 
     users.sort_by(|a, b| a.steam_id.cmp(&b.steam_id));
+    tracing::debug!(users = users.len(), "Steam users discovered");
 
     Ok(SteamInstallation {
         install_path,

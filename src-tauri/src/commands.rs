@@ -13,15 +13,22 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::Manager;
+use tracing::{debug, info, instrument, warn};
 
 type CommandResult<T> = Result<T, CommandError>;
 
 #[tauri::command]
+#[instrument]
 pub fn detect_steam() -> CommandResult<SteamInstallation> {
-    steam::detect::detect_steam().map_err(Into::into)
+    let result = steam::detect::detect_steam().map_err(Into::into);
+    if let Ok(ref install) = result {
+        info!(users = install.users.len(), running = install.running, "Steam detected");
+    }
+    result
 }
 
 #[tauri::command]
+#[instrument]
 pub fn read_shortcuts_for_user(
     user_steam_id: String,
 ) -> CommandResult<Vec<crate::models::ShortcutEntry>> {
@@ -32,10 +39,15 @@ pub fn read_shortcuts_for_user(
         .find(|user| user.steam_id == user_steam_id)
         .ok_or_else(|| AppError::UserNotFound(user_steam_id.clone()))?;
 
-    steam::shortcuts::read_shortcuts(&user.shortcuts_path).map_err(Into::into)
+    let result = steam::shortcuts::read_shortcuts(&user.shortcuts_path).map_err(Into::into);
+    if let Ok(ref shortcuts) = result {
+        debug!(count = shortcuts.len(), "Shortcuts loaded");
+    }
+    result
 }
 
 #[tauri::command]
+#[instrument(skip(app), fields(user = %request.user_steam_id, sources = request.include_sources.len()))]
 pub fn scan_sources(
     app: tauri::AppHandle,
     request: ScanRequest,
@@ -47,10 +59,15 @@ pub fn scan_sources(
         .find(|user| user.steam_id == request.user_steam_id)
         .ok_or_else(|| AppError::UserNotFound(request.user_steam_id.clone()))?;
 
-    steam::sources::scan_sources_with_progress(&app, user, &request).map_err(Into::into)
+    let result = steam::sources::scan_sources_with_progress(&app, user, &request).map_err(Into::into);
+    if let Ok(ref candidates) = result {
+        info!(total = candidates.len(), "Scan complete");
+    }
+    result
 }
 
 #[tauri::command]
+#[instrument(skip(app, candidates, options), fields(user = %user_steam_id, candidates = candidates.len()))]
 pub fn create_preview_plan(
     app: tauri::AppHandle,
     user_steam_id: String,
@@ -126,17 +143,20 @@ pub fn create_preview_plan(
         );
     }
 
-    Ok(PreviewPlan {
+    let plan = PreviewPlan {
         user_steam_id,
         changes,
         files_to_change: files.into_iter().collect(),
         backups,
         warnings,
         requires_steam_restart: options.stop_steam || options.restart_steam,
-    })
+    };
+    info!(changes = plan.changes.len(), backups = plan.backups.len(), warnings = plan.warnings.len(), "Preview plan created");
+    Ok(plan)
 }
 
 #[tauri::command]
+#[instrument(skip_all)]
 pub fn load_settings(app: tauri::AppHandle) -> CommandResult<UserSettings> {
     let path = settings_path(&app)?;
     if !path.exists() {
@@ -147,6 +167,7 @@ pub fn load_settings(app: tauri::AppHandle) -> CommandResult<UserSettings> {
 }
 
 #[tauri::command]
+#[instrument(skip_all)]
 pub fn save_settings(app: tauri::AppHandle, settings: UserSettings) -> CommandResult<()> {
     let path = settings_path(&app)?;
     if let Some(parent) = path.parent() {
@@ -171,6 +192,7 @@ fn settings_path(app: &tauri::AppHandle) -> CommandResult<PathBuf> {
 }
 
 #[tauri::command]
+#[instrument(fields(name = ?request.display_name, exe = %request.executable_path.display()))]
 pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<ImportCandidate> {
     let install = steam::detect::detect_steam()?;
     let user = install
@@ -186,8 +208,21 @@ pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<Im
 }
 
 #[tauri::command]
+#[instrument(skip(app), fields(user = %request.plan.user_steam_id, candidates = request.candidates.len()))]
 pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult<ApplyResult> {
-    steam::apply::apply_plan_with_progress(&app, request).map_err(Into::into)
+    let result = steam::apply::apply_plan_with_progress(&app, request).map_err(Into::into);
+    if let Ok(ref r) = result {
+        info!(
+            applied = r.applied_changes.len(),
+            skipped = r.skipped_changes.len(),
+            backups = r.backups_created.len(),
+            "Plan applied"
+        );
+        for msg in &r.skipped_changes {
+            warn!(reason = %msg, "Change skipped");
+        }
+    }
+    result
 }
 
 fn candidate_changes(
@@ -309,6 +344,8 @@ fn shortcut_is_unchanged(
 }
 
 #[tauri::command]
+#[instrument(skip_all)]
 pub fn close_app(app: tauri::AppHandle) {
+    info!("Application closing");
     app.exit(0);
 }

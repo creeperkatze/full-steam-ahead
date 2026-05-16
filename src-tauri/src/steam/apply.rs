@@ -15,6 +15,13 @@ pub fn apply_plan_with_progress(
     app: &tauri::AppHandle,
     request: ApplyRequest,
 ) -> AppResult<ApplyResult> {
+    tracing::info!(
+        candidates = request.candidates.len(),
+        stop_steam = request.options.stop_steam,
+        restart_steam = request.options.restart_steam,
+        "Applying plan"
+    );
+
     let install = detect::detect_steam()?;
     let user = install
         .users
@@ -41,7 +48,9 @@ pub fn apply_plan_with_progress(
                 total,
             },
         );
+        tracing::info!("Stopping Steam");
         stop_steam()?;
+        tracing::info!("Steam stopped");
     }
 
     current += 1;
@@ -62,6 +71,7 @@ pub fn apply_plan_with_progress(
             fs::create_dir_all(parent).map_err(io_context(parent))?;
         }
         fs::copy(&backup.source, &backup.destination).map_err(io_context(&backup.destination))?;
+        tracing::debug!(src = %backup.source.display(), dst = %backup.destination.display(), "Backup created");
         backups_created.push(backup.destination.clone());
     }
 
@@ -138,6 +148,7 @@ pub fn apply_plan_with_progress(
                 total,
             },
         );
+        tracing::info!("Restarting Steam");
         let _ = process::restart_steam(&install.install_path);
     }
 
@@ -162,6 +173,7 @@ fn stop_steam() -> AppResult<()> {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
         let details = if stderr.is_empty() { stdout } else { stderr };
+        tracing::error!(%details, "Steam stop command failed");
         return Err(AppError::Message(format!(
             "Steam could not be stopped before applying. {details}"
         )));

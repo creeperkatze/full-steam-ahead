@@ -33,6 +33,12 @@ pub fn scan_sources_with_progress(
         let found_count = found.len();
         candidates.extend(found);
 
+        if found_count == 0 {
+            tracing::debug!(source = %source_name, "No games found");
+        } else {
+            tracing::info!(source = %source_name, found = found_count, "Games found");
+        }
+
         let _ = app.emit(
             "scan-progress",
             ScanProgressEvent {

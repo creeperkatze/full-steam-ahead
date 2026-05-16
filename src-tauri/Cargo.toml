@@ -29,6 +29,9 @@ tauri = { version = "2.0.0", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2.0.0"
 tauri-plugin-opener = "2"
 thiserror = "1"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 walkdir = "2"
 
 [lints.clippy]

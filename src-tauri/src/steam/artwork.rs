@@ -114,6 +114,7 @@ pub fn apply_candidate_artwork(
     for asset in selected_artwork_assets(candidate) {
         let target = target_path(grid_path, shortcut_app_id, &asset.kind, &asset.path_or_url);
         if target.exists() && !replace_existing && asset.source != ArtworkSource::LocalFile {
+            tracing::debug!(kind = ?asset.kind, game = %candidate.name, "Preserving existing artwork");
             skipped.push(format!(
                 "Preserved existing {:?} artwork for {}",
                 asset.kind, candidate.name
@@ -123,7 +124,9 @@ pub fn apply_candidate_artwork(
 
         match asset.source {
             ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb => {
+                tracing::debug!(kind = ?asset.kind, game = %candidate.name, url = %asset.path_or_url, "Downloading artwork");
                 if let Err(error) = download_asset(&asset.path_or_url, &target) {
+                    tracing::warn!(kind = ?asset.kind, game = %candidate.name, %error, "Artwork download failed");
                     skipped.push(format!(
                         "Could not download {:?} artwork for {}: {}",
                         asset.kind, candidate.name, error
@@ -133,6 +136,7 @@ pub fn apply_candidate_artwork(
             ArtworkSource::LocalFile => {
                 let source = Path::new(&asset.path_or_url);
                 if let Err(error) = fs::copy(source, &target).map_err(io_context(&target)) {
+                    tracing::warn!(kind = ?asset.kind, game = %candidate.name, %error, "Artwork copy failed");
                     skipped.push(format!(
                         "Could not copy {:?} artwork for {}: {}",
                         asset.kind, candidate.name, error
