@@ -2,6 +2,7 @@ mod commands;
 mod error;
 mod importers;
 mod models;
+mod paths;
 mod process;
 mod steam;
 
@@ -14,10 +15,7 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn init_logging() -> WorkerGuard {
-    let log_dir = dirs::data_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("Full Steam Ahead")
-        .join("logs");
+    let log_dir = paths::app_data_dir().join("logs");
 
     let session_filename = format!(
         "session_{}.log",

@@ -8,7 +8,6 @@ use crate::{
 };
 use chrono::Utc;
 use std::{fs, path::PathBuf};
-use tauri::Manager;
 use tracing::{debug, info, instrument, warn};
 
 type CommandResult<T> = Result<T, CommandError>;
@@ -54,21 +53,14 @@ pub fn scan_sources(
 }
 
 #[tauri::command]
-#[instrument(skip(app, candidates, options), fields(user = %user_steam_id, candidates = candidates.len()))]
+#[instrument(skip(candidates, options), fields(user = %user_steam_id, candidates = candidates.len()))]
 pub fn create_preview_plan(
-    app: tauri::AppHandle,
     user_steam_id: String,
     candidates: Vec<ImportCandidate>,
     options: Options,
 ) -> CommandResult<PreviewPlan> {
     let user = steam::detect::find_user(&user_steam_id)?;
-    let app_data_dir = app.path().app_data_dir().map_err(|_| {
-        AppError::Message("Could not resolve app data directory for backups.".to_string())
-    })?;
-    let backup_root = app_data_dir
-        .parent()
-        .unwrap_or(&app_data_dir)
-        .join("Full Steam Ahead")
+    let backup_root = crate::paths::app_data_dir()
         .join("backups")
         .join(Utc::now().format("%Y%m%d-%H%M%S").to_string());
 
@@ -84,8 +76,8 @@ pub fn create_preview_plan(
 
 #[tauri::command]
 #[instrument(skip_all)]
-pub fn load_settings(app: tauri::AppHandle) -> CommandResult<UserSettings> {
-    let path = settings_path(&app)?;
+pub fn load_settings() -> CommandResult<UserSettings> {
+    let path = settings_path();
     if !path.exists() {
         return Ok(UserSettings::default());
     }
@@ -95,8 +87,8 @@ pub fn load_settings(app: tauri::AppHandle) -> CommandResult<UserSettings> {
 
 #[tauri::command]
 #[instrument(skip_all)]
-pub fn save_settings(app: tauri::AppHandle, settings: UserSettings) -> CommandResult<()> {
-    let path = settings_path(&app)?;
+pub fn save_settings(settings: UserSettings) -> CommandResult<()> {
+    let path = settings_path();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(io_context(parent))?;
     }
@@ -106,16 +98,8 @@ pub fn save_settings(app: tauri::AppHandle, settings: UserSettings) -> CommandRe
     Ok(())
 }
 
-fn settings_path(app: &tauri::AppHandle) -> CommandResult<PathBuf> {
-    let base = app
-        .path()
-        .app_data_dir()
-        .map_err(|_| AppError::Message("Could not resolve app data directory.".to_string()))?;
-    Ok(base
-        .parent()
-        .unwrap_or(&base)
-        .join("Full Steam Ahead")
-        .join("settings.json"))
+fn settings_path() -> PathBuf {
+    crate::paths::app_data_dir().join("settings.json")
 }
 
 #[tauri::command]
