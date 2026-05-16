@@ -359,3 +359,124 @@ pub fn close_app(app: tauri::AppHandle) {
     info!("Application closing");
     app.exit(0);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{ArtworkMode, ArtworkPlan, ImportSource};
+
+    fn make_candidate(
+        exe: &str,
+        start_dir: &str,
+        launch_options: Option<&str>,
+        tags: Vec<String>,
+    ) -> ImportCandidate {
+        ImportCandidate {
+            id: "test".to_string(),
+            source: ImportSource::Manual,
+            name: "Test Game".to_string(),
+            executable_path: PathBuf::from(exe),
+            start_dir: PathBuf::from(start_dir),
+            launch_options: launch_options.map(String::from),
+            existing_app_id: None,
+            matched_steam_app_id: None,
+            tags,
+            artwork: ArtworkPlan {
+                mode: ArtworkMode::PreserveExisting,
+                existing: Vec::new(),
+                proposed: Vec::new(),
+            },
+            url_scheme: None,
+            launcher_path: None,
+            use_launcher_url: false,
+        }
+    }
+
+    fn make_shortcut_matching(candidate: &ImportCandidate) -> crate::models::ShortcutEntry {
+        crate::models::ShortcutEntry {
+            app_id: 0,
+            app_name: candidate.name.clone(),
+            exe: format!("\"{}\"", candidate.effective_executable().display()),
+            start_dir: format!("\"{}\"", candidate.effective_start_dir().display()),
+            icon: String::new(),
+            shortcut_path: String::new(),
+            launch_options: candidate
+                .effective_launch_options()
+                .unwrap_or("")
+                .to_string(),
+            is_hidden: false,
+            allow_desktop_config: true,
+            allow_overlay: true,
+            open_vr: false,
+            devkit: false,
+            devkit_game_id: String::new(),
+            last_play_time: 0,
+            tags: candidate.tags.clone(),
+        }
+    }
+
+    #[test]
+    fn shortcut_unchanged_when_all_fields_match() {
+        let candidate = make_candidate("game.exe", "C:\\Games", Some("--flag"), vec!["Epic".to_string()]);
+        let shortcut = make_shortcut_matching(&candidate);
+        assert!(shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_changed_when_exe_differs() {
+        let candidate = make_candidate("game.exe", "C:\\Games", None, vec![]);
+        let mut shortcut = make_shortcut_matching(&candidate);
+        shortcut.exe = "\"other.exe\"".to_string();
+        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_changed_when_start_dir_differs() {
+        let candidate = make_candidate("game.exe", "C:\\Games", None, vec![]);
+        let mut shortcut = make_shortcut_matching(&candidate);
+        shortcut.start_dir = "\"C:\\Other\"".to_string();
+        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_changed_when_launch_options_differ() {
+        let candidate = make_candidate("game.exe", "C:\\Games", Some("--new"), vec![]);
+        let mut shortcut = make_shortcut_matching(&candidate);
+        shortcut.launch_options = "--old".to_string();
+        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_changed_when_tags_differ() {
+        let candidate = make_candidate("game.exe", "C:\\Games", None, vec!["Epic".to_string()]);
+        let mut shortcut = make_shortcut_matching(&candidate);
+        shortcut.tags = vec!["GOG".to_string()];
+        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_changed_when_empty_options_vs_some() {
+        let candidate = make_candidate("game.exe", "C:\\Games", Some("--flag"), vec![]);
+        let mut shortcut = make_shortcut_matching(&candidate);
+        shortcut.launch_options = String::new();
+        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_uses_launcher_path_when_use_launcher_url() {
+        let mut candidate =
+            make_candidate("explorer.exe", "C:\\WINDOWS", Some("shell:game"), vec![]);
+        candidate.use_launcher_url = true;
+        candidate.url_scheme = Some("shell:game".to_string());
+        candidate.launcher_path = Some(PathBuf::from("launcher/launcher.exe"));
+
+        // A shortcut built from the effective (launcher) path is unchanged.
+        let matching = make_shortcut_matching(&candidate);
+        assert!(shortcut_is_unchanged(&matching, &candidate));
+
+        // A shortcut pointing at the raw executable_path is seen as changed.
+        let mut mismatched = matching.clone();
+        mismatched.exe = format!("\"{}\"", candidate.executable_path.display());
+        assert!(!shortcut_is_unchanged(&mismatched, &candidate));
+    }
+}
