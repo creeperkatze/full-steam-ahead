@@ -44,7 +44,10 @@ fn init_logging() -> WorkerGuard {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let _log_guard = init_logging();
-    tracing::info!(version = env!("CARGO_PKG_VERSION"), "Full Steam Ahead starting");
+    tracing::info!(
+        version = env!("CARGO_PKG_VERSION"),
+        "Full Steam Ahead starting"
+    );
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

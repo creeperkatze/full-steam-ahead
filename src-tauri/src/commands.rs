@@ -22,7 +22,11 @@ type CommandResult<T> = Result<T, CommandError>;
 pub fn detect_steam() -> CommandResult<SteamInstallation> {
     let result = steam::detect::detect_steam().map_err(Into::into);
     if let Ok(ref install) = result {
-        info!(users = install.users.len(), running = install.running, "Steam detected");
+        info!(
+            users = install.users.len(),
+            running = install.running,
+            "Steam detected"
+        );
     }
     result
 }
@@ -59,7 +63,8 @@ pub fn scan_sources(
         .find(|user| user.steam_id == request.user_steam_id)
         .ok_or_else(|| AppError::UserNotFound(request.user_steam_id.clone()))?;
 
-    let result = steam::sources::scan_sources_with_progress(&app, user, &request).map_err(Into::into);
+    let result =
+        steam::sources::scan_sources_with_progress(&app, user, &request).map_err(Into::into);
     if let Ok(ref candidates) = result {
         info!(total = candidates.len(), "Scan complete");
     }
@@ -151,7 +156,12 @@ pub fn create_preview_plan(
         warnings,
         requires_steam_restart: options.stop_steam || options.restart_steam,
     };
-    info!(changes = plan.changes.len(), backups = plan.backups.len(), warnings = plan.warnings.len(), "Preview plan created");
+    info!(
+        changes = plan.changes.len(),
+        backups = plan.backups.len(),
+        warnings = plan.warnings.len(),
+        "Preview plan created"
+    );
     Ok(plan)
 }
 
