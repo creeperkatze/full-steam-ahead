@@ -1,6 +1,5 @@
 use crate::{
     error::{io_context, AppError, CommandError},
-    importers::quote_path,
     models::{
         ApplyRequest, ApplyResult, BackupPlan, ChangeKind, ImportCandidate, ManualImportRequest,
         Options, PlannedChange, PreviewPlan, ScanRequest, SteamInstallation, UserSettings,
@@ -204,9 +203,7 @@ fn candidate_changes(
     let mut artwork_files = Vec::new();
 
     let exe = candidate.effective_executable();
-    let quoted_exe = quote_path(exe);
-    let shortcut_exists =
-        steam::shortcuts::shortcut_exists(existing_shortcuts, &candidate.name, &quoted_exe);
+    let shortcut_exists = steam::shortcuts::shortcut_exists(existing_shortcuts, &candidate.name);
     changes.push(PlannedChange {
         id: format!("shortcut:{}", candidate.id),
         title: format!(
@@ -227,7 +224,7 @@ fn candidate_changes(
 
     let collection_name = candidate.source.collection_name();
     let collection_app_id = steam::non_steam_app_id(
-        &format!("\"{}\"", candidate.executable_path.display()),
+        &format!("\"{}\"", candidate.effective_executable().display()),
         &candidate.name,
     );
     let already_in_collection = existing_collection_app_ids

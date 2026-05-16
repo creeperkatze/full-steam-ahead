@@ -34,7 +34,7 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
             .entry(candidate.source.collection_name())
             .or_default()
             .push(non_steam_app_id(
-                &format!("\"{}\"", candidate.executable_path.display()),
+                &format!("\"{}\"", candidate.effective_executable().display()),
                 &candidate.name,
             ));
     }
