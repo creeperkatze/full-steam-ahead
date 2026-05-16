@@ -20,6 +20,14 @@ struct LoginUser {
     persona_name: Option<String>,
 }
 
+pub fn find_user(steam_id: &str) -> AppResult<SteamUser> {
+    detect_steam()?
+        .users
+        .into_iter()
+        .find(|u| u.steam_id == steam_id)
+        .ok_or_else(|| AppError::UserNotFound(steam_id.to_string()))
+}
+
 pub fn detect_steam() -> AppResult<SteamInstallation> {
     let install_path = find_steam_install_path().ok_or(AppError::SteamNotFound)?;
     tracing::debug!(path = %install_path.display(), "Steam installation found");

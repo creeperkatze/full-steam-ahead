@@ -19,7 +19,10 @@ fn init_logging() -> WorkerGuard {
         .join("Full Steam Ahead")
         .join("logs");
 
-    let session_filename = format!("session_{}.log", chrono::Local::now().format("%Y%m%d_%H%M%S"));
+    let session_filename = format!(
+        "session_{}.log",
+        chrono::Local::now().format("%Y%m%d_%H%M%S")
+    );
     let file_appender = tracing_appender::rolling::never(log_dir, session_filename);
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 

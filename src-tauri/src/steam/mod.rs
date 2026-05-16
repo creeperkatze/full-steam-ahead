@@ -2,6 +2,7 @@ pub mod apply;
 pub mod artwork;
 pub mod collections;
 pub mod detect;
+pub mod plan;
 pub mod shortcuts;
 pub mod sources;
 
