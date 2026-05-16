@@ -28,7 +28,6 @@ pub fn write_shortcuts(path: &Path, shortcuts: &[ShortcutEntry]) -> AppResult<()
     fs::write(path, bytes).map_err(io_context(path))
 }
 
-
 pub fn append_missing(existing: &mut Vec<ShortcutEntry>, additions: Vec<ShortcutEntry>) {
     for mut addition in additions {
         if addition.app_id == 0 {
