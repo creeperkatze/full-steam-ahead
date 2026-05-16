@@ -53,7 +53,7 @@ const selectedCandidates = computed(() =>
 function usesUrlLaunch(candidate: ImportCandidate): boolean {
 	if (!candidate.urlScheme) return false
 	if (!candidate.launcherPath) return true
-	return candidate.useLaunchUrl
+	return candidate.useLauncherUrl
 }
 
 function toggleUrlLaunch(id: string) {
@@ -61,7 +61,7 @@ function toggleUrlLaunch(id: string) {
 	if (idx === -1) return
 	candidates.value[idx] = {
 		...candidates.value[idx],
-		useLaunchUrl: !candidates.value[idx].useLaunchUrl,
+		useLauncherUrl: !candidates.value[idx].useLauncherUrl,
 	}
 	invalidatePreview()
 }

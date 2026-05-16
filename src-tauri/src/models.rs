@@ -141,15 +141,13 @@ pub struct ImportCandidate {
     pub tags: Vec<String>,
     pub artwork: ArtworkPlan,
     pub url_scheme: Option<String>,
-    /// Launcher executable path, set only when the game also has a direct `executable_path`.
     pub launcher_path: Option<PathBuf>,
-    /// Whether to launch via `url_scheme` + `launcher_path` instead of the direct `executable_path`.
-    pub use_url_launch: bool,
+    pub use_launcher_url: bool,
 }
 
 impl ImportCandidate {
     pub fn effective_executable(&self) -> &Path {
-        if self.use_url_launch {
+        if self.use_launcher_url {
             self.launcher_path
                 .as_deref()
                 .unwrap_or(&self.executable_path)
@@ -159,7 +157,7 @@ impl ImportCandidate {
     }
 
     pub fn effective_start_dir(&self) -> &Path {
-        if self.use_url_launch {
+        if self.use_launcher_url {
             self.launcher_path
                 .as_deref()
                 .and_then(|p| p.parent())
@@ -170,7 +168,7 @@ impl ImportCandidate {
     }
 
     pub fn effective_launch_options(&self) -> Option<&str> {
-        if self.use_url_launch {
+        if self.use_launcher_url {
             self.url_scheme
                 .as_deref()
                 .or(self.launch_options.as_deref())

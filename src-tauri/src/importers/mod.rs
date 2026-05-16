@@ -66,7 +66,7 @@ pub fn candidate_from_parts(
         artwork,
         url_scheme: None,
         launcher_path: None,
-        use_url_launch: false,
+        use_launcher_url: false,
     }
 }
 
@@ -94,6 +94,6 @@ pub fn launcher_candidate(
         tags,
     );
     candidate.url_scheme = Some(launch_url);
-    candidate.use_url_launch = true;
+    candidate.use_launcher_url = true;
     candidate
 }

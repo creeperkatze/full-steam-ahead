@@ -29,7 +29,7 @@ export interface ImportCandidate {
 	artwork: ArtworkPlan
 	urlScheme?: string | null
 	launcherPath?: string | null
-	useLaunchUrl: boolean
+	useLauncherUrl: boolean
 }
 
 export interface ManualImportRequest {
