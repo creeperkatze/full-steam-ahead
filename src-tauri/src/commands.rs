@@ -231,7 +231,8 @@ fn candidate_changes(
             [candidate.effective_executable(), &candidate.executable_path]
                 .iter()
                 .any(|p| {
-                    let id = steam::non_steam_app_id(&format!("\"{}\"", p.display()), &candidate.name);
+                    let id =
+                        steam::non_steam_app_id(&format!("\"{}\"", p.display()), &candidate.name);
                     ids.contains(&id)
                 })
         });
