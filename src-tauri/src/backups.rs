@@ -22,9 +22,7 @@ pub fn list() -> AppResult<Vec<BackupInfo>> {
 }
 
 pub fn restore(backup_id: &str, user: &SteamUser) -> AppResult<usize> {
-    let backup_dir = crate::paths::app_data_dir()
-        .join("backups")
-        .join(backup_id);
+    let backup_dir = crate::paths::app_data_dir().join("backups").join(backup_id);
     restore_from_dir(&backup_dir, user)
 }
 
@@ -184,7 +182,10 @@ fn format_timestamp(id: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs, sync::atomic::{AtomicU64, Ordering}};
+    use std::{
+        fs,
+        sync::atomic::{AtomicU64, Ordering},
+    };
 
     static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -195,8 +196,7 @@ mod tests {
     impl TmpDir {
         fn new() -> Self {
             let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-            let dir = std::env::temp_dir()
-                .join(format!("fsa_test_{}_{}", std::process::id(), n));
+            let dir = std::env::temp_dir().join(format!("fsa_test_{}_{}", std::process::id(), n));
             fs::create_dir_all(&dir).unwrap();
             Self(dir)
         }
@@ -251,7 +251,10 @@ mod tests {
     fn infer_shortcuts_path() {
         let tmp = TmpDir::new();
         let user = make_user(tmp.path());
-        assert_eq!(infer_destination(&user, "shortcuts.vdf"), user.shortcuts_path);
+        assert_eq!(
+            infer_destination(&user, "shortcuts.vdf"),
+            user.shortcuts_path
+        );
     }
 
     #[test]
@@ -287,8 +290,14 @@ mod tests {
         let src_shortcuts = PathBuf::from("/steam/config/shortcuts.vdf");
         let src_art = PathBuf::from("/steam/config/grid/99_header.png");
         let plans = vec![
-            BackupPlan { source: src_shortcuts.clone(), destination: dst_shortcuts },
-            BackupPlan { source: src_art.clone(), destination: dst_art },
+            BackupPlan {
+                source: src_shortcuts.clone(),
+                destination: dst_shortcuts,
+            },
+            BackupPlan {
+                source: src_art.clone(),
+                destination: dst_art,
+            },
         ];
         write_manifest(tmp.path(), &plans);
 
@@ -410,7 +419,10 @@ mod tests {
     #[test]
     fn list_formats_timestamp_in_display() {
         let tmp = TmpDir::new();
-        write(&tmp.path().join("20250516-143022").join("shortcuts.vdf"), b"x");
+        write(
+            &tmp.path().join("20250516-143022").join("shortcuts.vdf"),
+            b"x",
+        );
 
         let result = list_from_dir(tmp.path()).unwrap();
         assert_eq!(result[0].created_at, "2025-05-16 14:30:22");
