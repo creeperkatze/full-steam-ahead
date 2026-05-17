@@ -68,7 +68,8 @@ export function useScanSources() {
 		unlistenScan?.()
 		unlistenScan = await listen<ScanProgressEvent>('scan-progress', (event) => {
 			const { source, status, found } = event.payload
-			const entry = sourceStates.value.find((s) => s.name === source)
+			const entry =
+				typeof source === 'string' ? sourceStates.value.find((s) => s.key === source) : undefined
 			if (entry) {
 				if (status === 'scanning') {
 					entry.status = 'scanning'

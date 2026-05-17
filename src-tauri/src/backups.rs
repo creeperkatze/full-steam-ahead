@@ -71,7 +71,7 @@ fn list_from_dir(backups_dir: &Path) -> AppResult<Vec<BackupInfo>> {
             _ => continue,
         };
 
-        let created_at = format_timestamp(&id);
+        let created_at = id_to_iso(&id);
         let mut file_count = 0usize;
         let mut size_bytes = 0u64;
         if let Ok(entries) = fs::read_dir(&path) {
@@ -162,11 +162,10 @@ fn infer_destination(user: &SteamUser, filename: &str) -> PathBuf {
     }
 }
 
-fn format_timestamp(id: &str) -> String {
-    // Format: YYYYMMDD-HHMMSS
+fn id_to_iso(id: &str) -> String {
     if id.len() == 15 && id.as_bytes().get(8) == Some(&b'-') {
         format!(
-            "{}-{}-{} {}:{}:{}",
+            "{}-{}-{}T{}:{}:{}Z",
             &id[0..4],
             &id[4..6],
             &id[6..8],
@@ -231,18 +230,18 @@ mod tests {
         fs::write(path, content).unwrap();
     }
 
-    // format_timestamp
+    // id_to_iso
 
     #[test]
     fn timestamp_valid_format() {
-        assert_eq!(format_timestamp("20250516-143022"), "2025-05-16 14:30:22");
+        assert_eq!(id_to_iso("20250516-143022"), "2025-05-16T14:30:22Z");
     }
 
     #[test]
     fn timestamp_invalid_falls_back_to_raw() {
-        assert_eq!(format_timestamp("not-a-timestamp"), "not-a-timestamp");
-        assert_eq!(format_timestamp(""), "");
-        assert_eq!(format_timestamp("20250516_143022"), "20250516_143022");
+        assert_eq!(id_to_iso("not-a-timestamp"), "not-a-timestamp");
+        assert_eq!(id_to_iso(""), "");
+        assert_eq!(id_to_iso("20250516_143022"), "20250516_143022");
     }
 
     // infer_destination
@@ -425,6 +424,6 @@ mod tests {
         );
 
         let result = list_from_dir(tmp.path()).unwrap();
-        assert_eq!(result[0].created_at, "2025-05-16 14:30:22");
+        assert_eq!(result[0].created_at, "2025-05-16T14:30:22Z");
     }
 }

@@ -19,11 +19,10 @@ pub fn scan_sources_with_progress(
     let enabled_sources = enabled_sources(request);
 
     for source in &enabled_sources {
-        let source_name = source.display_name();
         let _ = app.emit(
             "scan-progress",
             ScanProgressEvent {
-                source: source_name.clone(),
+                source: source.clone(),
                 status: "scanning".to_string(),
                 found: 0,
             },
@@ -34,15 +33,15 @@ pub fn scan_sources_with_progress(
         candidates.extend(found);
 
         if found_count == 0 {
-            tracing::debug!(source = %source_name, "No games found");
+            tracing::debug!(source = %source.display_name(), "No games found");
         } else {
-            tracing::info!(source = %source_name, found = found_count, "Games found");
+            tracing::info!(source = %source.display_name(), found = found_count, "Games found");
         }
 
         let _ = app.emit(
             "scan-progress",
             ScanProgressEvent {
-                source: source_name,
+                source: source.clone(),
                 status: "done".to_string(),
                 found: found_count,
             },

@@ -35,6 +35,10 @@ onMounted(async () => {
 	}
 })
 
+function formatBackupDate(iso: string): string {
+	return iso.replace('T', ' ').replace('Z', '')
+}
+
 function formatSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`
 	if (bytes < 1_048_576) return `${(bytes / 1024).toFixed(1)} KB`
@@ -136,7 +140,7 @@ async function confirmRestore() {
 				>
 					<div class="flex items-center gap-3 px-3 py-2">
 						<div class="min-w-0 flex-1">
-							<span class="font-mono text-sm">{{ backup.createdAt }}</span>
+							<span class="font-mono text-sm">{{ formatBackupDate(backup.createdAt) }}</span>
 							<span class="ml-2 text-xs text-secondary">
 								{{ backup.fileCount }}
 								{{ backup.fileCount === 1 ? 'file' : 'files' }} ·

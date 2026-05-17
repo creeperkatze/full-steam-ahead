@@ -1,5 +1,7 @@
+import type { ImportSource } from './import'
+
 export interface ScanProgressEvent {
-	source: string
+	source: ImportSource
 	status: 'scanning' | 'done'
 	found: number
 }

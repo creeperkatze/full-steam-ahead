@@ -316,7 +316,7 @@ pub struct BackupInfo {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanProgressEvent {
-    pub source: String,
+    pub source: ImportSource,
     pub status: String,
     pub found: usize,
 }
