@@ -27,6 +27,5 @@ export const api = {
 	saveSettings: (settings: Pick<Options, 'stopSteam' | 'restartSteam'>) =>
 		invoke<void>('save_settings', { settings }),
 	listBackups: () => invoke<BackupInfo[]>('list_backups'),
-	restoreBackup: (backupId: string, userSteamId: string) =>
-		invoke<number>('restore_backup', { backupId, userSteamId }),
+	restoreBackup: (backupId: string) => invoke<number>('restore_backup', { backupId }),
 }

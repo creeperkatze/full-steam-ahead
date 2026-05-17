@@ -1,6 +1,6 @@
 use crate::{
     error::{io_context, AppError, AppResult},
-    models::{BackupInfo, BackupPlan, SteamUser},
+    models::{BackupInfo, BackupPlan},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -21,9 +21,9 @@ pub fn list() -> AppResult<Vec<BackupInfo>> {
     list_from_dir(&crate::paths::app_data_dir().join("backups"))
 }
 
-pub fn restore(backup_id: &str, user: &SteamUser) -> AppResult<usize> {
+pub fn restore_backup(backup_id: &str) -> AppResult<usize> {
     let backup_dir = crate::paths::app_data_dir().join("backups").join(backup_id);
-    restore_from_dir(&backup_dir, user)
+    restore_from_dir(&backup_dir)
 }
 
 pub fn write_manifest(backup_dir: &Path, plans: &[BackupPlan]) {
@@ -66,6 +66,9 @@ fn list_from_dir(backups_dir: &Path) -> AppResult<Vec<BackupInfo>> {
         if !path.is_dir() {
             continue;
         }
+        if !path.join(MANIFEST_FILENAME).exists() {
+            continue;
+        }
         let id = match path.file_name().and_then(|n| n.to_str()) {
             Some(s) if !s.is_empty() => s.to_string(),
             _ => continue,
@@ -103,7 +106,7 @@ fn list_from_dir(backups_dir: &Path) -> AppResult<Vec<BackupInfo>> {
     Ok(backups)
 }
 
-fn restore_from_dir(backup_dir: &Path, user: &SteamUser) -> AppResult<usize> {
+fn restore_from_dir(backup_dir: &Path) -> AppResult<usize> {
     if !backup_dir.exists() {
         return Err(AppError::Message(format!(
             "Backup '{}' not found.",
@@ -111,37 +114,25 @@ fn restore_from_dir(backup_dir: &Path, user: &SteamUser) -> AppResult<usize> {
         )));
     }
 
-    let manifest = load_manifest(backup_dir);
-    if manifest.is_none() {
-        debug!("No manifest found, falling back to filename inference");
-    }
+    let manifest = load_manifest(backup_dir).ok_or_else(|| {
+        AppError::Message(format!(
+            "Backup '{}' has no manifest and cannot be restored.",
+            backup_dir.display()
+        ))
+    })?;
 
     let mut restored = 0usize;
-    for entry in fs::read_dir(backup_dir).map_err(io_context(backup_dir))? {
-        let entry = entry.map_err(io_context(backup_dir))?;
-        let path = entry.path();
-        if !path.is_file() {
+    for (filename, destination) in &manifest.files {
+        let source = backup_dir.join(filename);
+        if !source.exists() {
+            warn!(file = %filename, "Backup file listed in manifest is missing, skipping");
             continue;
         }
-        let filename = match path.file_name().and_then(|n| n.to_str()) {
-            Some(s) => s.to_string(),
-            None => continue,
-        };
-        if filename == MANIFEST_FILENAME {
-            continue;
-        }
-
-        let destination = manifest
-            .as_ref()
-            .and_then(|m| m.files.get(&filename))
-            .cloned()
-            .unwrap_or_else(|| infer_destination(user, &filename));
-
         if let Some(parent) = destination.parent() {
             fs::create_dir_all(parent).map_err(io_context(parent))?;
         }
-        fs::copy(&path, &destination).map_err(io_context(&destination))?;
-        debug!(src = %path.display(), dst = %destination.display(), "File restored from backup");
+        fs::copy(&source, destination).map_err(io_context(destination))?;
+        debug!(src = %source.display(), dst = %destination.display(), "File restored from backup");
         restored += 1;
     }
 
@@ -152,14 +143,6 @@ fn restore_from_dir(backup_dir: &Path, user: &SteamUser) -> AppResult<usize> {
 fn load_manifest(backup_dir: &Path) -> Option<BackupManifest> {
     let raw = fs::read_to_string(backup_dir.join(MANIFEST_FILENAME)).ok()?;
     serde_json::from_str(&raw).ok()
-}
-
-fn infer_destination(user: &SteamUser, filename: &str) -> PathBuf {
-    match filename {
-        "shortcuts.vdf" => user.shortcuts_path.clone(),
-        "cloud-storage-namespace-1.json" => user.collections_path.clone(),
-        other => user.grid_path.join(other),
-    }
 }
 
 fn id_to_iso(id: &str) -> String {
@@ -188,8 +171,6 @@ mod tests {
 
     static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-    /// Creates a unique temp directory that is cleaned up when the returned
-    /// path goes out of scope. Uses std only — no extra dependencies needed.
     struct TmpDir(PathBuf);
 
     impl TmpDir {
@@ -208,18 +189,6 @@ mod tests {
     impl Drop for TmpDir {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.0);
-        }
-    }
-
-    fn make_user(base: &Path) -> SteamUser {
-        let grid = base.join("grid");
-        fs::create_dir_all(&grid).unwrap();
-        SteamUser {
-            steam_id: "123".to_string(),
-            account_name: None,
-            shortcuts_path: base.join("shortcuts.vdf"),
-            collections_path: base.join("cloud-storage-namespace-1.json"),
-            grid_path: grid,
         }
     }
 
@@ -242,38 +211,6 @@ mod tests {
         assert_eq!(id_to_iso("not-a-timestamp"), "not-a-timestamp");
         assert_eq!(id_to_iso(""), "");
         assert_eq!(id_to_iso("20250516_143022"), "20250516_143022");
-    }
-
-    // infer_destination
-
-    #[test]
-    fn infer_shortcuts_path() {
-        let tmp = TmpDir::new();
-        let user = make_user(tmp.path());
-        assert_eq!(
-            infer_destination(&user, "shortcuts.vdf"),
-            user.shortcuts_path
-        );
-    }
-
-    #[test]
-    fn infer_collections_path() {
-        let tmp = TmpDir::new();
-        let user = make_user(tmp.path());
-        assert_eq!(
-            infer_destination(&user, "cloud-storage-namespace-1.json"),
-            user.collections_path
-        );
-    }
-
-    #[test]
-    fn infer_artwork_goes_to_grid() {
-        let tmp = TmpDir::new();
-        let user = make_user(tmp.path());
-        assert_eq!(
-            infer_destination(&user, "12345_header.png"),
-            user.grid_path.join("12345_header.png")
-        );
     }
 
     // write_manifest / load_manifest
@@ -308,7 +245,6 @@ mod tests {
     #[test]
     fn write_manifest_skips_missing_destinations() {
         let tmp = TmpDir::new();
-        // destination does not exist on disk
         let plans = vec![BackupPlan {
             source: PathBuf::from("/original/shortcuts.vdf"),
             destination: tmp.path().join("shortcuts.vdf"),
@@ -329,7 +265,6 @@ mod tests {
     fn restore_uses_manifest_paths() {
         let tmp = TmpDir::new();
         let backup_dir = tmp.path().join("backup");
-        let user = make_user(tmp.path());
 
         write(&backup_dir.join("shortcuts.vdf"), b"backup-data");
 
@@ -344,37 +279,23 @@ mod tests {
             serde_json::to_string(&manifest).unwrap().as_bytes(),
         );
 
-        let count = restore_from_dir(&backup_dir, &user).unwrap();
+        let count = restore_from_dir(&backup_dir).unwrap();
         assert_eq!(count, 1);
         assert_eq!(fs::read(&custom_dest).unwrap(), b"backup-data");
     }
 
     #[test]
-    fn restore_skips_manifest_file_itself() {
+    fn restore_errors_when_no_manifest() {
         let tmp = TmpDir::new();
         let backup_dir = tmp.path().join("backup");
-        let user = make_user(tmp.path());
-
         write(&backup_dir.join("shortcuts.vdf"), b"data");
-        let manifest = BackupManifest {
-            files: [("shortcuts.vdf".to_string(), user.shortcuts_path.clone())]
-                .into_iter()
-                .collect(),
-        };
-        write(
-            &backup_dir.join(MANIFEST_FILENAME),
-            serde_json::to_string(&manifest).unwrap().as_bytes(),
-        );
-
-        let count = restore_from_dir(&backup_dir, &user).unwrap();
-        assert_eq!(count, 1); // only shortcuts.vdf, not manifest.json
+        assert!(restore_from_dir(&backup_dir).is_err());
     }
 
     #[test]
     fn restore_errors_when_backup_dir_missing() {
         let tmp = TmpDir::new();
-        let user = make_user(tmp.path());
-        assert!(restore_from_dir(&tmp.path().join("nonexistent"), &user).is_err());
+        assert!(restore_from_dir(&tmp.path().join("nonexistent")).is_err());
     }
 
     // list_from_dir
@@ -385,6 +306,7 @@ mod tests {
         for id in ["20250101-000000", "20250516-120000", "20240601-080000"] {
             let dir = tmp.path().join(id);
             write(&dir.join("shortcuts.vdf"), b"x");
+            write(&dir.join(MANIFEST_FILENAME), b"{}");
         }
 
         let result = list_from_dir(tmp.path()).unwrap();
@@ -404,7 +326,6 @@ mod tests {
         let result = list_from_dir(tmp.path()).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].file_count, 2);
-        // size should not include the manifest
         assert_eq!(result[0].size_bytes, 3 + 2); // "vdf" + "{}"
     }
 
@@ -418,12 +339,26 @@ mod tests {
     #[test]
     fn list_formats_timestamp_in_display() {
         let tmp = TmpDir::new();
-        write(
-            &tmp.path().join("20250516-143022").join("shortcuts.vdf"),
-            b"x",
-        );
+        let dir = tmp.path().join("20250516-143022");
+        write(&dir.join("shortcuts.vdf"), b"x");
+        write(&dir.join(MANIFEST_FILENAME), b"{}");
 
         let result = list_from_dir(tmp.path()).unwrap();
         assert_eq!(result[0].created_at, "2025-05-16T14:30:22Z");
+    }
+
+    #[test]
+    fn list_excludes_dirs_without_manifest() {
+        let tmp = TmpDir::new();
+        let with_manifest = tmp.path().join("20250516-120000");
+        write(&with_manifest.join("shortcuts.vdf"), b"x");
+        write(&with_manifest.join(MANIFEST_FILENAME), b"{}");
+
+        let without_manifest = tmp.path().join("20240101-000000");
+        write(&without_manifest.join("shortcuts.vdf"), b"x");
+
+        let result = list_from_dir(tmp.path()).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].id, "20250516-120000");
     }
 }

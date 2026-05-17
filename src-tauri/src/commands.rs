@@ -140,10 +140,9 @@ pub fn list_backups() -> CommandResult<Vec<BackupInfo>> {
 }
 
 #[tauri::command]
-#[instrument(fields(backup = %backup_id, user = %user_steam_id))]
-pub fn restore_backup(backup_id: String, user_steam_id: String) -> CommandResult<usize> {
-    let user = steam::detect::find_user(&user_steam_id)?;
-    let restored = backups::restore(&backup_id, &user)?;
+#[instrument]
+pub fn restore_backup(backup_id: String) -> CommandResult<usize> {
+    let restored = backups::restore_backup(&backup_id)?;
     info!(backup_id, restored, "Backup restored via command");
     Ok(restored)
 }

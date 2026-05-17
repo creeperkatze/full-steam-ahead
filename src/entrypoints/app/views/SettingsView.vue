@@ -5,12 +5,10 @@ import { onMounted, ref } from 'vue'
 import UiButton from '../../../components/ui/Button.vue'
 import { useAppState } from '../../../composables/useAppState'
 import { api } from '../../../helpers/api'
-import type { BackupInfo, SteamInstallation } from '../../../types'
+import type { BackupInfo } from '../../../types'
 
 const state = useAppState()
 
-const steamInstall = ref<SteamInstallation | null>(null)
-const selectedUserId = ref('')
 const backups = ref<BackupInfo[]>([])
 const backupsLoading = ref(true)
 const confirmingId = ref<string | null>(null)
@@ -20,13 +18,6 @@ const restoreError = ref<string | null>(null)
 
 onMounted(async () => {
 	try {
-		steamInstall.value = state.install.value ?? (await api.detectSteam())
-		const users = steamInstall.value?.users ?? []
-		if (state.selectedUserId.value) {
-			selectedUserId.value = state.selectedUserId.value
-		} else if (users.length === 1) {
-			selectedUserId.value = users[0].steamId
-		}
 		backups.value = await api.listBackups()
 	} catch {
 		// keep empty state
@@ -56,14 +47,14 @@ function cancelRestore() {
 }
 
 async function confirmRestore() {
-	if (!confirmingId.value || !selectedUserId.value) return
+	if (!confirmingId.value) return
 	const backupId = confirmingId.value
 	confirmingId.value = null
 	restoring.value = true
 	restoreError.value = null
 	restoreResult.value = null
 	try {
-		const count = await api.restoreBackup(backupId, selectedUserId.value)
+		const count = await api.restoreBackup(backupId)
 		restoreResult.value = { backupId, count }
 	} catch (e: unknown) {
 		restoreError.value = (e as { message?: string })?.message ?? 'Restore failed.'
@@ -99,29 +90,6 @@ async function confirmRestore() {
 				Restore Steam shortcuts, collections, and artwork to the state of a previous backup.
 			</p>
 
-			<!-- Account selector (multiple users) -->
-			<div v-if="(steamInstall?.users.length ?? 0) > 1" class="mb-3">
-				<label class="mb-1 block text-sm font-medium">Steam account</label>
-				<select
-					v-model="selectedUserId"
-					class="w-full rounded-md border border-border bg-surface-5 px-3 py-2 text-sm"
-				>
-					<option value="" disabled>Select an account</option>
-					<option v-for="user in steamInstall?.users" :key="user.steamId" :value="user.steamId">
-						{{ user.accountName ?? user.steamId }}
-					</option>
-				</select>
-			</div>
-
-			<!-- No account available -->
-			<div
-				v-if="!backupsLoading && !selectedUserId"
-				class="mb-3 flex items-center gap-2 rounded-md border border-border bg-surface-5 px-3 py-2 text-sm text-secondary"
-			>
-				<AlertCircle :size="15" class="shrink-0" />
-				Select a Steam account above before restoring.
-			</div>
-
 			<!-- Loading -->
 			<div v-if="backupsLoading" class="flex items-center gap-2 text-sm text-secondary">
 				<Loader2 :size="15" class="animate-spin" />
@@ -151,7 +119,7 @@ async function confirmRestore() {
 							v-if="confirmingId !== backup.id"
 							size="sm"
 							variant="ghost"
-							:disabled="restoring || !selectedUserId"
+							:disabled="restoring"
 							@click="startRestore(backup.id)"
 						>
 							<RotateCcw :size="14" />
