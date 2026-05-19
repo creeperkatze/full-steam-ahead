@@ -117,23 +117,15 @@ pub fn restart_steam(install_path: &std::path::Path) -> std::io::Result<Option<C
 
 #[cfg(windows)]
 pub fn command_output_no_window(command: &mut Command) -> std::io::Result<Output> {
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-
+    use std::os::windows::process::CommandExt;
+    command.creation_flags(CREATE_NO_WINDOW);
     command.output()
 }
 
 #[cfg(windows)]
 pub fn command_spawn_no_window(command: &mut Command) -> std::io::Result<Child> {
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-
+    use std::os::windows::process::CommandExt;
+    command.creation_flags(CREATE_NO_WINDOW);
     command.spawn()
 }
 
