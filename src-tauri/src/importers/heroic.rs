@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn parses_gog_config() {
         let json = r#"{"installed":[
-            {"appName":"1234","app_name":"1234","install_path":"/games/MyGame","platform":"linux"}
+            {"appName":"1234","install_path":"/games/MyGame","platform":"linux"}
         ]}"#;
         let config: HeroicGogConfig = serde_json::from_str(json).unwrap();
         assert_eq!(config.installed.len(), 1);
