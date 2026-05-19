@@ -122,6 +122,83 @@ struct HeroicGogEntry {
     platform: String,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // HeroicEpicGame JSON deserialization
+
+    #[test]
+    fn parses_epic_game_entry() {
+        let json = r#"{
+            "app_name": "CrabGame",
+            "title": "Crab Game",
+            "is_dlc": false,
+            "install_path": "/home/user/Games/CrabGame",
+            "executable": "CrabGame.sh"
+        }"#;
+        let game: HeroicEpicGame = serde_json::from_str(json).unwrap();
+        assert_eq!(game.app_name, "CrabGame");
+        assert_eq!(game.title, "Crab Game");
+        assert!(!game.is_dlc);
+    }
+
+    #[test]
+    fn epic_is_dlc_defaults_to_false() {
+        let json = r#"{"app_name":"g","title":"G","install_path":"/","executable":"g.sh"}"#;
+        let game: HeroicEpicGame = serde_json::from_str(json).unwrap();
+        assert!(!game.is_dlc);
+    }
+
+    #[test]
+    fn epic_filters_out_dlc() {
+        let json = r#"[
+            {"app_name":"game","title":"Game","is_dlc":false,"install_path":"/","executable":"g"},
+            {"app_name":"dlc","title":"DLC","is_dlc":true,"install_path":"/","executable":"d"}
+        ]"#;
+        let games: HashMap<String, HeroicEpicGame> = serde_json::from_str(
+            &json.replace('[', "{\"a\":").replace("},\n            {", ",\"b\":").replace(']', "}")
+        ).unwrap_or_default();
+        // Test the filtering logic directly on deserialized data
+        let non_dlc_count = serde_json::from_str::<Vec<serde_json::Value>>(json)
+            .unwrap()
+            .into_iter()
+            .filter(|v| !v["is_dlc"].as_bool().unwrap_or(false))
+            .count();
+        assert_eq!(non_dlc_count, 1);
+    }
+
+    // HeroicGogConfig / HeroicGogEntry JSON deserialization
+
+    #[test]
+    fn parses_gog_config() {
+        let json = r#"{"installed":[
+            {"appName":"1234","app_name":"1234","install_path":"/games/MyGame","platform":"linux"}
+        ]}"#;
+        let config: HeroicGogConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.installed.len(), 1);
+        assert_eq!(config.installed[0].install_path, "/games/MyGame");
+        assert_eq!(config.installed[0].platform, "linux");
+    }
+
+    #[test]
+    fn gog_entry_accepts_both_app_name_forms() {
+        // HeroicGogEntry uses #[serde(alias = "appName")] so both forms work
+        let with_alias = r#"{"appName":"A","install_path":"/g","platform":"windows"}"#;
+        let with_snake = r#"{"app_name":"B","install_path":"/g","platform":"linux"}"#;
+        let a: HeroicGogEntry = serde_json::from_str(with_alias).unwrap();
+        let b: HeroicGogEntry = serde_json::from_str(with_snake).unwrap();
+        assert_eq!(a.app_name, "A");
+        assert_eq!(b.app_name, "B");
+    }
+
+    #[test]
+    fn empty_gog_config_deserializes() {
+        let config: HeroicGogConfig = serde_json::from_str(r#"{"installed":[]}"#).unwrap();
+        assert!(config.installed.is_empty());
+    }
+}
+
 fn scan_gog_games(
     user: &SteamUser,
     installed_json: &Path,

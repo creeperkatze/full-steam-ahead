@@ -146,10 +146,70 @@ fn read_offer_id(game_folder: &Path) -> Option<String> {
             continue;
         }
         let raw = fs::read_to_string(path).ok()?;
-        let marker = "&id=";
-        let start = raw.find(marker)? + marker.len();
-        let end = raw[start..].find('&').map(|i| start + i)?;
-        return Some(raw[start..end].to_string());
+        if let Some(id) = parse_offer_id_from_mfst(&raw) {
+            return Some(id);
+        }
     }
     None
+}
+
+fn parse_offer_id_from_mfst(content: &str) -> Option<String> {
+    let marker = "&id=";
+    let start = content.find(marker)? + marker.len();
+    let end = content[start..].find('&').map(|i| start + i)?;
+    Some(content[start..end].to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracts_offer_id_from_mfst() {
+        let content = "?gameId=foo&id=Origin.OFR.123456&autoDownload=1";
+        assert_eq!(parse_offer_id_from_mfst(content).as_deref(), Some("Origin.OFR.123456"));
+    }
+
+    #[test]
+    fn extracts_id_with_multiple_trailing_params() {
+        let content = "&id=ABC.DEF.789&authCode=&cmdParams=";
+        assert_eq!(parse_offer_id_from_mfst(content).as_deref(), Some("ABC.DEF.789"));
+    }
+
+    #[test]
+    fn returns_none_when_marker_absent() {
+        assert!(parse_offer_id_from_mfst("gameId=foo&autoDownload=1").is_none());
+    }
+
+    #[test]
+    fn returns_none_when_no_trailing_ampersand() {
+        // ID would be at the very end of the string with nothing after it
+        assert!(parse_offer_id_from_mfst("&id=ABC").is_none());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn parse_quoted_exe_extracts_path() {
+        let cmd = r#""C:\Program Files\EA\EA.exe" --arg"#;
+        assert_eq!(
+            parse_quoted_executable(cmd),
+            Some(PathBuf::from(r"C:\Program Files\EA\EA.exe"))
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn parse_quoted_exe_unquoted_takes_first_word() {
+        let cmd = r"C:\EA\EA.exe --arg";
+        assert_eq!(
+            parse_quoted_executable(cmd),
+            Some(PathBuf::from(r"C:\EA\EA.exe"))
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn parse_quoted_exe_empty_returns_none() {
+        assert!(parse_quoted_executable("").is_none());
+    }
 }

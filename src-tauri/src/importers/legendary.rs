@@ -46,3 +46,48 @@ struct LegendaryGame {
     #[serde(default)]
     is_dlc: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserializes_game_list() {
+        let json = r#"[{"app_name":"game1","title":"Game One","is_dlc":false}]"#;
+        let games: Vec<LegendaryGame> = serde_json::from_str(json).unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].app_name, "game1");
+        assert_eq!(games[0].title, "Game One");
+    }
+
+    #[test]
+    fn is_dlc_defaults_to_false_when_absent() {
+        let json = r#"[{"app_name":"g","title":"G"}]"#;
+        let games: Vec<LegendaryGame> = serde_json::from_str(json).unwrap();
+        assert!(!games[0].is_dlc);
+    }
+
+    #[test]
+    fn filters_out_dlc_entries() {
+        let json = r#"[
+            {"app_name":"game","title":"Game","is_dlc":false},
+            {"app_name":"dlc","title":"DLC Pack","is_dlc":true}
+        ]"#;
+        let games: Vec<LegendaryGame> = serde_json::from_str(json).unwrap();
+        let non_dlc: Vec<_> = games.into_iter().filter(|g| !g.is_dlc).collect();
+        assert_eq!(non_dlc.len(), 1);
+        assert_eq!(non_dlc[0].app_name, "game");
+    }
+
+    #[test]
+    fn empty_list_deserializes() {
+        let games: Vec<LegendaryGame> = serde_json::from_str("[]").unwrap();
+        assert!(games.is_empty());
+    }
+
+    #[test]
+    fn invalid_json_is_handled_gracefully() {
+        let result = serde_json::from_str::<Vec<LegendaryGame>>("not json");
+        assert!(result.is_err());
+    }
+}

@@ -62,3 +62,60 @@ struct Program {
     #[serde(alias = "Name")]
     name: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_bottle_with_programs() {
+        let json = r#"{
+            "My Bottle": {
+                "Name": "My Bottle",
+                "External_Programs": {
+                    "prog1": {"Name": "My Game"}
+                }
+            }
+        }"#;
+        let map: HashMap<String, Bottle> = serde_json::from_str(json).unwrap();
+        assert_eq!(map.len(), 1);
+        assert_eq!(map["My Bottle"].name, "My Bottle");
+        assert_eq!(map["My Bottle"].external_programs["prog1"].name, "My Game");
+    }
+
+    #[test]
+    fn parses_empty_map() {
+        let map: HashMap<String, Bottle> = serde_json::from_str("{}").unwrap();
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn parses_bottle_with_no_programs() {
+        let json = r#"{"B":{"Name":"B","External_Programs":{}}}"#;
+        let map: HashMap<String, Bottle> = serde_json::from_str(json).unwrap();
+        assert!(map["B"].external_programs.is_empty());
+    }
+
+    #[test]
+    fn parses_multiple_programs_in_one_bottle() {
+        let json = r#"{
+            "Bottle": {
+                "Name": "Bottle",
+                "External_Programs": {
+                    "a": {"Name": "Alpha"},
+                    "b": {"Name": "Beta"}
+                }
+            }
+        }"#;
+        let map: HashMap<String, Bottle> = serde_json::from_str(json).unwrap();
+        assert_eq!(map["Bottle"].external_programs.len(), 2);
+    }
+
+    #[test]
+    fn lowercase_field_names_also_accepted() {
+        // serde alias means both "Name" and "name" work
+        let json = r#"{"b":{"name":"b","external_programs":{"p":{"name":"P"}}}}"#;
+        let map: HashMap<String, Bottle> = serde_json::from_str(json).unwrap();
+        assert_eq!(map["b"].name, "b");
+    }
+}

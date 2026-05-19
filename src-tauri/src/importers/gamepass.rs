@@ -106,3 +106,94 @@ ForEach-Object {
 } |
 ConvertTo-Json -Depth 5
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // AppxKind::is_game
+
+    #[test]
+    fn is_game_true_for_str_game() {
+        assert!(AppxKind::Str("Game".to_string()).is_game());
+    }
+
+    #[test]
+    fn is_game_false_for_non_game_str() {
+        assert!(!AppxKind::Str("Framework".to_string()).is_game());
+    }
+
+    #[test]
+    fn is_game_true_when_array_contains_game() {
+        assert!(AppxKind::Array(vec!["DeveloperTools".to_string(), "Game".to_string()]).is_game());
+    }
+
+    #[test]
+    fn is_game_false_for_empty_array() {
+        assert!(!AppxKind::Array(vec![]).is_game());
+    }
+
+    #[test]
+    fn is_game_false_for_null() {
+        assert!(!AppxKind::Null.is_game());
+    }
+
+    // AppxKind::as_ref
+
+    #[test]
+    fn as_ref_returns_str_value() {
+        assert_eq!(AppxKind::Str("App".to_string()).as_ref(), "App");
+    }
+
+    #[test]
+    fn as_ref_returns_first_array_element() {
+        assert_eq!(
+            AppxKind::Array(vec!["First".to_string(), "Second".to_string()]).as_ref(),
+            "First"
+        );
+    }
+
+    #[test]
+    fn as_ref_returns_empty_for_null() {
+        assert_eq!(AppxKind::Null.as_ref(), "");
+    }
+
+    #[test]
+    fn as_ref_returns_empty_for_empty_array() {
+        assert_eq!(AppxKind::Array(vec![]).as_ref(), "");
+    }
+
+    // JSON deserialization
+
+    #[test]
+    fn deserializes_game_with_str_kind() {
+        let json = r#"{"kind":"Game","display_name":"My Game","family_name":"Pub.MyGame_abc"}"#;
+        let info: AppxInfo = serde_json::from_str(json).unwrap();
+        assert!(info.kind.is_game());
+        assert_eq!(info.display_name, "My Game");
+    }
+
+    #[test]
+    fn deserializes_game_with_array_kind() {
+        let json = r#"{"kind":["Framework","Game"],"display_name":"App","family_name":"A_bc"}"#;
+        let info: AppxInfo = serde_json::from_str(json).unwrap();
+        assert!(info.kind.is_game());
+    }
+
+    #[test]
+    fn deserializes_non_game_with_null_kind() {
+        let json = r#"{"kind":null,"display_name":"Tool","family_name":"T_bc"}"#;
+        let info: AppxInfo = serde_json::from_str(json).unwrap();
+        assert!(!info.kind.is_game());
+    }
+
+    #[test]
+    fn deserializes_array_of_infos() {
+        let json = r#"[
+            {"kind":"Game","display_name":"A","family_name":"A_1"},
+            {"kind":"Framework","display_name":"B","family_name":"B_2"}
+        ]"#;
+        let apps: Vec<AppxInfo> = serde_json::from_str(json).unwrap();
+        assert_eq!(apps.iter().filter(|a| a.kind.is_game()).count(), 1);
+    }
+}
