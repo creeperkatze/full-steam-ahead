@@ -167,13 +167,19 @@ mod tests {
     #[test]
     fn extracts_offer_id_from_mfst() {
         let content = "?gameId=foo&id=Origin.OFR.123456&autoDownload=1";
-        assert_eq!(parse_offer_id_from_mfst(content).as_deref(), Some("Origin.OFR.123456"));
+        assert_eq!(
+            parse_offer_id_from_mfst(content).as_deref(),
+            Some("Origin.OFR.123456")
+        );
     }
 
     #[test]
     fn extracts_id_with_multiple_trailing_params() {
         let content = "&id=ABC.DEF.789&authCode=&cmdParams=";
-        assert_eq!(parse_offer_id_from_mfst(content).as_deref(), Some("ABC.DEF.789"));
+        assert_eq!(
+            parse_offer_id_from_mfst(content).as_deref(),
+            Some("ABC.DEF.789")
+        );
     }
 
     #[test]

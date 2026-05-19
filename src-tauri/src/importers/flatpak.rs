@@ -48,7 +48,8 @@ mod tests {
 
     #[test]
     fn parses_normal_line() {
-        let (name, id) = parse_flatpak_line("Heroic Games Launcher\tcom.heroicgameslauncher.hgl").unwrap();
+        let (name, id) =
+            parse_flatpak_line("Heroic Games Launcher\tcom.heroicgameslauncher.hgl").unwrap();
         assert_eq!(name, "Heroic Games Launcher");
         assert_eq!(id, "com.heroicgameslauncher.hgl");
     }

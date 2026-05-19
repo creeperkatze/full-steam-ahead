@@ -315,7 +315,12 @@ mod tests {
 
     #[test]
     fn target_path_header_uses_bare_id() {
-        let path = target_path(Path::new("/grid"), 12345, &ArtworkKind::Header, "header.jpg");
+        let path = target_path(
+            Path::new("/grid"),
+            12345,
+            &ArtworkKind::Header,
+            "header.jpg",
+        );
         assert_eq!(path, PathBuf::from("/grid/12345.jpg"));
     }
 
@@ -347,22 +352,34 @@ mod tests {
 
     #[test]
     fn extension_detects_jpg_from_url() {
-        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img.jpg"), "jpg");
+        assert_eq!(
+            extension_for(&ArtworkKind::Header, "https://example.com/img.jpg"),
+            "jpg"
+        );
     }
 
     #[test]
     fn extension_detects_png_from_url() {
-        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img.png"), "png");
+        assert_eq!(
+            extension_for(&ArtworkKind::Header, "https://example.com/img.png"),
+            "png"
+        );
     }
 
     #[test]
     fn extension_strips_query_string() {
-        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img.jpg?v=1"), "jpg");
+        assert_eq!(
+            extension_for(&ArtworkKind::Header, "https://example.com/img.jpg?v=1"),
+            "jpg"
+        );
     }
 
     #[test]
     fn extension_strips_fragment() {
-        assert_eq!(extension_for(&ArtworkKind::Hero, "https://example.com/img.png#section"), "png");
+        assert_eq!(
+            extension_for(&ArtworkKind::Hero, "https://example.com/img.png#section"),
+            "png"
+        );
     }
 
     #[test]
@@ -372,12 +389,18 @@ mod tests {
 
     #[test]
     fn extension_falls_back_to_png_for_logo() {
-        assert_eq!(extension_for(&ArtworkKind::Logo, "https://example.com/img"), "png");
+        assert_eq!(
+            extension_for(&ArtworkKind::Logo, "https://example.com/img"),
+            "png"
+        );
     }
 
     #[test]
     fn extension_falls_back_to_jpg_for_header() {
-        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img"), "jpg");
+        assert_eq!(
+            extension_for(&ArtworkKind::Header, "https://example.com/img"),
+            "jpg"
+        );
     }
 
     // selected_artwork_assets

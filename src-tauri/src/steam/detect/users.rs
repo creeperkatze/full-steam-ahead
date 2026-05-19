@@ -111,7 +111,10 @@ mod tests {
 
     #[test]
     fn quoted_tokens_single_value() {
-        assert_eq!(quoted_tokens("\t\"76561198000000001\""), vec!["76561198000000001"]);
+        assert_eq!(
+            quoted_tokens("\t\"76561198000000001\""),
+            vec!["76561198000000001"]
+        );
     }
 
     #[test]
@@ -217,7 +220,10 @@ mod tests {
 
     #[test]
     fn display_name_none_when_both_absent() {
-        let user = LoginUser { account_name: None, persona_name: None };
+        let user = LoginUser {
+            account_name: None,
+            persona_name: None,
+        };
         assert!(user.display_name().is_none());
     }
 
@@ -226,10 +232,13 @@ mod tests {
     #[test]
     fn lookup_by_direct_userdata_id() {
         let mut users = std::collections::HashMap::new();
-        users.insert("123456".to_string(), LoginUser {
-            account_name: Some("bob".to_string()),
-            persona_name: None,
-        });
+        users.insert(
+            "123456".to_string(),
+            LoginUser {
+                account_name: Some("bob".to_string()),
+                persona_name: None,
+            },
+        );
         let lu = LoginUsers { users };
         assert!(login_user_for_userdata_id(&lu, "123456").is_some());
     }
@@ -240,17 +249,22 @@ mod tests {
         let userdata_id: u64 = 123456;
         let steam64 = userdata_id + STEAM_ID64_BASE;
         let mut users = std::collections::HashMap::new();
-        users.insert(steam64.to_string(), LoginUser {
-            account_name: Some("bob".to_string()),
-            persona_name: None,
-        });
+        users.insert(
+            steam64.to_string(),
+            LoginUser {
+                account_name: Some("bob".to_string()),
+                persona_name: None,
+            },
+        );
         let lu = LoginUsers { users };
         assert!(login_user_for_userdata_id(&lu, &userdata_id.to_string()).is_some());
     }
 
     #[test]
     fn lookup_returns_none_for_unknown_id() {
-        let lu = LoginUsers { users: std::collections::HashMap::new() };
+        let lu = LoginUsers {
+            users: std::collections::HashMap::new(),
+        };
         assert!(login_user_for_userdata_id(&lu, "999999").is_none());
     }
 }

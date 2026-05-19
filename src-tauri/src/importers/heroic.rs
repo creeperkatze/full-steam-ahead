@@ -157,8 +157,12 @@ mod tests {
             {"app_name":"dlc","title":"DLC","is_dlc":true,"install_path":"/","executable":"d"}
         ]"#;
         let games: HashMap<String, HeroicEpicGame> = serde_json::from_str(
-            &json.replace('[', "{\"a\":").replace("},\n            {", ",\"b\":").replace(']', "}")
-        ).unwrap_or_default();
+            &json
+                .replace('[', "{\"a\":")
+                .replace("},\n            {", ",\"b\":")
+                .replace(']', "}"),
+        )
+        .unwrap_or_default();
         // Test the filtering logic directly on deserialized data
         let non_dlc_count = serde_json::from_str::<Vec<serde_json::Value>>(json)
             .unwrap()
