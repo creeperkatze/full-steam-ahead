@@ -178,3 +178,95 @@ struct SteamCollectionValue {
     added: Vec<u32>,
     removed: Vec<u32>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    // managed_collection_id
+
+    #[test]
+    fn collection_id_simple_name() {
+        assert_eq!(managed_collection_id("Epic Games"), "fsa-epic-games");
+    }
+
+    #[test]
+    fn collection_id_strips_special_chars() {
+        assert_eq!(managed_collection_id("EA app / Origin"), "fsa-ea-app-origin");
+    }
+
+    #[test]
+    fn collection_id_collapses_separators() {
+        assert_eq!(managed_collection_id("Ubisoft  Connect"), "fsa-ubisoft-connect");
+    }
+
+    #[test]
+    fn collection_id_empty_falls_back_to_imported() {
+        assert_eq!(managed_collection_id(""), "fsa-imported");
+    }
+
+    #[test]
+    fn collection_id_only_special_chars_falls_back_to_imported() {
+        assert_eq!(managed_collection_id("!@#$%"), "fsa-imported");
+    }
+
+    #[test]
+    fn collection_id_preserves_alphanumerics() {
+        assert_eq!(managed_collection_id("GOG"), "fsa-gog");
+    }
+
+    // is_managed_key
+
+    #[test]
+    fn managed_key_matches_fsa_prefix() {
+        assert!(is_managed_key("user-collections.fsa-epic-games"));
+    }
+
+    #[test]
+    fn managed_key_rejects_unrelated_key() {
+        assert!(!is_managed_key("user-collections.favorites"));
+    }
+
+    #[test]
+    fn managed_key_rejects_partial_prefix() {
+        assert!(!is_managed_key("user-collections.fsa"));
+    }
+
+    // parse_cloud_collections
+
+    #[test]
+    fn parse_empty_string_returns_empty() {
+        let (entries, prefix) = parse_cloud_collections("", Path::new("x.json")).unwrap();
+        assert!(entries.is_empty());
+        assert!(!prefix);
+    }
+
+    #[test]
+    fn parse_null_json_returns_empty() {
+        let (entries, _) = parse_cloud_collections("null", Path::new("x.json")).unwrap();
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn parse_array_returns_entries() {
+        let json = r#"[["some-key", {"value": "data"}]]"#;
+        let (entries, _) = parse_cloud_collections(json, Path::new("x.json")).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].0, "some-key");
+    }
+
+    #[test]
+    fn parse_strips_control_prefix_and_flags_it() {
+        let json = "\x01[[\"k\", {}]]";
+        let (entries, preserve) = parse_cloud_collections(json, Path::new("x.json")).unwrap();
+        assert!(preserve);
+        assert_eq!(entries.len(), 1);
+    }
+
+    #[test]
+    fn parse_non_array_non_null_returns_error() {
+        let result = parse_cloud_collections("{\"key\": 1}", Path::new("x.json"));
+        assert!(result.is_err());
+    }
+}

@@ -304,3 +304,149 @@ fn extension_for(kind: &ArtworkKind, source_path_or_url: &str) -> &'static str {
         ArtworkKind::Header | ArtworkKind::Capsule | ArtworkKind::Hero => "jpg",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{ArtworkMode, ArtworkPlan, ImportSource};
+    use std::path::PathBuf;
+
+    // target_path
+
+    #[test]
+    fn target_path_header_uses_bare_id() {
+        let path = target_path(Path::new("/grid"), 12345, &ArtworkKind::Header, "header.jpg");
+        assert_eq!(path, PathBuf::from("/grid/12345.jpg"));
+    }
+
+    #[test]
+    fn target_path_capsule_appends_p() {
+        let path = target_path(Path::new("/grid"), 12345, &ArtworkKind::Capsule, "img.jpg");
+        assert_eq!(path, PathBuf::from("/grid/12345p.jpg"));
+    }
+
+    #[test]
+    fn target_path_hero_appends_hero() {
+        let path = target_path(Path::new("/grid"), 12345, &ArtworkKind::Hero, "img.jpg");
+        assert_eq!(path, PathBuf::from("/grid/12345_hero.jpg"));
+    }
+
+    #[test]
+    fn target_path_logo_appends_logo() {
+        let path = target_path(Path::new("/grid"), 12345, &ArtworkKind::Logo, "img.png");
+        assert_eq!(path, PathBuf::from("/grid/12345_logo.png"));
+    }
+
+    #[test]
+    fn target_path_icon_appends_icon() {
+        let path = target_path(Path::new("/grid"), 12345, &ArtworkKind::Icon, "img.png");
+        assert_eq!(path, PathBuf::from("/grid/12345_icon.png"));
+    }
+
+    // extension_for
+
+    #[test]
+    fn extension_detects_jpg_from_url() {
+        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img.jpg"), "jpg");
+    }
+
+    #[test]
+    fn extension_detects_png_from_url() {
+        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img.png"), "png");
+    }
+
+    #[test]
+    fn extension_strips_query_string() {
+        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img.jpg?v=1"), "jpg");
+    }
+
+    #[test]
+    fn extension_strips_fragment() {
+        assert_eq!(extension_for(&ArtworkKind::Hero, "https://example.com/img.png#section"), "png");
+    }
+
+    #[test]
+    fn extension_jpeg_normalises_to_jpg() {
+        assert_eq!(extension_for(&ArtworkKind::Capsule, "img.JPEG"), "jpg");
+    }
+
+    #[test]
+    fn extension_falls_back_to_png_for_logo() {
+        assert_eq!(extension_for(&ArtworkKind::Logo, "https://example.com/img"), "png");
+    }
+
+    #[test]
+    fn extension_falls_back_to_jpg_for_header() {
+        assert_eq!(extension_for(&ArtworkKind::Header, "https://example.com/img"), "jpg");
+    }
+
+    // selected_artwork_assets
+
+    fn make_asset(kind: ArtworkKind, source: ArtworkSource) -> ArtworkAsset {
+        ArtworkAsset {
+            kind,
+            path_or_url: "url".to_string(),
+            source,
+            will_replace_existing: false,
+        }
+    }
+
+    fn make_candidate(proposed: Vec<ArtworkAsset>) -> ImportCandidate {
+        ImportCandidate {
+            id: "test".to_string(),
+            source: ImportSource::Manual,
+            name: "Game".to_string(),
+            executable_path: PathBuf::from("game.exe"),
+            start_dir: PathBuf::from("."),
+            launch_options: None,
+            existing_app_id: None,
+            matched_steam_app_id: None,
+            tags: vec![],
+            artwork: ArtworkPlan {
+                mode: ArtworkMode::PreserveExisting,
+                existing: vec![],
+                proposed,
+            },
+            url_scheme: None,
+            launcher_path: None,
+            use_launcher_url: false,
+        }
+    }
+
+    #[test]
+    fn selected_assets_empty_proposed_returns_empty() {
+        let candidate = make_candidate(vec![]);
+        assert!(selected_artwork_assets(&candidate).is_empty());
+    }
+
+    #[test]
+    fn selected_assets_prefers_local_file_over_official_steam() {
+        let candidate = make_candidate(vec![
+            make_asset(ArtworkKind::Header, ArtworkSource::OfficialSteam),
+            make_asset(ArtworkKind::Header, ArtworkSource::LocalFile),
+        ]);
+        let selected = selected_artwork_assets(&candidate);
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].source, ArtworkSource::LocalFile);
+    }
+
+    #[test]
+    fn selected_assets_one_per_kind() {
+        let candidate = make_candidate(vec![
+            make_asset(ArtworkKind::Header, ArtworkSource::OfficialSteam),
+            make_asset(ArtworkKind::Capsule, ArtworkSource::OfficialSteam),
+        ]);
+        let selected = selected_artwork_assets(&candidate);
+        assert_eq!(selected.len(), 2);
+    }
+
+    #[test]
+    fn selected_assets_deduplicates_same_kind() {
+        let candidate = make_candidate(vec![
+            make_asset(ArtworkKind::Hero, ArtworkSource::OfficialSteam),
+            make_asset(ArtworkKind::Hero, ArtworkSource::SteamGridDb),
+        ]);
+        let selected = selected_artwork_assets(&candidate);
+        assert_eq!(selected.len(), 1);
+    }
+}
