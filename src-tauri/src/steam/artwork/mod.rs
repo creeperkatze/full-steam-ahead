@@ -1,66 +1,16 @@
+mod fetch;
+
 use crate::{
-    error::{io_context, AppError, AppResult},
+    error::{io_context, AppResult},
     models::{ArtworkAsset, ArtworkKind, ArtworkMode, ArtworkPlan, ArtworkSource, ImportCandidate},
 };
-use serde::Deserialize;
 use std::{
     fs,
     path::{Path, PathBuf},
-    sync::OnceLock,
 };
 
-fn http_client() -> &'static reqwest::blocking::Client {
-    static CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
-    CLIENT.get_or_init(|| {
-        reqwest::blocking::Client::builder()
-            .user_agent(concat!(
-                "creeperkatze/full-steam-ahead/",
-                env!("CARGO_PKG_VERSION"),
-                " (contact@creeperkatze.dev)"
-            ))
-            .build()
-            .expect("failed to build HTTP client")
-    })
-}
-
-#[derive(Debug, Deserialize)]
-struct StoreSearchResponse {
-    items: Vec<StoreSearchItem>,
-}
-
-#[derive(Debug, Deserialize)]
-struct StoreSearchItem {
-    id: u32,
-    name: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct StoreItemsResponse {
-    response: StoreItemsBody,
-}
-
-#[derive(Debug, Deserialize)]
-struct StoreItemsBody {
-    store_items: Vec<StoreItem>,
-}
-
-#[derive(Debug, Deserialize)]
-struct StoreItem {
-    assets: Option<StoreItemAssets>,
-}
-
-#[derive(Debug, Deserialize)]
-struct StoreItemAssets {
-    asset_url_format: String,
-    header: Option<String>,
-    header_2x: Option<String>,
-    library_capsule: Option<String>,
-    library_capsule_2x: Option<String>,
-    library_hero: Option<String>,
-    library_hero_2x: Option<String>,
-    logo: Option<String>,
-    logo_2x: Option<String>,
-    community_icon: Option<String>,
+pub struct ArtworkSkip {
+    pub change_id: String,
 }
 
 pub fn steam_preferred_plan(
@@ -69,7 +19,7 @@ pub fn steam_preferred_plan(
     game_name: &str,
 ) -> (Option<u32>, ArtworkPlan) {
     let existing = existing_assets(grid_path, shortcut_app_id);
-    let Some(steam_app_id) = find_steam_app_id(game_name) else {
+    let Some(steam_app_id) = fetch::find_steam_app_id(game_name) else {
         return (
             None,
             ArtworkPlan {
@@ -100,10 +50,6 @@ pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
     }
 }
 
-pub struct ArtworkSkip {
-    pub change_id: String,
-}
-
 pub fn apply_candidate_artwork(
     grid_path: &Path,
     candidate: &ImportCandidate,
@@ -128,7 +74,7 @@ pub fn apply_candidate_artwork(
         match asset.source {
             ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb => {
                 tracing::debug!(kind = ?asset.kind, game = %candidate.name, url = %asset.path_or_url, "Downloading artwork");
-                if let Err(error) = download_asset(&asset.path_or_url, &target) {
+                if let Err(error) = fetch::download_asset(&asset.path_or_url, &target) {
                     tracing::warn!(kind = ?asset.kind, game = %candidate.name, %error, "Artwork download failed");
                     skipped.push(ArtworkSkip {
                         change_id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
@@ -248,7 +194,7 @@ fn official_assets(steam_app_id: u32, existing: &[ArtworkAsset]) -> Vec<ArtworkA
 }
 
 fn official_asset_specs(steam_app_id: u32) -> Vec<(ArtworkKind, String)> {
-    if let Some(specs) = store_item_asset_specs(steam_app_id) {
+    if let Some(specs) = fetch::store_item_asset_specs(steam_app_id) {
         return specs;
     }
 
@@ -262,93 +208,25 @@ fn official_asset_specs(steam_app_id: u32) -> Vec<(ArtworkKind, String)> {
         (ArtworkKind::Logo, format!("{base}/logo.png")),
     ];
 
-    if let Some(icon_url) = community_icon_url(steam_app_id) {
+    if let Some(icon_url) = fetch::community_icon_url(steam_app_id) {
         specs.push((ArtworkKind::Icon, icon_url));
     }
 
     specs
 }
 
-fn store_item_asset_specs(steam_app_id: u32) -> Option<Vec<(ArtworkKind, String)>> {
-    let request = serde_json::json!({
-        "ids": [{ "appid": steam_app_id }],
-        "context": { "country_code": "US" },
-        "data_request": { "include_assets": true }
-    });
-    let url = format!(
-        "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json={}",
-        encode_query(&request.to_string())
-    );
-    let item = http_client()
-        .get(url)
-        .send()
-        .ok()?
-        .error_for_status()
-        .ok()?
-        .json::<StoreItemsResponse>()
-        .ok()?
-        .response
-        .store_items
-        .into_iter()
-        .next()?;
-    let assets = item.assets?;
-    let mut specs = Vec::new();
-
-    push_store_asset(
-        &mut specs,
-        ArtworkKind::Header,
-        &assets.asset_url_format,
-        assets.header_2x.as_deref().or(assets.header.as_deref()),
-    );
-    push_store_asset(
-        &mut specs,
-        ArtworkKind::Capsule,
-        &assets.asset_url_format,
-        assets
-            .library_capsule_2x
-            .as_deref()
-            .or(assets.library_capsule.as_deref()),
-    );
-    push_store_asset(
-        &mut specs,
-        ArtworkKind::Hero,
-        &assets.asset_url_format,
-        assets
-            .library_hero_2x
-            .as_deref()
-            .or(assets.library_hero.as_deref()),
-    );
-    push_store_asset(
-        &mut specs,
-        ArtworkKind::Logo,
-        &assets.asset_url_format,
-        assets.logo_2x.as_deref().or(assets.logo.as_deref()),
-    );
-
-    fill_logo_fallback(&mut specs, &assets.asset_url_format, steam_app_id);
-
-    if let Some(icon_hash) = assets.community_icon.filter(|hash| {
-        hash.len() == 40 && hash.chars().all(|character| character.is_ascii_hexdigit())
-    }) {
-        specs.push((
-            ArtworkKind::Icon,
-            format!(
-                "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{steam_app_id}/{icon_hash}.jpg"
-            ),
-        ));
-    }
-
-    (!specs.is_empty()).then_some(specs)
-}
-
-fn known_library_logo_2x(steam_app_id: u32) -> Option<&'static str> {
-    match steam_app_id {
-        3_089_420 => Some("331e53ee4e0e2dea265f3da1226c9de4dc05f72c/logo_2x.png"),
-        _ => None,
+pub(super) fn push_store_asset(
+    specs: &mut Vec<(ArtworkKind, String)>,
+    kind: ArtworkKind,
+    asset_url_format: &str,
+    filename: Option<&str>,
+) {
+    if let Some(filename) = filename {
+        specs.push((kind, store_asset_url(asset_url_format, filename)));
     }
 }
 
-fn fill_logo_fallback(
+pub(super) fn fill_logo_fallback(
     specs: &mut Vec<(ArtworkKind, String)>,
     asset_url_format: &str,
     steam_app_id: u32,
@@ -373,14 +251,10 @@ fn fill_logo_fallback(
     }
 }
 
-fn push_store_asset(
-    specs: &mut Vec<(ArtworkKind, String)>,
-    kind: ArtworkKind,
-    asset_url_format: &str,
-    filename: Option<&str>,
-) {
-    if let Some(filename) = filename {
-        specs.push((kind, store_asset_url(asset_url_format, filename)));
+fn known_library_logo_2x(steam_app_id: u32) -> Option<&'static str> {
+    match steam_app_id {
+        3_089_420 => Some("331e53ee4e0e2dea265f3da1226c9de4dc05f72c/logo_2x.png"),
+        _ => None,
     }
 }
 
@@ -391,114 +265,16 @@ fn push_reachable_store_asset(
     filename: &str,
 ) {
     let url = store_asset_url(asset_url_format, filename);
-    if reachable_url(&url) {
+    if fetch::reachable_url(&url) {
         specs.push((kind, url));
     }
 }
 
-fn store_asset_url(asset_url_format: &str, filename: &str) -> String {
+pub(super) fn store_asset_url(asset_url_format: &str, filename: &str) -> String {
     format!(
         "https://shared.steamstatic.com/store_item_assets/{}",
         asset_url_format.replace("${FILENAME}", filename)
     )
-}
-
-fn reachable_url(url: &str) -> bool {
-    http_client()
-        .head(url)
-        .send()
-        .and_then(|response| response.error_for_status().map(|_| ()))
-        .is_ok()
-}
-
-fn community_icon_url(steam_app_id: u32) -> Option<String> {
-    let url = format!("https://store.steampowered.com/app/{steam_app_id}/");
-    let html = http_client()
-        .get(url)
-        .send()
-        .ok()?
-        .error_for_status()
-        .ok()?
-        .text()
-        .ok()?;
-    let marker = format!("steamcommunity/public/images/apps/{steam_app_id}/");
-    let marker_start = html.find(&marker)?;
-    let url_start = html[..marker_start].rfind("https://")?;
-    let extension_end = html[marker_start..].find(".jpg")? + marker_start + ".jpg".len();
-    let icon_url = html[url_start..extension_end].replace("\\/", "/");
-    let hash_start = marker_start + marker.len();
-    let hash = html[hash_start..].get(..40)?;
-
-    hash.chars()
-        .all(|character| character.is_ascii_hexdigit())
-        .then_some(icon_url)
-}
-
-fn find_steam_app_id(game_name: &str) -> Option<u32> {
-    let term = encode_query(game_name);
-    let url = format!("https://store.steampowered.com/api/storesearch/?term={term}&l=en&cc=US");
-    let response = http_client()
-        .get(url)
-        .send()
-        .ok()?
-        .error_for_status()
-        .ok()?;
-    let search = response.json::<StoreSearchResponse>().ok()?;
-    search
-        .items
-        .into_iter()
-        .min_by_key(|item| name_distance(&item.name, game_name))
-        .map(|item| item.id)
-}
-
-fn name_distance(left: &str, right: &str) -> usize {
-    let left = normalize_name(left);
-    let right = normalize_name(right);
-    if left == right {
-        return 0;
-    }
-    if left.contains(&right) || right.contains(&left) {
-        return 1;
-    }
-    left.len().abs_diff(right.len()) + 10
-}
-
-fn normalize_name(value: &str) -> String {
-    value
-        .chars()
-        .filter(|character| character.is_ascii_alphanumeric())
-        .flat_map(char::to_lowercase)
-        .collect()
-}
-
-fn encode_query(value: &str) -> String {
-    value
-        .bytes()
-        .flat_map(|byte| match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' => vec![byte as char],
-            b' ' => vec!['+'],
-            _ => format!("%{byte:02X}").chars().collect(),
-        })
-        .collect()
-}
-
-fn download_asset(url: &str, target: &Path) -> AppResult<()> {
-    let response = http_client()
-        .get(url)
-        .send()
-        .map_err(|error| AppError::Message(format!("request failed for {url}: {error}")))?
-        .error_for_status()
-        .map_err(|error| AppError::Message(format!("request failed for {url}: {error}")))?;
-    let bytes = response.bytes().map_err(|error| {
-        AppError::Message(format!(
-            "could not read artwork response for {url}: {error}"
-        ))
-    })?;
-
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).map_err(io_context(parent))?;
-    }
-    fs::write(target, bytes).map_err(io_context(target))
 }
 
 fn extension_for(kind: &ArtworkKind, source_path_or_url: &str) -> &'static str {

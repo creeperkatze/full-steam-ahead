@@ -1,15 +1,13 @@
 use crate::{
-    backups,
-    error::{io_context, AppError, CommandError},
+    error::CommandError,
     models::{
-        ApplyRequest, ApplyResult, BackupInfo, ImportCandidate, ManualImportRequest, Options,
-        PreviewPlan, ScanRequest, ShortcutEntry, SteamInstallation, UserSettings,
+        ApplyRequest, ApplyResult, ImportCandidate, ManualImportRequest, PreviewPlan, ScanRequest,
+        ShortcutEntry, SteamInstallation,
     },
     steam,
 };
 use chrono::Utc;
-use std::{fs, path::PathBuf};
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, instrument};
 
 type CommandResult<T> = Result<T, CommandError>;
 
@@ -58,7 +56,7 @@ pub fn scan_sources(
 pub fn create_preview_plan(
     user_steam_id: String,
     candidates: Vec<ImportCandidate>,
-    options: Options,
+    options: crate::models::Options,
 ) -> CommandResult<PreviewPlan> {
     let user = steam::detect::find_user(&user_steam_id)?;
     let backup_root = crate::paths::app_data_dir()
@@ -72,34 +70,6 @@ pub fn create_preview_plan(
         "Preview plan created"
     );
     Ok(plan)
-}
-
-#[tauri::command]
-#[instrument(skip_all)]
-pub fn load_settings() -> CommandResult<UserSettings> {
-    let path = settings_path();
-    if !path.exists() {
-        return Ok(UserSettings::default());
-    }
-    let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
-    Ok(serde_json::from_str(&raw).unwrap_or_default())
-}
-
-#[tauri::command]
-#[instrument(skip_all)]
-pub fn save_settings(settings: UserSettings) -> CommandResult<()> {
-    let path = settings_path();
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(io_context(parent))?;
-    }
-    let raw = serde_json::to_string_pretty(&settings)
-        .map_err(|_| AppError::Message("Failed to serialize settings.".to_string()))?;
-    fs::write(&path, raw).map_err(io_context(&path))?;
-    Ok(())
-}
-
-fn settings_path() -> PathBuf {
-    crate::paths::app_data_dir().join("settings.json")
 }
 
 #[tauri::command]
@@ -131,18 +101,4 @@ pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult
 pub fn close_app(app: tauri::AppHandle) {
     info!("Application closing");
     app.exit(0);
-}
-
-#[tauri::command]
-#[instrument]
-pub fn list_backups() -> CommandResult<Vec<BackupInfo>> {
-    backups::list().map_err(Into::into)
-}
-
-#[tauri::command]
-#[instrument]
-pub fn restore_backup(backup_id: String) -> CommandResult<usize> {
-    let restored = backups::restore_backup(&backup_id)?;
-    info!(backup_id, restored, "Backup restored via command");
-    Ok(restored)
 }
