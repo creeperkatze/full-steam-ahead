@@ -5,6 +5,7 @@ import { computed, onMounted } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import AppShell from '../../components/AppShell.vue'
+import TitleBar from '../../components/TitleBar.vue'
 import UiButton from '../../components/ui/Button.vue'
 import { useAppState } from '../../composables/useAppState'
 import { useReviewPlan } from '../../composables/useReviewPlan'
@@ -120,60 +121,62 @@ async function goNext() {
 </script>
 
 <template>
-	<AppShell
-		:active-step="activeStepIndex"
-		:error="task.error.value"
-		:settings-open="settingsOpen"
-		@select-step="goToStepIndex"
-		@toggle-settings="toggleSettings"
-	>
-		<RouterView />
+	<div class="flex h-screen flex-col bg-surface-2">
+		<TitleBar
+			:active-step="activeStepIndex"
+			:settings-open="settingsOpen"
+			@select-step="goToStepIndex"
+			@toggle-settings="toggleSettings"
+		/>
+		<AppShell :error="task.error.value">
+			<RouterView />
 
-		<template #footer>
-			<div v-if="showActionBar" class="flex shrink-0 justify-center px-2">
-				<div class="flex items-center gap-2">
-					<UiButton v-if="state.step.value !== 'start'" variant="ghost" @click="goBack">
-						Back
-					</UiButton>
-
-					<!-- Start view: scan button, plus continue when results exist -->
-					<template v-if="state.step.value === 'start'">
-						<UiButton
-							:variant="state.scanPhase.value === 'done' ? 'ghost' : undefined"
-							:disabled="scanDisabled"
-							@click="doScan"
-						>
-							Scan
-							<template #icon><Search :size="16" /></template>
+			<template #footer>
+				<div v-if="showActionBar" class="flex shrink-0 justify-center px-2">
+					<div class="flex items-center gap-2">
+						<UiButton v-if="state.step.value !== 'start'" variant="ghost" @click="goBack">
+							Back
 						</UiButton>
-						<UiButton v-if="state.scanPhase.value === 'done'" @click="continueToSources">
-							Continue
-							<template #icon><ArrowRight :size="16" /></template>
-						</UiButton>
-					</template>
 
-					<!-- All other steps -->
-					<UiButton
-						v-else-if="state.step.value !== 'done'"
-						:disabled="nextDisabled"
-						@click="goNext"
-					>
-						{{ nextLabel }}
-						<template #icon>
-							<Check v-if="state.step.value === 'review'" :size="18" />
-							<ArrowRight v-else :size="16" />
+						<!-- Start view: scan button, plus continue when results exist -->
+						<template v-if="state.step.value === 'start'">
+							<UiButton
+								:variant="state.scanPhase.value === 'done' ? 'ghost' : undefined"
+								:disabled="scanDisabled"
+								@click="doScan"
+							>
+								Scan
+								<template #icon><Search :size="16" /></template>
+							</UiButton>
+							<UiButton v-if="state.scanPhase.value === 'done'" @click="continueToSources">
+								Continue
+								<template #icon><ArrowRight :size="16" /></template>
+							</UiButton>
 						</template>
-					</UiButton>
 
-					<UiButton
-						v-else-if="state.step.value === 'done' && !task.loading.value"
-						@click="invoke('close_app')"
-					>
-						Close
-						<template #icon><X :size="16" /></template>
-					</UiButton>
+						<!-- All other steps -->
+						<UiButton
+							v-else-if="state.step.value !== 'done'"
+							:disabled="nextDisabled"
+							@click="goNext"
+						>
+							{{ nextLabel }}
+							<template #icon>
+								<Check v-if="state.step.value === 'review'" :size="18" />
+								<ArrowRight v-else :size="16" />
+							</template>
+						</UiButton>
+
+						<UiButton
+							v-else-if="state.step.value === 'done' && !task.loading.value"
+							@click="invoke('close_app')"
+						>
+							Close
+							<template #icon><X :size="16" /></template>
+						</UiButton>
+					</div>
 				</div>
-			</div>
-		</template>
-	</AppShell>
+			</template>
+		</AppShell>
+	</div>
 </template>

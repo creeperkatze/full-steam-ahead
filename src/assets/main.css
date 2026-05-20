@@ -61,6 +61,19 @@
         font: inherit;
     }
 
+    [data-tauri-drag-region]
+    {
+        -webkit-app-region: drag;
+    }
+
+    button,
+    a,
+    input,
+    select
+    {
+        -webkit-app-region: no-drag;
+    }
+
     input[type="checkbox"]
     {
         accent-color: theme(colors.accent);
