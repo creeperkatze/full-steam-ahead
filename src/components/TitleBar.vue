@@ -19,6 +19,7 @@ defineEmits<{
 
 const steps = ['Start', 'Sources', 'Artwork', 'Review', 'Done']
 
+const isMac = ref(false)
 const win = getCurrentWindow()
 const isMaximized = ref(false)
 
@@ -29,6 +30,7 @@ async function updateMaximized() {
 let unlisten: (() => void) | undefined
 
 onMounted(async () => {
+	isMac.value = navigator.userAgent.includes('Macintosh')
 	await updateMaximized()
 	unlisten = await win.onResized(updateMaximized)
 })
@@ -41,7 +43,7 @@ onUnmounted(() => unlisten?.())
 		class="grid h-18 shrink-0 select-none grid-cols-[auto_1fr_auto] items-center border-b border-border"
 		data-tauri-drag-region
 	>
-		<div class="flex items-center px-3">
+		<div :class="['flex items-center pr-3', isMac ? 'pl-20' : 'pl-3']">
 			<button
 				type="button"
 				class="cursor-pointer rounded opacity-90 transition-opacity hover:opacity-100"
@@ -93,31 +95,33 @@ onUnmounted(() => unlisten?.())
 					<Settings v-else :size="17" />
 				</UiButton>
 			</div>
-			<button
-				type="button"
-				title="Minimize"
-				class="flex w-11 items-center justify-center text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-				@click="win.minimize()"
-			>
-				<Minus :size="14" />
-			</button>
-			<button
-				type="button"
-				:title="isMaximized ? 'Restore' : 'Maximize'"
-				class="flex w-11 items-center justify-center text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-				@click="win.toggleMaximize()"
-			>
-				<Minimize2 v-if="isMaximized" :size="13" />
-				<Maximize2 v-else :size="13" />
-			</button>
-			<button
-				type="button"
-				title="Close"
-				class="flex w-11 items-center justify-center text-secondary transition-colors hover:bg-red-700 hover:text-white"
-				@click="win.close()"
-			>
-				<X :size="15" />
-			</button>
+			<template v-if="!isMac">
+				<button
+					type="button"
+					title="Minimize"
+					class="flex w-11 items-center justify-center text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
+					@click="win.minimize()"
+				>
+					<Minus :size="14" />
+				</button>
+				<button
+					type="button"
+					:title="isMaximized ? 'Restore' : 'Maximize'"
+					class="flex w-11 items-center justify-center text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
+					@click="win.toggleMaximize()"
+				>
+					<Minimize2 v-if="isMaximized" :size="13" />
+					<Maximize2 v-else :size="13" />
+				</button>
+				<button
+					type="button"
+					title="Close"
+					class="flex w-11 items-center justify-center text-secondary transition-colors hover:bg-red-700 hover:text-white"
+					@click="win.close()"
+				>
+					<X :size="15" />
+				</button>
+			</template>
 		</div>
 	</header>
 </template>
