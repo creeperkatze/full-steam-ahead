@@ -110,4 +110,4 @@ Please ensure you run `pnpm lint` before opening a pull request.
 
 ## 📜 License
 
-GPL-3.0
+AGPL-3.0
