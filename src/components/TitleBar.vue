@@ -108,7 +108,7 @@ onUnmounted(() => unlisten?.())
 					size="icon"
 					variant="ghost"
 					title="Close"
-					class="hover:bg-red-700 hover:text-white"
+					class="hover:bg-red-800! hover:border-red-700!"
 					@click="win.close()"
 				>
 					<X :size="15" />
