@@ -57,6 +57,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            #[cfg(not(target_os = "linux"))]
+            if let Some(window) = app.get_webview_window("main") {
+                if let Err(e) = window.set_shadow(true) {
+                    tracing::warn!(error = %e, "Failed to set window shadow");
+                }
+            }
+
             if let Ok(install) = steam::detect::detect_steam() {
                 if let Err(e) = app.asset_protocol_scope().allow_directory(&install.install_path, true) {
                     tracing::warn!(error = %e, path = %install.install_path.display(), "Could not extend asset scope for Steam path");
