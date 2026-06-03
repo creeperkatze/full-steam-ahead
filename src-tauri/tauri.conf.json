@@ -24,7 +24,8 @@
         "fullscreen": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "zoomHotkeysEnabled": false
+        "zoomHotkeysEnabled": false,
+        "trafficLightPosition": { "x": 8, "y": 14 }
       }
     ],
     "security": {
