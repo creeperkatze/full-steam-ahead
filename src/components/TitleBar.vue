@@ -43,7 +43,7 @@ onUnmounted(() => unlisten?.())
 
 <template>
 	<header
-		class="grid h-18 shrink-0 select-none grid-cols-[auto_1fr_auto] items-center border-b border-border"
+		class="flex h-18 shrink-0 select-none items-center overflow-hidden border-b border-border"
 		data-tauri-drag-region
 	>
 		<div :class="['flex items-center pr-3', isMac ? 'pl-20' : 'pl-3']">
@@ -57,12 +57,12 @@ onUnmounted(() => unlisten?.())
 			</button>
 		</div>
 
-		<nav v-if="!settingsOpen" class="grid grid-cols-5 gap-2 px-2" aria-label="Import progress">
+		<nav v-if="!settingsOpen" class="flex gap-2 px-2" aria-label="Import progress">
 			<button
 				v-for="(step, index) in steps"
 				:key="step"
 				type="button"
-				class="flex min-h-9 items-center gap-2 rounded-md border px-3 text-left text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary"
+				class="flex w-32 min-h-9 items-center justify-start gap-2 rounded-md border p-2 text-left text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary"
 				:class="
 					activeStep >= index
 						? 'border-accent bg-accent-bg text-primary'
@@ -83,9 +83,7 @@ onUnmounted(() => unlisten?.())
 				{{ step }}
 			</button>
 		</nav>
-		<div v-else aria-hidden="true" />
-
-		<div class="flex items-stretch self-stretch">
+		<div class="ml-auto flex items-stretch self-stretch">
 			<div class="flex items-center px-2">
 				<UiButton
 					size="icon"
