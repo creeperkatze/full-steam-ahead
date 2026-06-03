@@ -43,7 +43,7 @@ onUnmounted(() => unlisten?.())
 
 <template>
 	<header class="flex p-4 shrink-0 select-none items-center overflow-hidden" data-tauri-drag-region>
-		<div :class="['flex items-center pr-2', { 'pl-20': isMac }]">
+		<div :class="['flex items-center pr-2', { 'pl-18': isMac }]">
 			<button
 				type="button"
 				class="cursor-pointer rounded opacity-90 transition-opacity hover:opacity-100"
