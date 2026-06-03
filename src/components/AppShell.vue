@@ -54,7 +54,7 @@ onMounted(async () => {
 </script>
 
 <template>
-	<main class="flex min-h-0 flex-1 flex-col gap-3 p-3 text-primary">
+	<main class="flex min-h-0 flex-1 flex-col px-4 pb-2 text-primary">
 		<div
 			class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-surface-1 px-5 py-4"
 		>
@@ -67,7 +67,7 @@ onMounted(async () => {
 			<slot />
 		</div>
 
-		<div class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-end gap-3">
+		<div class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-end gap-3 pt-2">
 			<div class="flex min-w-0 items-center gap-2">
 				<span class="shrink-0 text-sm text-secondary">v{{ version }}</span>
 				<span v-if="updateChecking" class="flex min-w-0 items-center gap-1 text-sm text-secondary">
