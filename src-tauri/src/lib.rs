@@ -1,11 +1,11 @@
 mod backups;
 mod commands;
-mod error;
+pub mod error;
 mod importers;
-mod models;
-mod paths;
+pub mod models;
+pub mod paths;
 mod process;
-mod steam;
+pub mod steam;
 
 use commands::{
     apply_plan, close_app, create_manual_candidate, create_preview_plan, detect_steam,

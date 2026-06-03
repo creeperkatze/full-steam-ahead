@@ -11,10 +11,9 @@ use std::{
     thread::sleep,
     time::{Duration, Instant},
 };
-use tauri::Emitter;
 
 pub fn apply_plan_with_progress(
-    app: &tauri::AppHandle,
+    on_progress: impl Fn(ApplyProgressEvent),
     request: ApplyRequest,
 ) -> AppResult<ApplyResult> {
     tracing::info!(
@@ -37,28 +36,22 @@ pub fn apply_plan_with_progress(
 
     if request.options.stop_steam {
         current += 1;
-        let _ = app.emit(
-            "apply-progress",
-            ApplyProgressEvent {
-                step: ApplyStep::StoppingSteam,
-                current,
-                total,
-            },
-        );
+        on_progress(ApplyProgressEvent {
+            step: ApplyStep::StoppingSteam,
+            current,
+            total,
+        });
         tracing::info!("Stopping Steam");
         stop_steam()?;
         tracing::info!("Steam stopped");
     }
 
     current += 1;
-    let _ = app.emit(
-        "apply-progress",
-        ApplyProgressEvent {
-            step: ApplyStep::CreatingBackups,
-            current,
-            total,
-        },
-    );
+    on_progress(ApplyProgressEvent {
+        step: ApplyStep::CreatingBackups,
+        current,
+        total,
+    });
     let mut backups_created = Vec::new();
     for backup in &request.plan.backups {
         if !backup.source.exists() {
@@ -80,27 +73,21 @@ pub fn apply_plan_with_progress(
 
     if request.candidates.is_empty() {
         current += 1;
-        let _ = app.emit(
-            "apply-progress",
-            ApplyProgressEvent {
-                step: ApplyStep::ApplyingArtwork { game_name: None },
-                current,
-                total,
-            },
-        );
+        on_progress(ApplyProgressEvent {
+            step: ApplyStep::ApplyingArtwork { game_name: None },
+            current,
+            total,
+        });
     } else {
         for candidate in &request.candidates {
             current += 1;
-            let _ = app.emit(
-                "apply-progress",
-                ApplyProgressEvent {
-                    step: ApplyStep::ApplyingArtwork {
-                        game_name: Some(candidate.name.clone()),
-                    },
-                    current,
-                    total,
+            on_progress(ApplyProgressEvent {
+                step: ApplyStep::ApplyingArtwork {
+                    game_name: Some(candidate.name.clone()),
                 },
-            );
+                current,
+                total,
+            });
             let candidate_skipped = artwork::apply_candidate_artwork(
                 &user.grid_path,
                 candidate,
@@ -113,14 +100,11 @@ pub fn apply_plan_with_progress(
     }
 
     current += 1;
-    let _ = app.emit(
-        "apply-progress",
-        ApplyProgressEvent {
-            step: ApplyStep::UpdatingShortcuts,
-            current,
-            total,
-        },
-    );
+    on_progress(ApplyProgressEvent {
+        step: ApplyStep::UpdatingShortcuts,
+        current,
+        total,
+    });
     let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
     let additions = request
         .candidates
@@ -132,26 +116,20 @@ pub fn apply_plan_with_progress(
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
     current += 1;
-    let _ = app.emit(
-        "apply-progress",
-        ApplyProgressEvent {
-            step: ApplyStep::UpdatingCollections,
-            current,
-            total,
-        },
-    );
+    on_progress(ApplyProgressEvent {
+        step: ApplyStep::UpdatingCollections,
+        current,
+        total,
+    });
     collections::update_modern_collections(&user.collections_path, &request.candidates)?;
 
     if request.options.restart_steam {
         current += 1;
-        let _ = app.emit(
-            "apply-progress",
-            ApplyProgressEvent {
-                step: ApplyStep::RestartingSteam,
-                current,
-                total,
-            },
-        );
+        on_progress(ApplyProgressEvent {
+            step: ApplyStep::RestartingSteam,
+            current,
+            total,
+        });
         tracing::info!("Restarting Steam");
         let _ = process::restart_steam(&install_path);
     }

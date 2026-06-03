@@ -6,6 +6,7 @@ use crate::{
     },
     steam,
 };
+use tauri::Emitter;
 use chrono::Utc;
 use tracing::{debug, info, instrument};
 
@@ -43,8 +44,14 @@ pub fn scan_sources(
     request: ScanRequest,
 ) -> CommandResult<Vec<ImportCandidate>> {
     let user = steam::detect::find_user(&request.user_steam_id)?;
-    let result =
-        steam::sources::scan_sources_with_progress(&app, &user, &request).map_err(Into::into);
+    let result = steam::sources::scan_sources_with_progress(
+        |event| {
+            let _ = app.emit("scan-progress", event);
+        },
+        &user,
+        &request,
+    )
+    .map_err(Into::into);
     if let Ok(ref candidates) = result {
         info!(total = candidates.len(), "Scan complete");
     }
@@ -85,7 +92,13 @@ pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<Im
 #[tauri::command]
 #[instrument(skip(app, request), fields(user = %request.plan.user_steam_id, candidates = request.candidates.len()))]
 pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult<ApplyResult> {
-    let result = steam::apply::apply_plan_with_progress(&app, request).map_err(Into::into);
+    let result = steam::apply::apply_plan_with_progress(
+        |event| {
+            let _ = app.emit("apply-progress", event);
+        },
+        request,
+    )
+    .map_err(Into::into);
     if let Ok(ref r) = result {
         info!(
             applied = r.applied_changes.len(),

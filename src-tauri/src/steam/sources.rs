@@ -8,10 +8,9 @@ use crate::{
     steam::{artwork, non_steam_app_id},
 };
 use std::path::Path;
-use tauri::Emitter;
 
 pub fn scan_sources_with_progress(
-    app: &tauri::AppHandle,
+    on_progress: impl Fn(ScanProgressEvent),
     user: &SteamUser,
     request: &ScanRequest,
 ) -> AppResult<Vec<ImportCandidate>> {
@@ -19,14 +18,11 @@ pub fn scan_sources_with_progress(
     let enabled_sources = enabled_sources(request);
 
     for source in &enabled_sources {
-        let _ = app.emit(
-            "scan-progress",
-            ScanProgressEvent {
-                source: source.clone(),
-                status: "scanning".to_string(),
-                found: 0,
-            },
-        );
+        on_progress(ScanProgressEvent {
+            source: source.clone(),
+            status: "scanning".to_string(),
+            found: 0,
+        });
 
         let found = scan_single_source(source, user);
         let found_count = found.len();
@@ -38,14 +34,11 @@ pub fn scan_sources_with_progress(
             tracing::info!(source = %source.display_name(), found = found_count, "Games found");
         }
 
-        let _ = app.emit(
-            "scan-progress",
-            ScanProgressEvent {
-                source: source.clone(),
-                status: "done".to_string(),
-                found: found_count,
-            },
-        );
+        on_progress(ScanProgressEvent {
+            source: source.clone(),
+            status: "done".to_string(),
+            found: found_count,
+        });
     }
 
     Ok(candidates)

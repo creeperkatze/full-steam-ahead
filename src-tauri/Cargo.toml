@@ -12,6 +12,10 @@ edition = "2021"
 name = "full_steam_ahead_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[bin]]
+name = "fsh"
+path = "src/bin/cli.rs"
+
 [build-dependencies]
 tauri-build = { version = "2.0.0", features = [] }
 
