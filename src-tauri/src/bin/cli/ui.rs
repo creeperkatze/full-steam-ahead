@@ -48,7 +48,11 @@ pub fn print_summary(plan: &PreviewPlan) {
         println!("  {} {} new shortcut(s)", style("+").green().bold(), new_c);
     }
     if upd_c > 0 {
-        println!("  {} {} updated shortcut(s)", style("~").yellow().bold(), upd_c);
+        println!(
+            "  {} {} updated shortcut(s)",
+            style("~").yellow().bold(),
+            upd_c
+        );
     }
     if art_c > 0 {
         println!("  {} {} artwork file(s)", style("◆").cyan(), art_c);

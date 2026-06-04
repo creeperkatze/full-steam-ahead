@@ -160,12 +160,10 @@ pub fn apply_changes(
 ) -> AppResult<ApplyResult> {
     let pb = ProgressBar::new(0);
     pb.set_style(
-        ProgressStyle::with_template(
-            "  {spinner:.cyan} [{bar:40.cyan/237}] {pos}/{len}  {msg}",
-        )
-        .unwrap()
-        .progress_chars("█░░")
-        .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
+        ProgressStyle::with_template("  {spinner:.cyan} [{bar:40.cyan/237}] {pos}/{len}  {msg}")
+            .unwrap()
+            .progress_chars("█░░")
+            .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
     );
     pb.enable_steady_tick(Duration::from_millis(80));
 

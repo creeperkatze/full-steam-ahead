@@ -6,8 +6,8 @@ use crate::{
     },
     steam,
 };
-use tauri::Emitter;
 use chrono::Utc;
+use tauri::Emitter;
 use tracing::{debug, info, instrument};
 
 type CommandResult<T> = Result<T, CommandError>;
