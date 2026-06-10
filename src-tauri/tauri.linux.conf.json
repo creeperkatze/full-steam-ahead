@@ -1,0 +1,9 @@
+{
+    "bundle": {
+        "deb": {
+            "files": {
+                "/usr/bin/fsa": "target/release/fsa"
+            }
+        }
+    }
+}
