@@ -6,7 +6,7 @@
     "mainBinaryName": "Full Steam Ahead",
     "build": {
         "beforeDevCommand": "pnpm dev:web",
-        "beforeBuildCommand": "pnpm build:web && pnpm build:cli",
+        "beforeBuildCommand": "pnpm build:web",
         "devUrl": "http://localhost:1420",
         "frontendDist": "../dist"
     },

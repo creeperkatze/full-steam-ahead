@@ -32,11 +32,11 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            args: --bundles nsis,msi --config src-tauri/tauri.windows.conf.json
-            uploadPlainBinary: true
+            args: --bundles nsis,msi
+            uploadPlainBinary: false
           - platform: ubuntu-latest
-            args: --bundles deb,appimage,rpm --config src-tauri/tauri.linux.conf.json
-            uploadPlainBinary: true
+            args: --bundles deb,appimage,rpm
+            uploadPlainBinary: false
           - platform: macos-latest
             args: --target universal-apple-darwin --bundles dmg
             uploadPlainBinary: false
