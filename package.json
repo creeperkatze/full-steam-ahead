@@ -7,10 +7,8 @@
     "scripts": {
         "dev": "tauri dev",
         "dev:web": "vite",
-        "dev:cli": "cargo run --manifest-path src-tauri/Cargo.toml --bin fsa",
         "build": "tauri build",
         "build:web": "vue-tsc --noEmit && vite build",
-        "build:cli": "cargo build --release --manifest-path src-tauri/Cargo.toml --bin fsa",
         "preview": "vite preview",
         "lint": "eslint src/ && cargo clippy --manifest-path src-tauri/Cargo.toml && cargo fmt --manifest-path src-tauri/Cargo.toml --check",
         "lint:fix": "eslint src/ --fix && cargo clippy --manifest-path src-tauri/Cargo.toml --fix --allow-dirty && cargo fmt --manifest-path src-tauri/Cargo.toml",
