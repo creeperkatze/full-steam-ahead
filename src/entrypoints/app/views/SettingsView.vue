@@ -28,7 +28,7 @@ onMounted(async () => {
 })
 
 function formatBackupDate(iso: string): string {
-	return iso.replace('T', ' ').replace('Z', '')
+	return new Date(iso).toLocaleString()
 }
 
 function formatSize(bytes: number): string {
@@ -66,55 +66,62 @@ async function confirmRestore() {
 </script>
 
 <template>
-	<section class="grid w-full grid-cols-2 items-start gap-3">
-		<section class="rounded-lg border border-border bg-surface-3 p-4">
-			<h2 class="mb-3 text-base font-semibold">Apply Options</h2>
-			<div class="grid gap-2">
-				<label
-					class="flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger"
-				>
+	<div class="flex flex-col gap-4">
+		<!-- Steam -->
+		<section class="overflow-hidden rounded-xl border border-border">
+			<div class="border-b border-border bg-surface-4 px-4 py-3">
+				<h2 class="font-semibold">Steam</h2>
+			</div>
+			<div class="divide-y divide-border/50 bg-surface-3">
+				<label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-surface-4">
 					<UiCheckbox v-model="state.options.value.stopSteam" />
-					Stop Steam before applying
+					<div>
+						<p class="text-sm font-medium">Stop Steam before applying</p>
+						<p class="text-xs text-secondary">Steam must be closed to modify shortcut files</p>
+					</div>
 				</label>
-				<label
-					class="flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger"
-				>
+				<label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-surface-4">
 					<UiCheckbox v-model="state.options.value.restartSteam" />
-					Restart Steam after applying
+					<div>
+						<p class="text-sm font-medium">Restart Steam after applying</p>
+						<p class="text-xs text-secondary">
+							Relaunches Steam so imported games appear immediately
+						</p>
+					</div>
 				</label>
 			</div>
 		</section>
 
-		<section class="rounded-lg border border-border bg-surface-3 p-4">
-			<h2 class="mb-1 text-base font-semibold">Restore Backup</h2>
-			<p class="mb-3 text-sm text-secondary">
-				Restore Steam shortcuts, collections, and artwork to the state of a previous backup.
-			</p>
+		<!-- Backups -->
+		<section class="overflow-hidden rounded-xl border border-border">
+			<div class="flex items-center justify-between border-b border-border bg-surface-4 px-4 py-3">
+				<h2 class="font-semibold">Backups</h2>
+				<span v-if="!backupsLoading" class="text-xs text-secondary">
+					{{ backups.length }} {{ backups.length === 1 ? 'backup' : 'backups' }}
+				</span>
+			</div>
 
-			<!-- Loading -->
-			<div v-if="backupsLoading" class="flex items-center gap-2 text-sm text-secondary">
+			<div
+				v-if="backupsLoading"
+				class="flex items-center gap-2 bg-surface-3 px-4 py-3 text-sm text-secondary"
+			>
 				<Loader2 :size="15" class="animate-spin" />
 				Loading backups…
 			</div>
 
-			<!-- No backups -->
-			<p v-else-if="backups.length === 0" class="text-sm text-secondary">No backups found.</p>
+			<p v-else-if="backups.length === 0" class="bg-surface-3 px-4 py-3 text-sm text-secondary">
+				No backups found.
+			</p>
 
-			<!-- Backup list -->
-			<div v-else class="grid gap-2">
-				<div
-					v-for="backup in backups"
-					:key="backup.id"
-					class="rounded-md border border-border bg-surface-5"
-				>
-					<div class="flex items-center gap-3 px-3 py-2">
+			<div v-else class="max-h-72 divide-y divide-border/50 overflow-y-auto bg-surface-3">
+				<div v-for="backup in backups" :key="backup.id">
+					<div class="flex items-center gap-3 px-4 py-2.5">
 						<div class="min-w-0 flex-1">
-							<span class="font-mono text-sm">{{ formatBackupDate(backup.createdAt) }}</span>
-							<span class="ml-2 text-xs text-secondary">
-								{{ backup.fileCount }}
-								{{ backup.fileCount === 1 ? 'file' : 'files' }} ·
+							<p class="font-mono text-sm">{{ formatBackupDate(backup.createdAt) }}</p>
+							<p class="text-xs text-secondary">
+								{{ backup.fileCount }} {{ backup.fileCount === 1 ? 'file' : 'files' }} ·
 								{{ formatSize(backup.sizeBytes) }}
-							</span>
+							</p>
 						</div>
 						<UiButton
 							v-if="confirmingId !== backup.id"
@@ -128,35 +135,35 @@ async function confirmRestore() {
 						</UiButton>
 					</div>
 
-					<!-- Inline confirmation -->
-					<div v-if="confirmingId === backup.id" class="border-t border-border px-3 py-2">
+					<div
+						v-if="confirmingId === backup.id"
+						class="border-t border-border/50 bg-surface-5 px-4 py-2.5"
+					>
 						<p class="mb-2 text-sm text-secondary">
 							This will overwrite the current Steam files for this account. Continue?
 						</p>
 						<div class="flex gap-2">
-							<UiButton size="sm" variant="danger" @click="confirmRestore"> Yes, restore </UiButton>
+							<UiButton size="sm" variant="danger" @click="confirmRestore">Yes, restore</UiButton>
 							<UiButton size="sm" variant="ghost" @click="cancelRestore">Cancel</UiButton>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<!-- Restore feedback -->
 			<div
-				v-if="restoreResult"
-				class="mt-3 flex items-center gap-2 rounded-md border border-border bg-surface-5 px-3 py-2 text-sm"
+				v-if="restoreResult || restoreError"
+				class="border-t border-border bg-surface-3 px-4 py-3"
 			>
-				<CheckCircle2 :size="15" class="shrink-0 text-accent" />
-				Restored {{ restoreResult.count }}
-				{{ restoreResult.count === 1 ? 'file' : 'files' }} successfully.
-			</div>
-			<div
-				v-if="restoreError"
-				class="mt-3 flex items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 py-2 text-sm text-danger"
-			>
-				<AlertCircle :size="15" class="shrink-0" />
-				{{ restoreError }}
+				<div v-if="restoreResult" class="flex items-center gap-2 text-sm">
+					<CheckCircle2 :size="15" class="shrink-0 text-accent" />
+					Restored {{ restoreResult.count }}
+					{{ restoreResult.count === 1 ? 'file' : 'files' }} successfully.
+				</div>
+				<div v-if="restoreError" class="flex items-center gap-2 text-sm text-danger">
+					<AlertCircle :size="15" class="shrink-0" />
+					{{ restoreError }}
+				</div>
 			</div>
 		</section>
-	</section>
+	</div>
 </template>
