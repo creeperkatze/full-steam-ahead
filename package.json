@@ -30,6 +30,7 @@
         "@eslint/js": "^10.0.1",
         "@tailwindcss/vite": "^4.3.0",
         "@tauri-apps/cli": "^2.11.2",
+        "@types/node": "^25.9.3",
         "@vitejs/plugin-vue": "^6.0.7",
         "autoprefixer": "^10.5.0",
         "eslint": "^10.4.0",

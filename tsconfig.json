@@ -11,8 +11,9 @@
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"],
   "references": []
 }
