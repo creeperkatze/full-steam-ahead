@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, FolderArchive, Gamepad2, Image, Library, ListChecks, Save } from '@lucide/vue'
+import { ChevronDown, FolderArchive, Image, Library, ListChecks } from '@lucide/vue'
 import { computed } from 'vue'
 
 import GameIcon from '../../../components/GameIcon.vue'
@@ -63,18 +63,6 @@ const games = computed(() => {
 
 const candidateByName = computed(() => new Map(state.candidates.value.map((c) => [c.name, c])))
 
-const summary = computed(() => {
-	const changes = props.plan?.changes ?? []
-	return {
-		games: games.value.length,
-		shortcuts: changes.filter((c) => c.kind === 'addShortcut' || c.kind === 'updateShortcut')
-			.length,
-		artwork: changes.filter((c) => c.kind === 'writeArtwork').length,
-		collections: changes.filter((c) => c.kind === 'updateCollections').length,
-		backups: props.plan?.backups.length ?? 0,
-	}
-})
-
 function changeCount(game: GameReview) {
 	return Number(Boolean(game.shortcut)) + game.collections.length + game.artwork.length
 }
@@ -115,38 +103,6 @@ function fileName(path: string) {
 		</div>
 
 		<template v-else>
-			<!-- Summary stats -->
-			<div class="flex flex-wrap gap-2">
-				<div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
-					<Gamepad2 :size="15" class="text-accent" />
-					<strong>{{ summary.games }}</strong>
-					<span class="text-xs text-secondary">games</span>
-				</div>
-				<div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
-					<ListChecks :size="15" class="text-accent" />
-					<strong>{{ summary.shortcuts }}</strong>
-					<span class="text-xs text-secondary">shortcuts</span>
-				</div>
-				<div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
-					<Image :size="15" class="text-accent" />
-					<strong>{{ summary.artwork }}</strong>
-					<span class="text-xs text-secondary">artwork</span>
-				</div>
-				<div
-					v-if="summary.collections"
-					class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2"
-				>
-					<Library :size="15" class="text-accent" />
-					<strong>{{ summary.collections }}</strong>
-					<span class="text-xs text-secondary">collections</span>
-				</div>
-				<div class="flex items-center gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
-					<Save :size="15" class="text-accent" />
-					<strong>{{ summary.backups }}</strong>
-					<span class="text-xs text-secondary">backups</span>
-				</div>
-			</div>
-
 			<!-- Game list -->
 			<div class="grid gap-2">
 				<article
