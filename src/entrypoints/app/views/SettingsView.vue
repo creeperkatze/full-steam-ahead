@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, Loader2, RotateCcw } from '@lucide/vue'
 import { onMounted, ref } from 'vue'
 
 import UiButton from '../../../components/ui/Button.vue'
+import UiCheckbox from '../../../components/ui/Checkbox.vue'
 import { useAppState } from '../../../composables/useAppState'
 import { api } from '../../../helpers/api'
 import type { BackupInfo } from '../../../types'
@@ -70,15 +71,15 @@ async function confirmRestore() {
 			<h2 class="mb-3 text-base font-semibold">Apply Options</h2>
 			<div class="grid gap-2">
 				<label
-					class="flex min-h-10 items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger"
+					class="flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger"
 				>
-					<input v-model="state.options.value.stopSteam" type="checkbox" />
+					<UiCheckbox v-model="state.options.value.stopSteam" />
 					Stop Steam before applying
 				</label>
 				<label
-					class="flex min-h-10 items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger"
+					class="flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-danger-border bg-surface-5 px-3 text-danger"
 				>
-					<input v-model="state.options.value.restartSteam" type="checkbox" />
+					<UiCheckbox v-model="state.options.value.restartSteam" />
 					Restart Steam after applying
 				</label>
 			</div>

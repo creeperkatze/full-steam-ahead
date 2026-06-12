@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import GameIcon from '../../../components/GameIcon.vue'
 import SourceCard from '../../../components/SourceCard.vue'
 import UiButton from '../../../components/ui/Button.vue'
+import Checkbox from '../../../components/ui/Checkbox.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
 import { useAppState } from '../../../composables/useAppState'
 import { SCANNABLE_SOURCES } from '../../../composables/useScanSources'
@@ -199,13 +200,10 @@ function selectNone() {
 			<label
 				class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5"
 			>
-				<input
-					type="checkbox"
-					:checked="allSelected(manualCandidates)"
+				<Checkbox
+					:model-value="allSelected(manualCandidates)"
 					:disabled="manualCandidates.length === 0"
-					@change="
-						setCandidatesSelected(manualCandidates, ($event.target as HTMLInputElement).checked)
-					"
+					@update:model-value="setCandidatesSelected(manualCandidates, $event)"
 				/>
 				<strong class="min-w-0 flex-1 truncate text-base">{{ importSourceName('manual') }}</strong>
 				<span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
@@ -238,10 +236,9 @@ function selectNone() {
 
 				<ItemRow v-for="candidate in manualCandidates" :key="candidate.id" as="label" interactive>
 					<template #leading>
-						<input
-							type="checkbox"
-							:checked="state.selectedCandidateIds.value.has(candidate.id)"
-							@change="toggleCandidate(candidate.id)"
+						<Checkbox
+							:model-value="state.selectedCandidateIds.value.has(candidate.id)"
+							@update:model-value="toggleCandidate(candidate.id)"
 						/>
 						<GameIcon :candidate="candidate" :size="20" />
 					</template>

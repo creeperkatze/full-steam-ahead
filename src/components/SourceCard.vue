@@ -6,6 +6,7 @@ import { importSourceName } from '../helpers/sourceNames'
 import type { ImportCandidate } from '../types'
 import GameIcon from './GameIcon.vue'
 import SourceIcon from './SourceIcon.vue'
+import Checkbox from './ui/Checkbox.vue'
 import ItemRow from './ui/ItemRow.vue'
 import Toggle from './ui/Toggle.vue'
 
@@ -38,10 +39,9 @@ const allSelected = computed(
 		<label
 			class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5"
 		>
-			<input
-				type="checkbox"
-				:checked="allSelected"
-				@change="emit('set-all', ($event.target as HTMLInputElement).checked)"
+			<Checkbox
+				:model-value="allSelected"
+				@update:model-value="emit('set-all', $event)"
 			/>
 			<SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />
 			<strong class="min-w-0 flex-1 truncate text-base">{{ title }}</strong>
@@ -53,10 +53,9 @@ const allSelected = computed(
 		<div class="grid gap-1.5 bg-surface-3 p-2">
 			<ItemRow v-for="candidate in candidates" :key="candidate.id" as="label" interactive>
 				<template #leading>
-					<input
-						type="checkbox"
-						:checked="selectedIds.has(candidate.id)"
-						@change="emit('toggle', candidate.id)"
+					<Checkbox
+						:model-value="selectedIds.has(candidate.id)"
+						@update:model-value="emit('toggle', candidate.id)"
 					/>
 					<GameIcon :candidate="candidate" :size="20" />
 				</template>
