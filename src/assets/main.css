@@ -4,36 +4,33 @@
 {
     --font-sans: 'Inter Variable', Inter, "Segoe UI", sans-serif;
 
-    --color-surface-1: #1f2328;
-    --color-surface-2: #171a1f;
-    --color-surface-3: #292e35;
-    --color-surface-4: #333941;
-    --color-surface-5: #22272e;
-    --color-surface-inset: #1a1f25;
-    --color-surface-hover: #2b333d;
-    --color-control: #303844;
-    --color-control-hover: #394453;
+    --color-surface-1: #1c2230;
+    --color-surface-2: #13171e;
+    --color-surface-3: #242c3a;
+    --color-surface-4: #2d3444;
+    --color-surface-5: #1f2532;
 
-    --color-primary: #e6edf3;
-    --color-secondary: #9da7b1;
-    --color-path: #c8d1da;
+    --color-control: #293248;
+    --color-control-hover: #333c55;
 
-    --color-border: #454c56;
-    --color-border-muted: #3a424d;
-    --color-border-dashed: #596370;
+    --color-primary: #c8d6e4;
+    --color-secondary: #8aa2b6;
+    --color-path: #9eb6c6;
 
-    --color-accent: #66c0f4;
+    --color-border: #3b4858;
+    --color-border-muted: #2d3848;
+    --color-border-dashed: #4c5e6e;
+
+    --color-accent: #2badff;
     --color-accent-strong: #1a9fff;
-    --color-accent-bg: #12324a;
+    --color-accent-bg: #0d1e2e;
     --color-accent-contrast: #07131f;
-    --color-accent-text: #9ed8fb;
 
     --color-danger: #f0a397;
     --color-danger-bg: #2b1d1a;
     --color-danger-control: #3a2421;
     --color-danger-hover: #472b27;
     --color-danger-border: #754037;
-    --color-danger-border-muted: #734139;
 
     --color-warning: #f0d98a;
     --color-warning-bg: #292518;
