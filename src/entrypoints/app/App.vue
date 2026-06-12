@@ -30,6 +30,14 @@ const activeStepIndex = computed(() => {
 	return 0
 })
 
+const navigableSteps = computed(() => [
+	true,
+	state.scanPhase.value === 'done',
+	state.selectedCandidates.value.length > 0,
+	state.selectedCandidates.value.length > 0,
+	activeStepIndex.value >= 4,
+])
+
 const nextLabel = computed(() => {
 	if (state.step.value === 'review') return 'Apply'
 	return 'Continue'
@@ -124,6 +132,7 @@ async function goNext() {
 	<div class="flex h-screen flex-col bg-surface-2">
 		<TitleBar
 			:active-step="activeStepIndex"
+			:navigable-steps="navigableSteps"
 			:settings-open="settingsOpen"
 			@select-step="goToStepIndex"
 			@toggle-settings="toggleSettings"
