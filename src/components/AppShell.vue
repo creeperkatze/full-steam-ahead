@@ -93,7 +93,7 @@ onMounted(async () => {
 					<span class="truncate">Update available</span>
 				</button>
 			</div>
-			<div class="flex items-center gap-2">
+			<div class="flex min-h-9 items-center gap-2">
 				<slot name="footer" />
 			</div>
 			<div class="flex items-center justify-end gap-3">
