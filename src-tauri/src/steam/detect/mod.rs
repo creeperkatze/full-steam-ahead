@@ -59,13 +59,13 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
                 .parse::<u64>()
                 .ok()
                 .and_then(|id| id.checked_add(users::STEAM_ID64_BASE))
-                .map(|id64| {
-                    install_path
-                        .join("config")
-                        .join("avatarcache")
-                        .join(format!("{id64}.png"))
-                })
-                .filter(|p| p.exists());
+                .and_then(|id64| {
+                    let cache = install_path.join("config").join("avatarcache");
+                    ["png", "jpg", "jpeg", "gif"]
+                        .iter()
+                        .map(|ext| cache.join(format!("{id64}.{ext}")))
+                        .find(|p| p.exists())
+                });
 
             steam_users.push(SteamUser {
                 account_name: login_user.and_then(|u| u.display_name()),
