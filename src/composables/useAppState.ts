@@ -76,7 +76,7 @@ async function loadSettingsFromDisk() {
 		const saved = await api.loadSettings()
 		options.value = { ...options.value, ...saved }
 	} catch {
-		// keep defaults
+		// Keep defaults
 	}
 }
 

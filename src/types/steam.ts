@@ -7,6 +7,7 @@ export interface SteamInstallation {
 export interface SteamUser {
 	steamId: string
 	accountName?: string | null
+	avatarPath?: string | null
 	shortcutsPath: string
 	gridPath: string
 	collectionsPath: string

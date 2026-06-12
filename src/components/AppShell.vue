@@ -41,7 +41,7 @@ async function checkForUpdates() {
 		if (tag && tag !== version.value) latestVersion.value = tag
 		else if (tag) isLatest.value = true
 	} catch {
-		// silently ignore
+		// Silently ignore
 	} finally {
 		updateChecking.value = false
 	}

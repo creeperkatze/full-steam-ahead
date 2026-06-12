@@ -14,6 +14,7 @@ pub struct SteamInstallation {
 pub struct SteamUser {
     pub steam_id: String,
     pub account_name: Option<String>,
+    pub avatar_path: Option<PathBuf>,
     pub shortcuts_path: PathBuf,
     pub grid_path: PathBuf,
     pub collections_path: PathBuf,

@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { Check, Loader2, Search } from '@lucide/vue'
+import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, onMounted } from 'vue'
 
 import SourceIcon from '../../../components/SourceIcon.vue'
+import UserAvatar from '../../../components/UserAvatar.vue'
+import Dropdown from '../../../components/ui/Dropdown.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
 import { useAppState } from '../../../composables/useAppState'
 import { SCANNABLE_SOURCES, useScanSources } from '../../../composables/useScanSources'
@@ -17,6 +20,14 @@ const steamUsers = computed(() =>
 	[...(state.install.value?.users ?? [])].sort((a, b) =>
 		steamUserName(a).localeCompare(steamUserName(b)),
 	),
+)
+
+const userOptions = computed(() =>
+	steamUsers.value.map((user) => ({
+		value: user.steamId,
+		label: steamUserName(user),
+		avatarSrc: user.avatarPath ? convertFileSrc(user.avatarPath) : null,
+	})),
 )
 
 const doneCount = computed(() => sourceStates.value.filter((s) => s.status === 'done').length)
@@ -83,15 +94,12 @@ async function refreshSteam() {
 				<div
 					class="flex items-center gap-3 rounded-lg border border-border bg-surface-3 px-4 py-2.5"
 				>
-					<span class="text-sm text-secondary">Steam User</span>
-					<select
-						v-model="state.selectedUserId.value"
-						class="h-9 rounded-md border border-border bg-surface-5 px-2 text-sm text-primary"
-					>
-						<option v-for="user in steamUsers" :key="user.steamId" :value="user.steamId">
-							{{ steamUserName(user) }}
-						</option>
-					</select>
+					<span class="shrink-0 text-sm text-secondary">Steam User</span>
+					<Dropdown v-model="state.selectedUserId.value" :options="userOptions">
+						<template #leading="{ option }">
+							<UserAvatar :src="option.avatarSrc" :size="18" />
+						</template>
+					</Dropdown>
 				</div>
 			</template>
 		</section>

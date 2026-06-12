@@ -51,11 +51,25 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
                 continue;
             };
 
+            let login_user = login_users
+                .as_ref()
+                .and_then(|lu| users::login_user_for_userdata_id(lu, &steam_id));
+
+            let avatar_path = steam_id
+                .parse::<u64>()
+                .ok()
+                .and_then(|id| id.checked_add(users::STEAM_ID64_BASE))
+                .map(|id64| {
+                    install_path
+                        .join("config")
+                        .join("avatarcache")
+                        .join(format!("{id64}.png"))
+                })
+                .filter(|p| p.exists());
+
             steam_users.push(SteamUser {
-                account_name: login_users.as_ref().and_then(|lu| {
-                    users::login_user_for_userdata_id(lu, &steam_id)
-                        .and_then(|user| user.display_name())
-                }),
+                account_name: login_user.and_then(|u| u.display_name()),
+                avatar_path,
                 shortcuts_path: path.join("config").join("shortcuts.vdf"),
                 grid_path: path.join("config").join("grid"),
                 collections_path: path

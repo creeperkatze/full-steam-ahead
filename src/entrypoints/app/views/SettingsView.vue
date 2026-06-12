@@ -21,7 +21,7 @@ onMounted(async () => {
 	try {
 		backups.value = await api.listBackups()
 	} catch {
-		// keep empty state
+		// Keep empty state
 	} finally {
 		backupsLoading.value = false
 	}
