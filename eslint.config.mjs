@@ -25,6 +25,9 @@ export default tseslint.config(
 				clearInterval: 'readonly',
 				HTMLElement: 'readonly',
 				HTMLInputElement: 'readonly',
+				KeyboardEvent: 'readonly',
+				MouseEvent: 'readonly',
+				Node: 'readonly',
 			},
 		},
 		plugins: {
