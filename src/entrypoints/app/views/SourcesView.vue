@@ -24,13 +24,6 @@ interface PlatformCard {
 	candidates: ImportCandidate[]
 }
 
-const selectedCount = computed(() => state.selectedCandidateIds.value.size)
-const steamUsers = computed(() =>
-	[...(state.install.value?.users ?? [])].sort((a, b) =>
-		steamUserName(a).localeCompare(steamUserName(b)),
-	),
-)
-
 const platformCards = computed<PlatformCard[]>(() =>
 	SCANNABLE_SOURCES.map((source) => ({
 		key: source,
@@ -53,10 +46,6 @@ const otherCards = computed(() => {
 
 function candidatesFor(source: ImportSource) {
 	return state.candidates.value.filter((candidate) => candidate.source === source)
-}
-
-function steamUserName(user: { accountName?: string | null }) {
-	return user.accountName?.trim() || 'Unnamed Steam User'
 }
 
 function selectedIn(candidates: ImportCandidate[]) {
@@ -118,58 +107,10 @@ function toggleCandidate(id: string) {
 	state.selectedCandidateIds.value = next
 	state.invalidatePreview()
 }
-
-function selectAll() {
-	state.selectedCandidateIds.value = new Set(state.candidates.value.map((c) => c.id))
-	state.invalidatePreview()
-}
-
-function selectNone() {
-	state.selectedCandidateIds.value = new Set()
-	state.invalidatePreview()
-}
 </script>
 
 <template>
 	<div class="flex flex-1 flex-col gap-4">
-		<!-- ── Header row ─────────────────────────────────────────────── -->
-		<section
-			class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-border bg-surface-3 p-3"
-		>
-			<div class="grid grid-cols-[auto_minmax(260px,1fr)_auto] items-center gap-3">
-				<strong class="text-base">Steam User</strong>
-				<select
-					v-model="state.selectedUserId.value"
-					class="h-10 w-fit rounded-md border border-border bg-surface-5 px-2 text-primary"
-					:disabled="!state.install.value?.users.length"
-					@change="state.invalidatePreview()"
-				>
-					<option v-for="user in steamUsers" :key="user.steamId" :value="user.steamId">
-						{{ steamUserName(user) }}
-					</option>
-				</select>
-				<div class="flex items-center gap-4">
-					<span class="text-secondary"
-						>Found <strong class="text-primary">{{ state.candidates.value.length }}</strong></span
-					>
-					<span class="text-secondary"
-						>Selected <strong class="text-primary">{{ selectedCount }}</strong></span
-					>
-				</div>
-			</div>
-			<div class="flex gap-2">
-				<UiButton variant="ghost" :disabled="state.candidates.value.length === 0" @click="selectAll"
-					>All</UiButton
-				>
-				<UiButton
-					variant="ghost"
-					:disabled="state.candidates.value.length === 0"
-					@click="selectNone"
-					>None</UiButton
-				>
-			</div>
-		</section>
-
 		<!-- ── Source cards ───────────────────────────────────────────── -->
 		<section class="grid gap-3">
 			<SourceCard
