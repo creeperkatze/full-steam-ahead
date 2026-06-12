@@ -39,10 +39,7 @@ const allSelected = computed(
 		<label
 			class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5"
 		>
-			<Checkbox
-				:model-value="allSelected"
-				@update:model-value="emit('set-all', $event)"
-			/>
+			<Checkbox :model-value="allSelected" @update:model-value="emit('set-all', $event)" />
 			<SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />
 			<strong class="min-w-0 flex-1 truncate text-base">{{ title }}</strong>
 			<span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
