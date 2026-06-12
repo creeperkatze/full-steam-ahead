@@ -103,7 +103,7 @@ onMounted(async () => {
 					@click="openUrl('https://ko-fi.com/creeperkatze')"
 				>
 					<KofiIcon class="size-4" aria-hidden="true" />
-					<span>Support</span>
+					<span>Donate</span>
 				</button>
 				<button
 					type="button"
