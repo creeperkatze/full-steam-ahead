@@ -2,12 +2,12 @@
 
 A desktop app to import games from other launchers into Steam.
 
-![GitHub Branch Check Runs](https://img.shields.io/github/check-runs/creeperkatze/full-steam-ahead/main?labelColor=0d143c)
-![GitHub Issues](https://img.shields.io/github/issues/creeperkatze/full-steam-ahead?labelColor=0d143c)
-![GitHub Pull Requests](https://img.shields.io/github/issues-pr/creeperkatze/full-steam-ahead?labelColor=0d143c)
-![GitHub Repo stars](https://img.shields.io/github/stars/creeperkatze/full-steam-ahead?style=flat&labelColor=0d143c)
+![GitHub Branch Check Runs](https://img.shields.io/github/check-runs/creeperkatze/full-steam-ahead/main)
+![GitHub Issues](https://img.shields.io/github/issues/creeperkatze/full-steam-ahead)
+![GitHub Pull Requests](https://img.shields.io/github/issues-pr/creeperkatze/full-steam-ahead)
+![GitHub Repo stars](https://img.shields.io/github/stars/creeperkatze/full-steam-ahead?style=flat)
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/F1F11WYJU3)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/creeperkatze)
 
 > [!IMPORTANT]
 > Full Steam Ahead is still in development and may be unstable.
