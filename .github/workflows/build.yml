@@ -33,7 +33,7 @@ jobs:
         include:
           - platform: windows-latest
             args: --bundles nsis,msi
-            uploadPlainBinary: false
+            uploadPlainBinary: true
           - platform: ubuntu-latest
             args: --bundles deb,appimage,rpm
             uploadPlainBinary: false
