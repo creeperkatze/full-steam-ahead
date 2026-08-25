@@ -96,9 +96,6 @@ async function confirmRestore() {
 		<section class="overflow-hidden rounded-xl border border-border">
 			<div class="flex items-center justify-between border-b border-border bg-surface-4 px-4 py-3">
 				<h2 class="font-semibold">Backups</h2>
-				<span v-if="!backupsLoading" class="text-xs text-secondary">
-					{{ backups.length }} {{ backups.length === 1 ? 'backup' : 'backups' }}
-				</span>
 			</div>
 
 			<div

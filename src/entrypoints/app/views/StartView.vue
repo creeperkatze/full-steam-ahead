@@ -31,9 +31,6 @@ const userOptions = computed(() =>
 )
 
 const doneCount = computed(() => sourceStates.value.filter((s) => s.status === 'done').length)
-const foundTotal = computed(() =>
-	sourceStates.value.reduce((sum, s) => sum + (s.status === 'done' ? s.found : 0), 0),
-)
 const scanProgressPct = computed(() =>
 	SCANNABLE_SOURCES.length > 0 ? (doneCount.value / SCANNABLE_SOURCES.length) * 100 : 0,
 )
@@ -111,9 +108,6 @@ async function refreshSteam() {
 			>
 				<div>
 					<h1 class="text-base font-bold">Scanning for games…</h1>
-					<p class="text-sm text-secondary">
-						{{ foundTotal }} game{{ foundTotal !== 1 ? 's' : '' }} found so far
-					</p>
 				</div>
 				<Loader2 :size="20" class="animate-spin text-accent" />
 			</div>
