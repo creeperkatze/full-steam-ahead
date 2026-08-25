@@ -1,5 +1,6 @@
 node_modules/
 dist/
+lcov.info
 src-tauri/target/
 src-tauri/gen/
 *.log

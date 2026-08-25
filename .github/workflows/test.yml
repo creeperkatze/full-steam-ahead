@@ -68,6 +68,8 @@ jobs:
           node-version: 22
 
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: ${{ matrix.os == 'ubuntu-latest' && 'llvm-tools' || '' }}
 
       - run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
@@ -87,3 +89,17 @@ jobs:
             patchelf
 
       - run: pnpm test
+
+      - if: matrix.os == 'ubuntu-latest'
+        uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
+        with:
+          tool: cargo-llvm-cov
+
+      - if: matrix.os == 'ubuntu-latest'
+        run: pnpm test:coverage
+
+      - if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@e53489f4d376d79066609109e7a95a29eb3740b1 # v7.0.0
+        with:
+          files: ./lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}

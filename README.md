@@ -3,6 +3,7 @@
 A desktop app to import games from other launchers into Steam.
 
 ![GitHub Branch Check Runs](https://img.shields.io/github/check-runs/creeperkatze/full-steam-ahead/main)
+![Codecov](https://img.shields.io/codecov/c/github/creeperkatze/full-steam-ahead)
 ![GitHub Issues](https://img.shields.io/github/issues/creeperkatze/full-steam-ahead)
 ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/creeperkatze/full-steam-ahead)
 ![GitHub Repo stars](https://img.shields.io/github/stars/creeperkatze/full-steam-ahead?style=flat)
