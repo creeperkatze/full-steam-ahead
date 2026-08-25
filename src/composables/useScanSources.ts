@@ -8,14 +8,7 @@ import { useAppState } from './useAppState'
 import { useTaskStatus } from './useTaskStatus'
 
 export type ScannableSource =
-	| 'playnite'
-	| 'epic'
-	| 'amazon'
-	| 'gog'
-	| 'itch'
-	| 'origin'
-	| 'ubisoftConnect'
-	| 'gamePass'
+	'playnite' | 'epic' | 'amazon' | 'gog' | 'itch' | 'origin' | 'ubisoftConnect' | 'gamePass'
 
 export interface SourceState {
 	key: ScannableSource
