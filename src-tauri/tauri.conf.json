@@ -47,7 +47,7 @@
         "publisher": "Creeperkatze",
         "copyright": "",
         "homepage": "https://github.com/creeperkatze/full-steam-ahead",
-        "license": "GPL-3.0-only",
+        "license": "AGPL-3.0-only",
         "licenseFile": "../LICENSE",
         "shortDescription": "A desktop app to import games from other launchers into Steam.",
         "longDescription": "",
