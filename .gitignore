@@ -4,3 +4,4 @@ lcov.info
 src-tauri/target/
 src-tauri/gen/
 *.log
+**/.vitepress/cache/
