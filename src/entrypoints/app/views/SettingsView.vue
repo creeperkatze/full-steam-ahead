@@ -8,9 +8,12 @@ import {
 	Power,
 	RotateCcw,
 	RotateCw,
+	Star,
 } from '@lucide/vue'
 import { onMounted, ref } from 'vue'
 
+import KofiIcon from '../../../assets/icons/kofi.svg?component'
+import Card from '../../../components/Card.vue'
 import OptionToggle from '../../../components/options/OptionToggle.vue'
 import SectionHeader from '../../../components/options/SectionHeader.vue'
 import SidebarTab from '../../../components/options/SidebarTab.vue'
@@ -84,7 +87,7 @@ async function confirmRestore() {
 
 <template>
 	<div class="flex min-h-0 flex-1">
-		<nav class="flex w-32 shrink-0 flex-col gap-1 pr-4">
+		<nav class="flex w-48 shrink-0 flex-col gap-1 pr-4">
 			<SidebarTab
 				v-for="section in sections"
 				:key="section.id"
@@ -93,6 +96,23 @@ async function confirmRestore() {
 				:active="activeSection === section.id"
 				@click="activeSection = section.id"
 			/>
+
+			<div class="mt-auto flex flex-col gap-1.5 pt-4">
+				<Card
+					href="https://ko-fi.com/creeperkatze"
+					:icon="KofiIcon"
+					color="#FF5E5B"
+					title="Donate on Ko-fi"
+					description="Buy me a coffee"
+				/>
+				<Card
+					href="https://github.com/creeperkatze/full-steam-ahead"
+					:icon="Star"
+					color="#9ca3af"
+					title="View on GitHub"
+					description="Leave a star"
+				/>
+			</div>
 		</nav>
 
 		<div class="min-w-0 flex-1 border-l border-border pl-4">
