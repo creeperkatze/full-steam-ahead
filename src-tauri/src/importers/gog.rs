@@ -12,8 +12,8 @@ use std::{
 pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     let mut all_candidates = Vec::new();
 
-    for (config_path, wine_c_drive) in find_galaxy_configs() {
-        let Ok(raw) = fs::read_to_string(&config_path) else {
+    for source in find_galaxy_configs() {
+        let Ok(raw) = fs::read_to_string(&source.config_path) else {
             continue;
         };
         let Ok(config) = serde_json::from_str::<GogConfig>(&raw) else {
@@ -29,7 +29,7 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
 
         // On Unix, translate Windows-style C:\ paths to the wine_c_drive equivalent
         #[cfg(unix)]
-        let roots: Vec<String> = if let Some(ref wine_c) = wine_c_drive {
+        let roots: Vec<String> = if let Some(ref wine_c) = source.wine_c_drive {
             roots
                 .into_iter()
                 .filter_map(|path| translate_installation_path(&path, wine_c))
@@ -53,9 +53,10 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
                 } else {
                     folder
                 };
-                let mut found = scan_gog_folder(user, &game_folder)?;
+                let mut found =
+                    scan_gog_folder(user, &game_folder, source.compat_folder.as_deref())?;
                 // Ensures Steam launches this shortcut through Proton, since it was found in a Wine/Proton prefix.
-                if wine_c_drive.is_some() {
+                if source.wine_c_drive.is_some() {
                     for candidate in &mut found {
                         candidate.needs_proton = true;
                     }
@@ -72,11 +73,15 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
 pub fn scan_folders(user: &SteamUser, folders: Vec<PathBuf>) -> Vec<ImportCandidate> {
     folders
         .into_iter()
-        .flat_map(|f| scan_gog_folder(user, &f).unwrap_or_default())
+        .flat_map(|f| scan_gog_folder(user, &f, None).unwrap_or_default())
         .collect()
 }
 
-fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<ImportCandidate>> {
+fn scan_gog_folder(
+    user: &SteamUser,
+    game_folder: &Path,
+    compat_folder: Option<&Path>,
+) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
     for entry in fs::read_dir(game_folder)
         .map_err(io_context(game_folder))?
@@ -117,6 +122,11 @@ fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<Import
         let work_dir = PathBuf::from(work_dir.to_string_lossy().replace('\\', "/"));
 
         let args = task.arguments.filter(|a| !a.trim().is_empty());
+        // Ensures Steam reuses the exact Proton prefix GOG Galaxy installed this game into.
+        let args = match compat_folder {
+            Some(compat) => Some(steam_compat_data_launch_options(compat, args.as_deref())),
+            None => args,
+        };
         candidates.push(candidate_from_parts(
             user,
             ImportSource::Gog,
@@ -131,15 +141,38 @@ fn scan_gog_folder(user: &SteamUser, game_folder: &Path) -> AppResult<Vec<Import
     Ok(candidates)
 }
 
-fn find_galaxy_configs() -> Vec<(PathBuf, Option<PathBuf>)> {
+fn steam_compat_data_launch_options(compat_folder: &Path, extra_args: Option<&str>) -> String {
+    let mut options = format!(
+        "STEAM_COMPAT_DATA_PATH=\"{}\" %command%",
+        compat_folder.display()
+    );
+    if let Some(extra_args) = extra_args.filter(|a| !a.trim().is_empty()) {
+        options.push(' ');
+        options.push_str(extra_args);
+    }
+    options
+}
+
+struct GalaxyConfigSource {
+    config_path: PathBuf,
+    wine_c_drive: Option<PathBuf>,
+    /// Set only when found inside a Steam-managed Proton prefix, not an external Wine prefix.
+    compat_folder: Option<PathBuf>,
+}
+
+fn find_galaxy_configs() -> Vec<GalaxyConfigSource> {
     #[cfg(windows)]
     {
         let base = std::env::var("PROGRAMDATA").unwrap_or_else(|_| "C:\\ProgramData".to_string());
-        let config = PathBuf::from(base)
+        let config_path = PathBuf::from(base)
             .join("GOG.com")
             .join("Galaxy")
             .join("config.json");
-        vec![(config, None)]
+        vec![GalaxyConfigSource {
+            config_path,
+            wine_c_drive: None,
+            compat_folder: None,
+        }]
     }
 
     #[cfg(unix)]
@@ -160,19 +193,27 @@ fn find_galaxy_configs() -> Vec<(PathBuf, Option<PathBuf>)> {
             .join("Galaxy")
             .join("config.json");
         if default_config.exists() {
-            result.push((default_config, Some(default_drive_c)));
+            result.push(GalaxyConfigSource {
+                config_path: default_config,
+                wine_c_drive: Some(default_drive_c),
+                compat_folder: None,
+            });
         }
 
         // Proton compat data prefixes
         for prefix in super::find_proton_prefixes() {
             let drive_c = prefix.join("pfx").join("drive_c");
-            let config = drive_c
+            let config_path = drive_c
                 .join("ProgramData")
                 .join("GOG.com")
                 .join("Galaxy")
                 .join("config.json");
-            if config.exists() {
-                result.push((config, Some(drive_c)));
+            if config_path.exists() {
+                result.push(GalaxyConfigSource {
+                    config_path,
+                    wine_c_drive: Some(drive_c),
+                    compat_folder: Some(prefix),
+                });
             }
         }
 
@@ -189,10 +230,35 @@ fn translate_installation_path(path: &str, wine_c_drive: &Path) -> Option<String
 
 #[cfg(test)]
 mod tests {
-    #[cfg(unix)]
     use super::*;
-    #[cfg(unix)]
     use std::path::Path;
+
+    #[test]
+    fn compat_data_launch_options_without_args() {
+        let compat = Path::new("/home/user/.steam/steam/steamapps/compatdata/123");
+        assert_eq!(
+            steam_compat_data_launch_options(compat, None),
+            "STEAM_COMPAT_DATA_PATH=\"/home/user/.steam/steam/steamapps/compatdata/123\" %command%"
+        );
+    }
+
+    #[test]
+    fn compat_data_launch_options_appends_extra_args() {
+        let compat = Path::new("/prefix/123");
+        assert_eq!(
+            steam_compat_data_launch_options(compat, Some("-windowed -skipintro")),
+            "STEAM_COMPAT_DATA_PATH=\"/prefix/123\" %command% -windowed -skipintro"
+        );
+    }
+
+    #[test]
+    fn compat_data_launch_options_ignores_blank_extra_args() {
+        let compat = Path::new("/prefix/123");
+        assert_eq!(
+            steam_compat_data_launch_options(compat, Some("   ")),
+            "STEAM_COMPAT_DATA_PATH=\"/prefix/123\" %command%"
+        );
+    }
 
     #[cfg(unix)]
     #[test]
