@@ -30,6 +30,7 @@ export interface ImportCandidate {
 	urlScheme?: string | null
 	launcherPath?: string | null
 	useLauncherUrl: boolean
+	needsProton: boolean
 }
 
 export interface ManualImportRequest {

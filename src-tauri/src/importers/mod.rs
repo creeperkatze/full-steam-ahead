@@ -104,6 +104,7 @@ pub fn candidate_from_parts(
         url_scheme: None,
         launcher_path: None,
         use_launcher_url: false,
+        needs_proton: false,
     }
 }
 

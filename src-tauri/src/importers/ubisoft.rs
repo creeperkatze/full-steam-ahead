@@ -143,7 +143,7 @@ fn scan_unix(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
             };
 
             let _ = icon;
-            launcher_candidate(
+            let mut candidate = launcher_candidate(
                 user,
                 ImportSource::UbisoftConnect,
                 "ubisoft",
@@ -151,7 +151,10 @@ fn scan_unix(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
                 launcher_info.exe_path.clone(),
                 launch_url,
                 vec!["Ubisoft Connect".to_string()],
-            )
+            );
+            // Ensures Steam launches this shortcut through Proton, since it was found in a Proton prefix.
+            candidate.needs_proton = launcher_info.compat_folder.is_some();
+            candidate
         })
         .collect();
 

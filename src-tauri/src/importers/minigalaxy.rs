@@ -27,6 +27,8 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         c.source = ImportSource::MiniGalaxy;
         c.id = c.id.replace("gog-", "minigalaxy-");
         c.tags = vec!["MiniGalaxy".to_string(), "GOG".to_string()];
+        // Ensures Steam launches this shortcut through Proton, since MiniGalaxy runs games in its own Wine prefixes.
+        c.needs_proton = true;
     }
 
     Ok(candidates)

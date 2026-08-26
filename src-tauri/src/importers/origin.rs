@@ -58,7 +58,8 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         let launch_url =
             format!("origin2://game/launch?offerIds={id}&autoDownload=1&authCode=&cmdParams=");
 
-        candidates.push(launcher_candidate(
+        #[cfg_attr(not(unix), allow(unused_mut))]
+        let mut candidate = launcher_candidate(
             user,
             ImportSource::Origin,
             "origin",
@@ -66,7 +67,15 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
             paths.exe_path.clone(),
             launch_url,
             vec!["EA app / Origin".to_string()],
-        ));
+        );
+
+        // Ensures Steam launches this shortcut through Proton, since it was found in a Proton prefix.
+        #[cfg(unix)]
+        {
+            candidate.needs_proton = paths.compat_folder.is_some();
+        }
+
+        candidates.push(candidate);
     }
 
     Ok(candidates)

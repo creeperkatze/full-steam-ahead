@@ -38,9 +38,6 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
             roots
         };
 
-        #[cfg(not(unix))]
-        let _ = wine_c_drive;
-
         for root in roots {
             let root = PathBuf::from(root);
             if !root.exists() {
@@ -56,7 +53,14 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
                 } else {
                     folder
                 };
-                all_candidates.extend(scan_gog_folder(user, &game_folder)?);
+                let mut found = scan_gog_folder(user, &game_folder)?;
+                // Ensures Steam launches this shortcut through Proton, since it was found in a Wine/Proton prefix.
+                if wine_c_drive.is_some() {
+                    for candidate in &mut found {
+                        candidate.needs_proton = true;
+                    }
+                }
+                all_candidates.extend(found);
             }
         }
     }

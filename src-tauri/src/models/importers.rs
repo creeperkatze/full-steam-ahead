@@ -83,6 +83,8 @@ pub struct ImportCandidate {
     pub url_scheme: Option<String>,
     pub launcher_path: Option<PathBuf>,
     pub use_launcher_url: bool,
+    #[serde(default)]
+    pub needs_proton: bool,
 }
 
 impl ImportCandidate {

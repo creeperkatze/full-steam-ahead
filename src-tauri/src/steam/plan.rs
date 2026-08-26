@@ -103,8 +103,7 @@ fn candidate_changes(
     let already_in_collection = existing_collection_app_ids
         .get(&collection_name)
         .is_some_and(|ids| {
-            // Check both the effective exe and the raw exe path so that games previously
-            // imported without Via Launcher are still recognised after the toggle changes.
+            // Checks both the effective and raw exe path so games are still recognised after the launcher toggle changes.
             [candidate.effective_executable(), &candidate.executable_path]
                 .iter()
                 .any(|p| {
@@ -201,6 +200,7 @@ mod tests {
             url_scheme: None,
             launcher_path: None,
             use_launcher_url: false,
+            needs_proton: false,
         }
     }
 

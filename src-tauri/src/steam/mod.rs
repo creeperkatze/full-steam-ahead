@@ -3,6 +3,8 @@ pub mod artwork;
 pub mod collections;
 pub mod detect;
 pub mod plan;
+#[cfg(unix)]
+pub mod proton;
 pub mod shortcuts;
 pub mod sources;
 
@@ -16,8 +18,7 @@ mod tests {
 
     #[test]
     fn empty_input_forces_high_bit() {
-        // CRC32("") = 0, so the | 0x8000_0000 is the only contributor.
-        // If this value ever changes, the CRC32 variant or concatenation changed.
+        // CRC32("") = 0, so the | 0x8000_0000 is the only contributor to this value.
         assert_eq!(non_steam_app_id("", ""), 0x8000_0000);
     }
 
@@ -43,8 +44,7 @@ mod tests {
 
     #[test]
     fn concatenation_order_is_exe_then_name() {
-        // Flipping the arguments must produce a different ID, proving
-        // the format is "{exe}{name}" and not "{name}{exe}".
+        // Flipping the arguments must change the ID, proving the format is "{exe}{name}".
         assert_ne!(non_steam_app_id("ab", "cd"), non_steam_app_id("cd", "ab"));
     }
 }

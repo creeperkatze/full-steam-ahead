@@ -138,7 +138,8 @@ fn candidate_from_manifest(
         launch_url
     };
 
-    if needs_launcher {
+    #[cfg_attr(not(all(unix, not(target_os = "macos"))), allow(unused_mut))]
+    let mut candidate = if needs_launcher {
         launcher_candidate(
             user,
             ImportSource::Epic,
@@ -163,7 +164,15 @@ fn candidate_from_manifest(
         candidate.url_scheme = Some(launch_url);
         candidate.launcher_path = Some(paths.launcher_path.clone());
         candidate
+    };
+
+    // Found inside an existing Proton prefix, so Steam must be told to launch it via Proton
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        candidate.needs_proton = paths.compat_folder.is_some();
     }
+
+    candidate
 }
 
 fn is_installed(manifest: &EpicManifest) -> bool {

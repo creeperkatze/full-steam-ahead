@@ -1,3 +1,5 @@
+#[cfg(unix)]
+use crate::steam::proton;
 use crate::{
     backups,
     error::{io_context, AppError, AppResult},
@@ -106,12 +108,27 @@ pub fn apply_plan_with_progress(
         total,
     });
     let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
-    let additions = request
+    let new_candidates = request
         .candidates
         .iter()
         .filter(|candidate| candidate.existing_app_id.is_none())
+        .collect::<Vec<_>>();
+    let additions = new_candidates
+        .iter()
         .map(|candidate| sources::shortcut_from_candidate(candidate, &user.grid_path))
         .collect::<Vec<_>>();
+
+    #[cfg(unix)]
+    {
+        let proton_app_ids = new_candidates
+            .iter()
+            .zip(&additions)
+            .filter(|(candidate, _)| candidate.needs_proton)
+            .map(|(_, shortcut)| shortcut.app_id)
+            .collect::<Vec<_>>();
+        proton::setup_compat_tool_mapping(&install_path, &proton_app_ids)?;
+    }
+
     shortcuts::append_missing(&mut existing, additions);
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
