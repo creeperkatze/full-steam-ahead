@@ -31,7 +31,7 @@ function stepLabel(step: ApplyStep): string {
 		<!-- Apply progress -->
 		<section
 			v-if="applyProgress"
-			class="flex flex-1 flex-col items-center justify-center gap-4 rounded-xl border border-accent/30 bg-accent-bg p-8"
+			class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-accent/30 bg-accent-bg p-8"
 		>
 			<div class="w-full max-w-sm">
 				<div class="mb-3 flex items-center gap-3">
@@ -53,7 +53,7 @@ function stepLabel(step: ApplyStep): string {
 		<!-- Success state -->
 		<section
 			v-else-if="applyResult"
-			class="flex flex-1 flex-col items-center justify-center gap-5 rounded-xl border border-accent/30 bg-accent-bg text-center"
+			class="flex flex-1 flex-col items-center justify-center gap-6 border border-accent/30 bg-accent-bg text-center"
 		>
 			<div class="grid size-14 place-items-center rounded-full bg-accent text-accent-contrast">
 				<Check :size="28" />

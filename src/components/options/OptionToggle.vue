@@ -18,7 +18,7 @@ defineEmits<{
 
 <template>
 	<div
-		class="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-3 px-4 py-3"
+		class="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-3 px-3 py-2"
 		:class="disabled ? 'opacity-60' : ''"
 	>
 		<component :is="icon" v-if="icon" :size="18" class="shrink-0 text-secondary" />

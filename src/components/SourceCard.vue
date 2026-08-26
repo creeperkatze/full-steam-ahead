@@ -35,7 +35,7 @@ const allSelected = computed(
 </script>
 
 <template>
-	<article class="overflow-hidden rounded-xl border border-border">
+	<article class="overflow-hidden rounded-lg border border-border">
 		<label
 			class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5"
 		>

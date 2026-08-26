@@ -56,7 +56,7 @@ onMounted(async () => {
 <template>
 	<main class="flex min-h-0 flex-1 flex-col px-4 pb-2 text-primary">
 		<div
-			class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-surface-1 px-5 py-4"
+			class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-surface-1 p-4"
 		>
 			<div
 				v-if="error"

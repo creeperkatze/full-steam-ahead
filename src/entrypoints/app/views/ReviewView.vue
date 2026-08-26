@@ -108,7 +108,7 @@ function fileName(path: string) {
 				<article
 					v-for="game in games"
 					:key="game.name"
-					class="overflow-hidden rounded-xl border border-border"
+					class="overflow-hidden rounded-lg border border-border"
 				>
 					<div class="flex items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
 						<GameIcon
@@ -167,7 +167,7 @@ function fileName(path: string) {
 			</div>
 
 			<!-- Backup details -->
-			<details class="group overflow-hidden rounded-xl border border-border">
+			<details class="group overflow-hidden rounded-lg border border-border">
 				<summary
 					class="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-transparent bg-surface-4 px-3 py-2.5 text-sm group-open:border-border"
 				>

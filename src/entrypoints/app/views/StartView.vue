@@ -57,10 +57,9 @@ async function refreshSteam() {
 
 <template>
 	<div class="flex flex-1 flex-col gap-4">
-		<!-- ── Welcome (idle / done) ──────────────────────────────────── -->
 		<section
 			v-if="state.scanPhase.value !== 'scanning'"
-			class="flex flex-1 flex-col items-center justify-center gap-6 rounded-xl border border-accent/30 bg-accent-bg px-8 py-8 text-center"
+			class="flex flex-1 flex-col items-center justify-center gap-6 rounded-lg border border-accent/30 bg-accent-bg px-8 py-8 text-center"
 		>
 			<div class="grid size-16 place-items-center rounded-full bg-accent text-accent-contrast">
 				<Search :size="28" />
@@ -100,9 +99,7 @@ async function refreshSteam() {
 				</div>
 			</template>
 		</section>
-
-		<!-- ── Scanning (progress) ─────────────────────────────────────── -->
-		<section v-else class="overflow-hidden rounded-xl border border-border">
+		<section v-else class="overflow-hidden rounded-lg border border-border">
 			<div
 				class="flex items-center justify-between border-b border-border bg-surface-4 px-3 py-2.5"
 			>

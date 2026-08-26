@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Maximize2, Minimize2, Minus, Settings, X } from '@lucide/vue'
+import { Maximize2, Minimize2, Minus, Settings, Undo2, X } from '@lucide/vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { onMounted, onUnmounted, ref } from 'vue'
@@ -93,7 +93,7 @@ onUnmounted(() => unlisten?.())
 				:active="settingsOpen"
 				@click="$emit('toggle-settings')"
 			>
-				<X v-if="settingsOpen" :size="18" />
+				<Undo2 v-if="settingsOpen" :size="18" />
 				<Settings v-else :size="17" />
 			</UiButton>
 			<template v-if="!isMac">

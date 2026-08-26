@@ -15,7 +15,7 @@ defineEmits<{
 <template>
 	<button
 		type="button"
-		class="flex w-full cursor-pointer items-center gap-2.5 rounded-md border px-3 py-2 text-left text-sm font-medium whitespace-nowrap transition-colors"
+		class="flex w-full cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-medium whitespace-nowrap transition-colors"
 		:class="
 			active
 				? 'border-accent bg-accent-bg text-primary'

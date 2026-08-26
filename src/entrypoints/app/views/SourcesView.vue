@@ -111,7 +111,6 @@ function toggleCandidate(id: string) {
 
 <template>
 	<div class="flex flex-1 flex-col gap-4">
-		<!-- ── Source cards ───────────────────────────────────────────── -->
 		<section class="grid gap-3">
 			<SourceCard
 				v-for="card in platformCards"
@@ -135,9 +134,7 @@ function toggleCandidate(id: string) {
 				@set-all="setCandidatesSelected(card.candidates, $event)"
 			/>
 		</section>
-
-		<!-- ── Manual section ────────────────────────────────────────── -->
-		<section class="overflow-hidden rounded-xl border border-border">
+		<section class="overflow-hidden rounded-lg border border-border">
 			<label
 				class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5"
 			>
