@@ -6,10 +6,6 @@ import { onMounted, ref } from 'vue'
 
 import KofiIcon from '../assets/icons/kofi.svg?component'
 
-defineProps<{
-	error: string
-}>()
-
 defineSlots<{
 	default?: () => unknown
 	footer?: () => unknown
@@ -58,12 +54,6 @@ onMounted(async () => {
 		<div
 			class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-surface-1 p-4"
 		>
-			<div
-				v-if="error"
-				class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-danger"
-			>
-				{{ error }}
-			</div>
 			<slot />
 		</div>
 

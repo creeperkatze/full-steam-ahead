@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FolderOpen, X } from '@lucide/vue'
+import { CheckCircle2, FolderOpen, X, XCircle } from '@lucide/vue'
 import type { Component } from 'vue'
 
 import UiButton from '../ui/Button.vue'
@@ -10,6 +10,7 @@ defineProps<{
 	description?: string
 	modelValue: string
 	placeholder?: string
+	valid?: boolean | null
 }>()
 
 defineEmits<{
@@ -28,12 +29,28 @@ defineEmits<{
 			</div>
 		</div>
 		<div class="flex items-center gap-2">
-			<input
-				:value="modelValue"
-				:placeholder="placeholder"
-				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
-				@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-			/>
+			<div class="relative min-w-0 flex-1">
+				<input
+					:value="modelValue"
+					:placeholder="placeholder"
+					class="h-9 w-full rounded-md border bg-surface-4 px-2 text-sm text-primary"
+					:class="[
+						valid === false ? 'border-danger-border' : 'border-border',
+						valid === null || valid === undefined ? '' : 'pr-7',
+					]"
+					@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+				/>
+				<CheckCircle2
+					v-if="valid === true"
+					:size="15"
+					class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-accent"
+				/>
+				<XCircle
+					v-else-if="valid === false"
+					:size="15"
+					class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-danger"
+				/>
+			</div>
 			<UiButton
 				v-if="modelValue"
 				size="icon"

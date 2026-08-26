@@ -46,6 +46,25 @@ watch(
 	{ deep: true },
 )
 
+let steamLocationRefreshTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(steamLocation, () => {
+	clearTimeout(steamLocationRefreshTimer)
+	steamLocationRefreshTimer = setTimeout(async () => {
+		try {
+			const detected = await api.detectSteam()
+			install.value = detected
+			if (!detected.users.some((user) => user.steamId === selectedUserId.value)) {
+				selectedUserId.value = detected.users[0]?.steamId ?? ''
+			}
+		} catch {
+			install.value = null
+			selectedUserId.value = ''
+		}
+		invalidatePreview()
+	}, 400)
+})
+
 const selectedUser = computed<SteamUser | undefined>(() =>
 	install.value?.users.find((user) => user.steamId === selectedUserId.value),
 )

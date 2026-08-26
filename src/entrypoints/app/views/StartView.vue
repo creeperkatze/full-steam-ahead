@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Check, Loader2, Search } from '@lucide/vue'
+import { Check, Loader2, RotateCw, Search } from '@lucide/vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, onMounted } from 'vue'
 
 import SourceIcon from '../../../components/SourceIcon.vue'
+import UiButton from '../../../components/ui/Button.vue'
 import Dropdown from '../../../components/ui/Dropdown.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
 import UserAvatar from '../../../components/UserAvatar.vue'
@@ -77,10 +78,15 @@ async function refreshSteam() {
 			</div>
 
 			<!-- Steam not found -->
-			<p v-else-if="!state.install.value" class="text-sm text-danger">
-				Steam installation not found.
-				<button class="ml-1 underline hover:no-underline" @click="refreshSteam">Try again</button>
-			</p>
+			<div v-else-if="!state.install.value" class="flex flex-col items-center gap-2">
+				<p class="text-sm text-danger">
+					No Steam installation found. Check the location in Settings.
+				</p>
+				<UiButton size="sm" variant="ghost" @click="refreshSteam">
+					<RotateCw :size="14" />
+					Try again
+				</UiButton>
+			</div>
 
 			<!-- No users -->
 			<p v-else-if="steamUsers.length === 0" class="text-sm text-danger">No Steam users found.</p>

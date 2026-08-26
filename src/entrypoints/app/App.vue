@@ -137,7 +137,7 @@ async function goNext() {
 			@select-step="goToStepIndex"
 			@toggle-settings="toggleSettings"
 		/>
-		<AppShell :error="task.error.value">
+		<AppShell>
 			<RouterView />
 
 			<template #footer>

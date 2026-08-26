@@ -14,7 +14,7 @@ import {
 	Trash2,
 } from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import GitHubIcon from '../../../assets/icons/github.svg?component'
 import KofiIcon from '../../../assets/icons/kofi.svg?component'
@@ -64,6 +64,30 @@ async function pickSteamLocation() {
 		state.steamLocation.value = picked
 	}
 }
+
+const steamLocationValid = ref<boolean | null>(null)
+let steamLocationCheckTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(
+	() => state.steamLocation.value,
+	(path) => {
+		clearTimeout(steamLocationCheckTimer)
+		const trimmed = path.trim()
+		if (!trimmed) {
+			steamLocationValid.value = null
+			return
+		}
+		steamLocationCheckTimer = setTimeout(async () => {
+			const valid = await api.validateSteamLocation(trimmed)
+			if (state.steamLocation.value.trim() === trimmed) {
+				steamLocationValid.value = valid
+			}
+		}, 400)
+	},
+	{ immediate: true },
+)
+
+onUnmounted(() => clearTimeout(steamLocationCheckTimer))
 
 function formatBackupDate(iso: string): string {
 	return new Date(iso).toLocaleString()
@@ -179,6 +203,7 @@ async function confirmAction() {
 						label="Steam installation location"
 						description="Override auto-detection if Steam isn't found automatically"
 						placeholder="Auto-detected"
+						:valid="steamLocationValid"
 						@browse="pickSteamLocation"
 					/>
 				</div>

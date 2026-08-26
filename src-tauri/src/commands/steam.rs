@@ -28,6 +28,12 @@ pub fn detect_steam() -> CommandResult<SteamInstallation> {
 
 #[tauri::command]
 #[instrument]
+pub fn validate_steam_location(path: String) -> bool {
+    steam::detect::is_valid_steam_location(std::path::Path::new(&path))
+}
+
+#[tauri::command]
+#[instrument]
 pub fn read_shortcuts_for_user(user_steam_id: String) -> CommandResult<Vec<ShortcutEntry>> {
     let user = steam::detect::find_user(&user_steam_id)?;
     let result = steam::shortcuts::read_shortcuts(&user.shortcuts_path).map_err(Into::into);

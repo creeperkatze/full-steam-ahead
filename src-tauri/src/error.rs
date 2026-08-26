@@ -4,7 +4,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
-    #[error("Steam could not be found on this device.")]
+    #[error("No Steam installation found. Check the location in Settings.")]
     SteamNotFound,
     #[error("The requested Steam user was not found: {0}")]
     UserNotFound(String),

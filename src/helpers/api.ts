@@ -15,6 +15,7 @@ import type {
 
 export const api = {
 	detectSteam: () => invoke<SteamInstallation>('detect_steam'),
+	validateSteamLocation: (path: string) => invoke<boolean>('validate_steam_location', { path }),
 	readShortcuts: (userSteamId: string) =>
 		invoke<ShortcutEntry[]>('read_shortcuts_for_user', { userSteamId }),
 	scanSources: (request: ScanRequest) => invoke<ImportCandidate[]>('scan_sources', { request }),

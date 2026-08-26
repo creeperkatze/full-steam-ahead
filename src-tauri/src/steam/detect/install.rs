@@ -1,11 +1,17 @@
 use std::path::{Path, PathBuf};
 
 pub(super) fn find_steam_install_path(override_path: Option<&Path>) -> Option<PathBuf> {
-    override_path
-        .filter(|path| path.exists())
-        .map(Path::to_path_buf)
-        .or_else(platform_steam_install_path)
-        .or_else(common_steam_install_path)
+    // An explicit override is respected as-is: if it isn't a valid Steam install,
+    // detection fails rather than silently falling back to auto-detection.
+    if let Some(path) = override_path {
+        return is_steam_install(path).then(|| path.to_path_buf());
+    }
+
+    platform_steam_install_path().or_else(common_steam_install_path)
+}
+
+pub(super) fn is_steam_install(path: &Path) -> bool {
+    path.join("steamapps").is_dir() || path.join("config").is_dir()
 }
 
 #[cfg(windows)]
@@ -55,11 +61,6 @@ fn platform_steam_install_path() -> Option<PathBuf> {
     })
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
-fn is_steam_install(path: &std::path::Path) -> bool {
-    path.join("steamapps").is_dir() || path.join("config").is_dir()
-}
-
 #[cfg(not(any(windows, unix)))]
 fn platform_steam_install_path() -> Option<PathBuf> {
     None
@@ -69,4 +70,41 @@ fn common_steam_install_path() -> Option<PathBuf> {
     dirs::data_dir()
         .map(|data| data.join("Steam"))
         .filter(|path| path.exists())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        fs,
+        sync::atomic::{AtomicU64, Ordering},
+    };
+
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    fn tmp_dir() -> PathBuf {
+        let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let dir =
+            std::env::temp_dir().join(format!("fsa_install_test_{}_{}", std::process::id(), n));
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn override_used_when_valid() {
+        let dir = tmp_dir();
+        fs::create_dir_all(dir.join("steamapps")).unwrap();
+
+        assert_eq!(find_steam_install_path(Some(&dir)), Some(dir.clone()));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn invalid_override_fails_instead_of_falling_back() {
+        let dir = tmp_dir();
+        // No steamapps/config subdir, so this isn't a valid Steam install.
+
+        assert_eq!(find_steam_install_path(Some(&dir)), None);
+        let _ = fs::remove_dir_all(&dir);
+    }
 }

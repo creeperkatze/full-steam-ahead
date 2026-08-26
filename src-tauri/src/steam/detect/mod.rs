@@ -6,7 +6,10 @@ use crate::{
     models::{SteamInstallation, SteamUser},
     process,
 };
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub fn find_user(steam_id: &str) -> AppResult<SteamUser> {
     detect_steam()?
@@ -29,6 +32,10 @@ pub fn find_user_with_install(steam_id: &str) -> AppResult<(SteamUser, PathBuf)>
 
 pub fn find_install_path() -> Option<PathBuf> {
     install::find_steam_install_path(steam_location_override().as_deref())
+}
+
+pub fn is_valid_steam_location(path: &Path) -> bool {
+    install::is_steam_install(path)
 }
 
 fn steam_location_override() -> Option<PathBuf> {
