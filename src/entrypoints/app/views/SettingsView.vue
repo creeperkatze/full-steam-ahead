@@ -8,10 +8,10 @@ import {
 	Power,
 	RotateCcw,
 	RotateCw,
-	Star,
 } from '@lucide/vue'
 import { onMounted, ref } from 'vue'
 
+import GitHubIcon from '../../../assets/icons/github.svg?component'
 import KofiIcon from '../../../assets/icons/kofi.svg?component'
 import Card from '../../../components/Card.vue'
 import OptionToggle from '../../../components/options/OptionToggle.vue'
@@ -107,7 +107,7 @@ async function confirmRestore() {
 				/>
 				<Card
 					href="https://github.com/creeperkatze/full-steam-ahead"
-					:icon="Star"
+					:icon="GitHubIcon"
 					color="#9ca3af"
 					title="View on GitHub"
 					description="Leave a star"
