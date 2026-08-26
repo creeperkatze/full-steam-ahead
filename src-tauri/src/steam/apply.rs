@@ -176,7 +176,7 @@ fn stop_steam() -> AppResult<()> {
     }
 
     Err(AppError::Message(
-        "Steam was asked to close, but steam.exe was still running after 15 seconds.".to_string(),
+        "Steam was asked to close, but was still running after 15 seconds.".to_string(),
     ))
 }
 

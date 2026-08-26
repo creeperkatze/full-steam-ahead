@@ -88,12 +88,12 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
         #[cfg(all(unix, not(target_os = "macos")))]
         if let Some(ref compat) = paths.compat_folder {
             if let Some(translated) =
-                super::proton::translate_windows_path(compat, &manifest.manifest_location)
+                super::translate_windows_path(compat, &manifest.manifest_location)
             {
                 manifest.manifest_location = translated.to_string_lossy().to_string();
             }
             if let Some(translated) =
-                super::proton::translate_windows_path(compat, &manifest.install_location)
+                super::translate_windows_path(compat, &manifest.install_location)
             {
                 manifest.install_location = translated.to_string_lossy().to_string();
             }
@@ -202,12 +202,7 @@ fn find_epic_paths() -> Option<EpicPaths> {
 
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        let home = std::env::var("HOME").ok()?;
-        let compat_dir = PathBuf::from(&home)
-            .join(".steam")
-            .join("steam")
-            .join("steamapps")
-            .join("compatdata");
+        let compat_dir = super::compat_data_dir()?;
 
         for entry in std::fs::read_dir(compat_dir).ok()?.flatten() {
             let binaries = entry

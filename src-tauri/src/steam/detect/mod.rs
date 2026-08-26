@@ -27,6 +27,10 @@ pub fn find_user_with_install(steam_id: &str) -> AppResult<(SteamUser, PathBuf)>
     Ok((user, install_path))
 }
 
+pub fn find_install_path() -> Option<PathBuf> {
+    install::find_steam_install_path()
+}
+
 pub fn detect_steam() -> AppResult<SteamInstallation> {
     let install_path = install::find_steam_install_path().ok_or(AppError::SteamNotFound)?;
     tracing::debug!(path = %install_path.display(), "Steam installation found");

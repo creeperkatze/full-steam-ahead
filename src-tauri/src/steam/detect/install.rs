@@ -26,18 +26,34 @@ fn platform_steam_install_path() -> Option<PathBuf> {
 #[cfg(all(unix, not(target_os = "macos")))]
 fn platform_steam_install_path() -> Option<PathBuf> {
     dirs::home_dir().and_then(|home| {
+        let flatpak_home = home
+            .join(".var")
+            .join("app")
+            .join("com.valvesoftware.Steam");
+
         [
             home.join(".steam").join("steam"),
+            home.join(".steam").join("root"),
             home.join(".local").join("share").join("Steam"),
-            home.join(".var")
-                .join("app")
-                .join("com.valvesoftware.Steam")
-                .join(".steam")
-                .join("steam"),
+            home.join(".steam").join("debian-installation"),
+            home.join("snap")
+                .join("steam")
+                .join("common")
+                .join(".local")
+                .join("share")
+                .join("Steam"),
+            flatpak_home.join("data").join("Steam"),
+            flatpak_home.join(".local").join("share").join("Steam"),
+            flatpak_home.join(".steam").join("steam"),
         ]
         .into_iter()
-        .find(|path| path.exists())
+        .find(|path| is_steam_install(path))
     })
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn is_steam_install(path: &std::path::Path) -> bool {
+    path.join("steamapps").is_dir() || path.join("config").is_dir()
 }
 
 #[cfg(not(any(windows, unix)))]

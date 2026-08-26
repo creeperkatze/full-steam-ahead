@@ -160,7 +160,7 @@ fn find_galaxy_configs() -> Vec<(PathBuf, Option<PathBuf>)> {
         }
 
         // Proton compat data prefixes
-        for prefix in super::proton::find_proton_prefixes() {
+        for prefix in super::find_proton_prefixes() {
             let drive_c = prefix.join("pfx").join("drive_c");
             let config = drive_c
                 .join("ProgramData")

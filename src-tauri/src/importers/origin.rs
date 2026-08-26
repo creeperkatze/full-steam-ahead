@@ -91,12 +91,7 @@ fn find_origin_paths() -> Option<OriginPaths> {
 
     #[cfg(unix)]
     {
-        let home = std::env::var("HOME").ok()?;
-        let compat_dir = PathBuf::from(&home)
-            .join(".steam")
-            .join("steam")
-            .join("steamapps")
-            .join("compatdata");
+        let compat_dir = super::compat_data_dir()?;
 
         for entry in std::fs::read_dir(compat_dir).ok()?.flatten() {
             let drive_c = entry.path().join("pfx").join("drive_c");
