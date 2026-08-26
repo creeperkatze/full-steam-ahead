@@ -99,29 +99,33 @@ fn candidate_changes(
         });
     }
 
-    let collection_name = candidate.source.collection_name();
-    let already_in_collection = existing_collection_app_ids
-        .get(&collection_name)
-        .is_some_and(|ids| {
-            // Checks both the effective and raw exe path so games are still recognised after the launcher toggle changes.
-            [candidate.effective_executable(), &candidate.executable_path]
-                .iter()
-                .any(|p| {
-                    let id =
-                        super::non_steam_app_id(&format!("\"{}\"", p.display()), &candidate.name);
-                    ids.contains(&id)
-                })
+    if options.create_collections {
+        let collection_name = candidate.source.collection_name();
+        let already_in_collection = existing_collection_app_ids
+            .get(&collection_name)
+            .is_some_and(|ids| {
+                // Checks both the effective and raw exe path so games are still recognised after the launcher toggle changes.
+                [candidate.effective_executable(), &candidate.executable_path]
+                    .iter()
+                    .any(|p| {
+                        let id = super::non_steam_app_id(
+                            &format!("\"{}\"", p.display()),
+                            &candidate.name,
+                        );
+                        ids.contains(&id)
+                    })
+            });
+        changes.push(PlannedChange {
+            id: format!("collection:{}:{}", collection_name, candidate.id),
+            game_name: candidate.name.clone(),
+            file: collections_path.to_path_buf(),
+            kind: ChangeKind::UpdateCollections,
+            destructive: already_in_collection,
+            artwork_source: None,
+            artwork_kind: None,
+            collection_name: Some(collection_name),
         });
-    changes.push(PlannedChange {
-        id: format!("collection:{}:{}", collection_name, candidate.id),
-        game_name: candidate.name.clone(),
-        file: collections_path.to_path_buf(),
-        kind: ChangeKind::UpdateCollections,
-        destructive: already_in_collection,
-        artwork_source: None,
-        artwork_kind: None,
-        collection_name: Some(collection_name),
-    });
+    }
 
     let app_id = super::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
     for asset in super::artwork::selected_artwork_assets(candidate) {

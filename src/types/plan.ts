@@ -2,6 +2,14 @@ export interface Options {
 	stopSteam: boolean
 	restartSteam: boolean
 	replaceExistingArtwork: boolean
+	createCollections: boolean
+}
+
+export interface PersistedSettings {
+	stopSteam: boolean
+	restartSteam: boolean
+	createCollections: boolean
+	steamLocation: string | null
 }
 
 export interface PreviewPlan {

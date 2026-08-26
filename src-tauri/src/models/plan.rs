@@ -55,6 +55,7 @@ pub struct Options {
     pub stop_steam: bool,
     pub restart_steam: bool,
     pub replace_existing_artwork: bool,
+    pub create_collections: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

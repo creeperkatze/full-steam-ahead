@@ -1,7 +1,11 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub(super) fn find_steam_install_path() -> Option<PathBuf> {
-    platform_steam_install_path().or_else(common_steam_install_path)
+pub(super) fn find_steam_install_path(override_path: Option<&Path>) -> Option<PathBuf> {
+    override_path
+        .filter(|path| path.exists())
+        .map(Path::to_path_buf)
+        .or_else(platform_steam_install_path)
+        .or_else(common_steam_install_path)
 }
 
 #[cfg(windows)]

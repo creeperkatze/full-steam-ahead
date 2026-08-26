@@ -28,14 +28,18 @@ const options = ref<Options>({
 	stopSteam: false,
 	restartSteam: false,
 	replaceExistingArtwork: true,
+	createCollections: true,
 })
+const steamLocation = ref('')
 
 watch(
-	options,
+	[options, steamLocation],
 	() => {
 		api.saveSettings({
 			stopSteam: options.value.stopSteam,
 			restartSteam: options.value.restartSteam,
+			createCollections: options.value.createCollections,
+			steamLocation: steamLocation.value.trim() || null,
 		})
 		invalidatePreview()
 	},
@@ -74,7 +78,13 @@ function invalidatePreview() {
 async function loadSettingsFromDisk() {
 	try {
 		const saved = await api.loadSettings()
-		options.value = { ...options.value, ...saved }
+		options.value = {
+			...options.value,
+			stopSteam: saved.stopSteam,
+			restartSteam: saved.restartSteam,
+			createCollections: saved.createCollections,
+		}
+		steamLocation.value = saved.steamLocation ?? ''
 	} catch {
 		// Keep defaults
 	}
@@ -94,6 +104,7 @@ export function useAppState() {
 		manualPath,
 		manualName,
 		options,
+		steamLocation,
 		selectedUser,
 		selectedCandidates,
 		usesUrlLaunch,

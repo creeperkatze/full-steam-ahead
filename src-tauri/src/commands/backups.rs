@@ -16,3 +16,11 @@ pub fn restore_backup(backup_id: String) -> CommandResult<usize> {
     info!(backup_id, restored, "Backup restored via command");
     Ok(restored)
 }
+
+#[tauri::command]
+#[instrument]
+pub fn delete_backup(backup_id: String) -> CommandResult<()> {
+    backups::delete_backup(&backup_id)?;
+    info!(backup_id, "Backup deleted via command");
+    Ok(())
+}

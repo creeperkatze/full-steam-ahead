@@ -8,9 +8,9 @@ mod process;
 pub mod steam;
 
 use commands::{
-    apply_plan, close_app, create_manual_candidate, create_preview_plan, detect_steam,
-    list_backups, load_settings, read_shortcuts_for_user, restore_backup, save_settings,
-    scan_sources,
+    apply_plan, close_app, create_manual_candidate, create_preview_plan, delete_backup,
+    detect_steam, list_backups, load_settings, read_shortcuts_for_user, restore_backup,
+    save_settings, scan_sources,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -85,6 +85,7 @@ pub fn run() {
             close_app,
             list_backups,
             restore_backup,
+            delete_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Full Steam Ahead");

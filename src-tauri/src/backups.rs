@@ -26,6 +26,11 @@ pub fn restore_backup(backup_id: &str) -> AppResult<usize> {
     restore_from_dir(&backup_dir)
 }
 
+pub fn delete_backup(backup_id: &str) -> AppResult<()> {
+    let backup_dir = crate::paths::app_data_dir().join("backups").join(backup_id);
+    delete_dir(&backup_dir)
+}
+
 pub fn write_manifest(backup_dir: &Path, plans: &[BackupPlan]) {
     let files: HashMap<String, PathBuf> = plans
         .iter()
@@ -138,6 +143,18 @@ fn restore_from_dir(backup_dir: &Path) -> AppResult<usize> {
 
     info!(restored, "Backup restored");
     Ok(restored)
+}
+
+fn delete_dir(backup_dir: &Path) -> AppResult<()> {
+    if !backup_dir.exists() {
+        return Err(AppError::Message(format!(
+            "Backup '{}' not found.",
+            backup_dir.display()
+        )));
+    }
+    fs::remove_dir_all(backup_dir).map_err(io_context(backup_dir))?;
+    info!(dir = %backup_dir.display(), "Backup deleted");
+    Ok(())
 }
 
 fn load_manifest(backup_dir: &Path) -> Option<BackupManifest> {
@@ -296,6 +313,24 @@ mod tests {
     fn restore_errors_when_backup_dir_missing() {
         let tmp = TmpDir::new();
         assert!(restore_from_dir(&tmp.path().join("nonexistent")).is_err());
+    }
+
+    // delete_dir
+
+    #[test]
+    fn delete_removes_backup_dir() {
+        let tmp = TmpDir::new();
+        let backup_dir = tmp.path().join("backup");
+        write(&backup_dir.join("shortcuts.vdf"), b"data");
+
+        delete_dir(&backup_dir).unwrap();
+        assert!(!backup_dir.exists());
+    }
+
+    #[test]
+    fn delete_errors_when_backup_dir_missing() {
+        let tmp = TmpDir::new();
+        assert!(delete_dir(&tmp.path().join("nonexistent")).is_err());
     }
 
     // list_from_dir

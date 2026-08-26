@@ -28,11 +28,19 @@ pub fn find_user_with_install(steam_id: &str) -> AppResult<(SteamUser, PathBuf)>
 }
 
 pub fn find_install_path() -> Option<PathBuf> {
-    install::find_steam_install_path()
+    install::find_steam_install_path(steam_location_override().as_deref())
+}
+
+fn steam_location_override() -> Option<PathBuf> {
+    crate::commands::load_settings()
+        .ok()
+        .and_then(|settings| settings.steam_location)
+        .filter(|path| !path.trim().is_empty())
+        .map(PathBuf::from)
 }
 
 pub fn detect_steam() -> AppResult<SteamInstallation> {
-    let install_path = install::find_steam_install_path().ok_or(AppError::SteamNotFound)?;
+    let install_path = find_install_path().ok_or(AppError::SteamNotFound)?;
     tracing::debug!(path = %install_path.display(), "Steam installation found");
 
     let userdata = install_path.join("userdata");

@@ -6,6 +6,7 @@ import type {
 	ImportCandidate,
 	ManualImportRequest,
 	Options,
+	PersistedSettings,
 	PreviewPlan,
 	ScanRequest,
 	ShortcutEntry,
@@ -23,9 +24,9 @@ export const api = {
 		invoke<PreviewPlan>('create_preview_plan', { userSteamId, candidates, options }),
 	applyPlan: (plan: PreviewPlan, candidates: ImportCandidate[], options: Options) =>
 		invoke<ApplyResult>('apply_plan', { request: { plan, candidates, options } }),
-	loadSettings: () => invoke<Pick<Options, 'stopSteam' | 'restartSteam'>>('load_settings'),
-	saveSettings: (settings: Pick<Options, 'stopSteam' | 'restartSteam'>) =>
-		invoke<void>('save_settings', { settings }),
+	loadSettings: () => invoke<PersistedSettings>('load_settings'),
+	saveSettings: (settings: PersistedSettings) => invoke<void>('save_settings', { settings }),
 	listBackups: () => invoke<BackupInfo[]>('list_backups'),
 	restoreBackup: (backupId: string) => invoke<number>('restore_backup', { backupId }),
+	deleteBackup: (backupId: string) => invoke<void>('delete_backup', { backupId }),
 }
