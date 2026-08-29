@@ -18,7 +18,7 @@ const state = useAppState()
 				v-model="state.steamGridDb.value.enabled"
 				:icon="Images"
 				label="Enable SteamGridDB"
-				description="Adds a button to pick custom artwork from SteamGridDB when reviewing games"
+				description="Adds a button to pick custom artwork from SteamGridDB when reviewing games."
 			/>
 			<div
 				class="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2"
@@ -53,7 +53,7 @@ const state = useAppState()
 				v-model="state.steamGridDb.value.allowNsfw"
 				:icon="Eye"
 				label="Allow NSFW artwork"
-				description="Includes NSFW-tagged images in SteamGridDB results"
+				description="Includes NSFW-tagged images in SteamGridDB results."
 			/>
 		</div>
 	</section>

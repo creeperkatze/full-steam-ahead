@@ -65,7 +65,7 @@ async function openLogsFolder() {
 			<OptionButton
 				:icon="FolderOpen"
 				label="Logs folder"
-				description="Open the folder containing session log files"
+				description="Open the folder containing session log files."
 				button-label="Open"
 				@click="openLogsFolder"
 			/>
