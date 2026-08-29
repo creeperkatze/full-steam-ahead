@@ -13,32 +13,12 @@ import type { ArtworkAsset, ArtworkKind, ImportCandidate, SteamGridDbImage } fro
 
 const state = useAppState()
 
-const slots: Array<{ kind: ArtworkKind; label: string; preview: string }> = [
-	{
-		kind: 'header',
-		label: 'Header',
-		preview: 'h-32 p-2',
-	},
-	{
-		kind: 'capsule',
-		label: 'Capsule',
-		preview: 'h-44 p-2',
-	},
-	{
-		kind: 'hero',
-		label: 'Hero',
-		preview: 'h-32 p-2',
-	},
-	{
-		kind: 'logo',
-		label: 'Logo',
-		preview: 'h-32 p-4',
-	},
-	{
-		kind: 'icon',
-		label: 'Icon',
-		preview: 'h-32 p-5',
-	},
+const slots: Array<{ kind: ArtworkKind; label: string }> = [
+	{ kind: 'header', label: 'Header' },
+	{ kind: 'capsule', label: 'Capsule' },
+	{ kind: 'hero', label: 'Hero' },
+	{ kind: 'logo', label: 'Logo' },
+	{ kind: 'icon', label: 'Icon' },
 ]
 
 const brokenPreviewUrls = ref<Record<string, true>>({})
@@ -245,8 +225,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 						</div>
 
 						<div
-							class="flex w-full items-center justify-center rounded-md border border-dashed border-border-dashed bg-surface-inset"
-							:class="slot.preview"
+							class="flex p-2 h-44 w-full items-center justify-center rounded-md border border-dashed border-border-dashed bg-surface-inset"
 						>
 							<img
 								v-if="
