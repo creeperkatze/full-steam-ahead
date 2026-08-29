@@ -28,11 +28,11 @@ export const SCANNABLE_SOURCES: ScannableSource[] = [
 	'gamePass',
 ]
 
-const sourceStates = ref<SourceState[]>(makeSourceStates())
+const sourceStates = ref<SourceState[]>(makeSourceStates(SCANNABLE_SOURCES))
 let unlistenScan: (() => void) | undefined
 
-function makeSourceStates(): SourceState[] {
-	return SCANNABLE_SOURCES.map((key) => ({
+function makeSourceStates(sources: ScannableSource[]): SourceState[] {
+	return sources.map((key) => ({
 		key,
 		name: importSourceName(key),
 		status: 'pending' as const,
@@ -55,7 +55,10 @@ export function useScanSources() {
 	async function scan() {
 		if (!state.selectedUserId.value) return
 
-		sourceStates.value = makeSourceStates()
+		const enabledSources = SCANNABLE_SOURCES.filter(
+			(key) => state.sourceSettings.value[key]?.enabled ?? true,
+		)
+		sourceStates.value = makeSourceStates(enabledSources)
 		state.scanPhase.value = 'scanning'
 
 		unlistenScan?.()

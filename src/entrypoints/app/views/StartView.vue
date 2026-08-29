@@ -9,7 +9,7 @@ import Dropdown from '../../../components/ui/Dropdown.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
 import UserAvatar from '../../../components/UserAvatar.vue'
 import { useAppState } from '../../../composables/useAppState'
-import { SCANNABLE_SOURCES, useScanSources } from '../../../composables/useScanSources'
+import { useScanSources } from '../../../composables/useScanSources'
 import { useTaskStatus } from '../../../composables/useTaskStatus'
 import { api } from '../../../helpers/api'
 
@@ -33,7 +33,7 @@ const userOptions = computed(() =>
 
 const doneCount = computed(() => sourceStates.value.filter((s) => s.status === 'done').length)
 const scanProgressPct = computed(() =>
-	SCANNABLE_SOURCES.length > 0 ? (doneCount.value / SCANNABLE_SOURCES.length) * 100 : 0,
+	sourceStates.value.length > 0 ? (doneCount.value / sourceStates.value.length) * 100 : 0,
 )
 
 onMounted(async () => {
@@ -147,7 +147,7 @@ async function refreshSteam() {
 						/>
 					</div>
 					<p class="text-xs text-secondary">
-						{{ doneCount }} of {{ SCANNABLE_SOURCES.length }} sources scanned
+						{{ doneCount }} of {{ sourceStates.length }} sources scanned
 					</p>
 				</div>
 			</div>
