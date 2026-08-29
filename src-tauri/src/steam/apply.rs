@@ -2,7 +2,7 @@
 use crate::steam::proton;
 use crate::{
     backups,
-    error::{io_context, AppError, AppResult},
+    error::{io_context, AppResult},
     models::{ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep},
     process,
     steam::{artwork, collections, detect, shortcuts, sources},
@@ -44,8 +44,7 @@ pub fn apply_plan_with_progress(
             total,
         });
         tracing::info!("Stopping Steam");
-        stop_steam()?;
-        tracing::info!("Steam stopped");
+        stop_steam();
     }
 
     current += 1;
@@ -166,37 +165,26 @@ pub fn apply_plan_with_progress(
     })
 }
 
-fn stop_steam() -> AppResult<()> {
+fn stop_steam() {
     if !is_steam_running() {
-        return Ok(());
+        return;
     }
 
-    let output = process::stop_steam().map_err(|source| AppError::Io {
-        path: process::steam_process_name().into(),
-        source,
-    })?;
-
-    if !output.status.success() && is_steam_running() {
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        let details = if stderr.is_empty() { stdout } else { stderr };
-        tracing::error!(%details, "Steam stop command failed");
-        return Err(AppError::Message(format!(
-            "Steam could not be stopped before applying. {details}"
-        )));
+    if let Err(error) = process::stop_steam() {
+        tracing::warn!(%error, "Failed to run the Steam stop command");
+        return;
     }
 
-    let deadline = Instant::now() + Duration::from_secs(15);
+    let deadline = Instant::now() + Duration::from_secs(5);
     while Instant::now() < deadline {
         if !is_steam_running() {
-            return Ok(());
+            tracing::info!("Steam stopped");
+            return;
         }
-        sleep(Duration::from_millis(300));
+        sleep(Duration::from_millis(200));
     }
 
-    Err(AppError::Message(
-        "Steam was asked to close, but was still running after 15 seconds.".to_string(),
-    ))
+    tracing::warn!("Steam did not close within 5s");
 }
 
 fn is_steam_running() -> bool {
