@@ -15,7 +15,7 @@
         "typecheck": "vue-tsc --noEmit",
         "test": "cargo test --manifest-path src-tauri/Cargo.toml",
         "test:coverage": "cargo llvm-cov --manifest-path src-tauri/Cargo.toml --lcov --output-path lcov.info",
-        "version": "node scripts/sync-version.mjs",
+        "version": "node scripts/sync-version.js",
         "release:patch": "pnpm version patch && git push && git push --tags",
         "release:minor": "pnpm version minor && git push && git push --tags",
         "release:major": "pnpm version major && git push && git push --tags"
