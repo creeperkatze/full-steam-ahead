@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ImagePlus, Images, RotateCcw } from '@lucide/vue'
+import { ImagePlus, RotateCcw } from '@lucide/vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { computed, ref } from 'vue'
 
+import SteamGridDbIcon from '../../../assets/icons/steamgriddb.svg'
 import GameIcon from '../../../components/GameIcon.vue'
 import SteamGridDbBrowser from '../../../components/SteamGridDbBrowser.vue'
 import UiButton from '../../../components/ui/Button.vue'
@@ -281,7 +282,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								title="Browse SteamGridDB"
 								@click="openSteamGridDbBrowser(candidate, slot.kind)"
 							>
-								<Images :size="14" />
+								<SteamGridDbIcon class="h-3 w-auto" />
 							</UiButton>
 							<UiButton
 								class="h-9 w-9 shrink-0"
