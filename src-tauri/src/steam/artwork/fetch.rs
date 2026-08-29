@@ -60,12 +60,21 @@ pub(super) fn find_steam_app_id(game_name: &str) -> Option<u32> {
     let term = encode_query(game_name);
     let url = format!("https://store.steampowered.com/api/storesearch/?term={term}&l=en&cc=US");
     let response = http_client()
-        .get(url)
+        .get(url.as_str())
         .send()
+        .inspect_err(|error| tracing::debug!(%error, url, "Steam store search request failed"))
         .ok()?
         .error_for_status()
+        .inspect_err(
+            |error| tracing::debug!(%error, url, "Steam store search returned an error status"),
+        )
         .ok()?;
-    let search = response.json::<StoreSearchResponse>().ok()?;
+    let search = response
+        .json::<StoreSearchResponse>()
+        .inspect_err(
+            |error| tracing::debug!(%error, url, "Steam store search response was invalid"),
+        )
+        .ok()?;
     search
         .items
         .into_iter()
@@ -88,12 +97,17 @@ pub(super) fn store_item_asset_specs(
         encode_query(&request.to_string())
     );
     let item = http_client()
-        .get(url)
+        .get(url.as_str())
         .send()
+        .inspect_err(|error| tracing::debug!(%error, url, "Steam store item request failed"))
         .ok()?
         .error_for_status()
+        .inspect_err(
+            |error| tracing::debug!(%error, url, "Steam store item request returned an error status"),
+        )
         .ok()?
         .json::<StoreItemsResponse>()
+        .inspect_err(|error| tracing::debug!(%error, url, "Steam store item response was invalid"))
         .ok()?
         .response
         .store_items
@@ -152,12 +166,19 @@ pub(super) fn store_item_asset_specs(
 pub(super) fn community_icon_url(steam_app_id: u32) -> Option<String> {
     let url = format!("https://store.steampowered.com/app/{steam_app_id}/");
     let html = http_client()
-        .get(url)
+        .get(url.as_str())
         .send()
+        .inspect_err(|error| tracing::debug!(%error, url, "Steam community page request failed"))
         .ok()?
         .error_for_status()
+        .inspect_err(
+            |error| tracing::debug!(%error, url, "Steam community page returned an error status"),
+        )
         .ok()?
         .text()
+        .inspect_err(
+            |error| tracing::debug!(%error, url, "Steam community page body was unreadable"),
+        )
         .ok()?;
     let marker = format!("steamcommunity/public/images/apps/{steam_app_id}/");
     let marker_start = html.find(&marker)?;
@@ -177,6 +198,7 @@ pub(super) fn reachable_url(url: &str) -> bool {
         .head(url)
         .send()
         .and_then(|response| response.error_for_status().map(|_| ()))
+        .inspect_err(|error| tracing::debug!(%error, url, "Artwork URL not reachable"))
         .is_ok()
 }
 

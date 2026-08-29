@@ -29,7 +29,7 @@ const error = ref<string | null>(null)
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
-function describeError(e: unknown, fallback: string): string {.
+function describeError(e: unknown, fallback: string): string {
 	console.error(e)
 	if (typeof e === 'string' && e) return e
 	const message = (e as { message?: unknown } | null)?.message
