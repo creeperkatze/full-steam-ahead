@@ -104,19 +104,23 @@ function fileName(path: string) {
 
 		<template v-else>
 			<!-- Game list -->
-			<div class="grid gap-2">
+			<div v-if="games.length > 0" class="grid gap-2">
 				<article
 					v-for="game in games"
 					:key="game.name"
 					class="overflow-hidden rounded-lg border border-border"
 				>
-					<div class="flex items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5">
-						<GameIcon
-							v-if="candidateByName.get(game.name)"
-							:candidate="candidateByName.get(game.name)!"
-							:size="20"
-						/>
-						<strong class="min-w-0 flex-1 truncate text-base">{{ game.name }}</strong>
+					<div
+						class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 p-2"
+					>
+						<div class="flex min-w-0 items-center gap-2">
+							<GameIcon
+								v-if="candidateByName.get(game.name)"
+								:candidate="candidateByName.get(game.name)!"
+								:size="20"
+							/>
+							<strong class="min-w-0 truncate text-base">{{ game.name }}</strong>
+						</div>
 						<span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
 							{{ changeCount(game) }} change{{ changeCount(game) === 1 ? '' : 's' }}
 						</span>
