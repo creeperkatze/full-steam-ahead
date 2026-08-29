@@ -9,9 +9,9 @@ pub mod steam;
 
 use commands::{
     apply_plan, available_launchers, close_app, create_manual_candidate, create_preview_plan,
-    delete_backup, detect_steam, list_backups, load_settings, read_shortcuts_for_user,
-    restore_backup, save_settings, scan_sources, steamgriddb_images, steamgriddb_search,
-    validate_steam_location,
+    delete_backup, detect_steam, get_debug_info, list_backups, load_settings, open_logs_folder,
+    read_shortcuts_for_user, restore_backup, save_settings, scan_sources, steamgriddb_images,
+    steamgriddb_search, validate_steam_location,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -91,6 +91,8 @@ pub fn run() {
             list_backups,
             restore_backup,
             delete_backup,
+            get_debug_info,
+            open_logs_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Full Steam Ahead");

@@ -1,3 +1,4 @@
+export * from './debug'
 export * from './events'
 export * from './import'
 export * from './plan'

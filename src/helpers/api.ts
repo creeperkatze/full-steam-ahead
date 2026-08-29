@@ -4,6 +4,7 @@ import type {
 	ApplyResult,
 	ArtworkKind,
 	BackupInfo,
+	DebugInfo,
 	ImportCandidate,
 	ImportSource,
 	ManualImportRequest,
@@ -39,4 +40,6 @@ export const api = {
 	listBackups: () => invoke<BackupInfo[]>('list_backups'),
 	restoreBackup: (backupId: string) => invoke<number>('restore_backup', { backupId }),
 	deleteBackup: (backupId: string) => invoke<void>('delete_backup', { backupId }),
+	getDebugInfo: () => invoke<DebugInfo>('get_debug_info'),
+	openLogsFolder: () => invoke<void>('open_logs_folder'),
 }

@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import ImportFlowView from './views/ImportFlowView.vue'
 import ArtworkSettingsView from './views/settings/ArtworkView.vue'
 import BackupsView from './views/settings/BackupsView.vue'
+import DebugView from './views/settings/DebugView.vue'
 import LaunchersView from './views/settings/LaunchersView.vue'
 import SettingsShell from './views/settings/SettingsShell.vue'
 import SteamView from './views/settings/SteamView.vue'
@@ -21,6 +22,7 @@ export const router = createRouter({
 				{ path: 'launchers', name: 'settings-launchers', component: LaunchersView },
 				{ path: 'artwork', name: 'settings-artwork', component: ArtworkSettingsView },
 				{ path: 'backups', name: 'settings-backups', component: BackupsView },
+				{ path: 'debug', name: 'settings-debug', component: DebugView },
 			],
 		},
 	],
