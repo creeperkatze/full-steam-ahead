@@ -110,7 +110,7 @@ async function refreshSteam() {
 				class="flex items-center justify-between border-b border-border bg-surface-4 px-3 py-2.5"
 			>
 				<div>
-					<h1 class="text-base font-bold">Scanning for games…</h1>
+					<h1 class="text-base font-bold">Scanning for games</h1>
 				</div>
 				<Loader2 :size="20" class="animate-spin text-accent" />
 			</div>
