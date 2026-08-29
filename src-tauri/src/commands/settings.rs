@@ -1,9 +1,9 @@
 use crate::{
     error::{io_context, AppError, CommandError},
     models::{ImportSource, UserSettings},
-    steam,
+    paths, steam,
 };
-use std::{fs, path::PathBuf};
+use std::fs;
 use tracing::instrument;
 
 type CommandResult<T> = Result<T, CommandError>;
@@ -17,7 +17,7 @@ pub fn available_launchers() -> Vec<ImportSource> {
 #[tauri::command]
 #[instrument(skip_all)]
 pub fn load_settings() -> CommandResult<UserSettings> {
-    let path = settings_path();
+    let path = paths::settings_path();
     if !path.exists() {
         return Ok(UserSettings::default());
     }
@@ -28,7 +28,7 @@ pub fn load_settings() -> CommandResult<UserSettings> {
 #[tauri::command]
 #[instrument(skip_all)]
 pub fn save_settings(settings: UserSettings) -> CommandResult<()> {
-    let path = settings_path();
+    let path = paths::settings_path();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(io_context(parent))?;
     }
@@ -36,8 +36,4 @@ pub fn save_settings(settings: UserSettings) -> CommandResult<()> {
         .map_err(|_| AppError::Message("Failed to serialize settings.".to_string()))?;
     fs::write(&path, raw).map_err(io_context(&path))?;
     Ok(())
-}
-
-fn settings_path() -> PathBuf {
-    crate::paths::app_data_dir().join("settings.json")
 }

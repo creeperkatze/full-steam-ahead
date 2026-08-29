@@ -18,16 +18,16 @@ struct BackupManifest {
 }
 
 pub fn list() -> AppResult<Vec<BackupInfo>> {
-    list_from_dir(&crate::paths::app_data_dir().join("backups"))
+    list_from_dir(&crate::paths::backups_dir())
 }
 
 pub fn restore_backup(backup_id: &str) -> AppResult<usize> {
-    let backup_dir = crate::paths::app_data_dir().join("backups").join(backup_id);
+    let backup_dir = crate::paths::backups_dir().join(backup_id);
     restore_from_dir(&backup_dir)
 }
 
 pub fn delete_backup(backup_id: &str) -> AppResult<()> {
-    let backup_dir = crate::paths::app_data_dir().join("backups").join(backup_id);
+    let backup_dir = crate::paths::backups_dir().join(backup_id);
     delete_dir(&backup_dir)
 }
 

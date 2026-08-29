@@ -18,7 +18,7 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn init_logging() -> WorkerGuard {
-    let log_dir = paths::app_data_dir().join("logs");
+    let log_dir = paths::logs_dir();
 
     let session_filename = format!(
         "session_{}.log",
