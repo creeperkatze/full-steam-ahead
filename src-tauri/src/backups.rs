@@ -31,6 +31,10 @@ pub fn delete_backup(backup_id: &str) -> AppResult<()> {
     delete_dir(&backup_dir)
 }
 
+pub fn delete_all_backups() -> AppResult<()> {
+    delete_all_from_dir(&crate::paths::backups_dir())
+}
+
 pub fn write_manifest(backup_dir: &Path, plans: &[BackupPlan]) {
     let files: HashMap<String, PathBuf> = plans
         .iter()
@@ -154,6 +158,21 @@ fn delete_dir(backup_dir: &Path) -> AppResult<()> {
     }
     fs::remove_dir_all(backup_dir).map_err(io_context(backup_dir))?;
     info!(dir = %backup_dir.display(), "Backup deleted");
+    Ok(())
+}
+
+fn delete_all_from_dir(backups_dir: &Path) -> AppResult<()> {
+    if !backups_dir.exists() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(backups_dir).map_err(io_context(backups_dir))? {
+        let entry = entry.map_err(io_context(backups_dir))?;
+        let path = entry.path();
+        if path.is_dir() {
+            fs::remove_dir_all(&path).map_err(io_context(&path))?;
+        }
+    }
+    info!(dir = %backups_dir.display(), "All backups deleted");
     Ok(())
 }
 
@@ -331,6 +350,31 @@ mod tests {
     fn delete_errors_when_backup_dir_missing() {
         let tmp = TmpDir::new();
         assert!(delete_dir(&tmp.path().join("nonexistent")).is_err());
+    }
+
+    // delete_all_from_dir
+
+    #[test]
+    fn delete_all_removes_every_backup_dir() {
+        let tmp = TmpDir::new();
+        write(
+            &tmp.path().join("20250101-000000").join("shortcuts.vdf"),
+            b"x",
+        );
+        write(
+            &tmp.path().join("20250516-120000").join("shortcuts.vdf"),
+            b"x",
+        );
+
+        delete_all_from_dir(tmp.path()).unwrap();
+
+        assert!(fs::read_dir(tmp.path()).unwrap().next().is_none());
+    }
+
+    #[test]
+    fn delete_all_is_noop_when_dir_missing() {
+        let tmp = TmpDir::new();
+        assert!(delete_all_from_dir(&tmp.path().join("nonexistent")).is_ok());
     }
 
     // list_from_dir

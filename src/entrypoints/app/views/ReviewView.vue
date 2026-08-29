@@ -177,7 +177,7 @@ function fileName(path: string) {
 				>
 					<span class="inline-flex items-center gap-2">
 						<FolderArchive :size="15" />
-						<strong>Backups</strong>
+						<strong>Backup</strong>
 					</span>
 					<span class="flex items-center gap-2">
 						<span class="rounded-md border border-border px-2 py-1 text-xs text-secondary"

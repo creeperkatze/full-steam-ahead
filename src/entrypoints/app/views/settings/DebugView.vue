@@ -16,7 +16,7 @@ const metadataFields = computed(() => {
 	return [
 		{ label: 'Version', value: debugInfo.value.appVersion },
 		{ label: 'Platform', value: `${debugInfo.value.os} (${debugInfo.value.arch})` },
-		{ label: 'Data path', value: debugInfo.value.dataPath }
+		{ label: 'Data path', value: debugInfo.value.dataPath },
 	]
 })
 

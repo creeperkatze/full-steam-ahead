@@ -1,5 +1,5 @@
 use crate::{backups, error::CommandError, models::BackupInfo};
-use tracing::{info, instrument};
+use tracing::instrument;
 
 type CommandResult<T> = Result<T, CommandError>;
 
@@ -13,7 +13,6 @@ pub fn list_backups() -> CommandResult<Vec<BackupInfo>> {
 #[instrument]
 pub fn restore_backup(backup_id: String) -> CommandResult<usize> {
     let restored = backups::restore_backup(&backup_id)?;
-    info!(backup_id, restored, "Backup restored via command");
     Ok(restored)
 }
 
@@ -21,6 +20,12 @@ pub fn restore_backup(backup_id: String) -> CommandResult<usize> {
 #[instrument]
 pub fn delete_backup(backup_id: String) -> CommandResult<()> {
     backups::delete_backup(&backup_id)?;
-    info!(backup_id, "Backup deleted via command");
+    Ok(())
+}
+
+#[tauri::command]
+#[instrument]
+pub fn delete_all_backups() -> CommandResult<()> {
+    backups::delete_all_backups()?;
     Ok(())
 }

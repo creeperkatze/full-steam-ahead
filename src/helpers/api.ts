@@ -40,6 +40,7 @@ export const api = {
 	listBackups: () => invoke<BackupInfo[]>('list_backups'),
 	restoreBackup: (backupId: string) => invoke<number>('restore_backup', { backupId }),
 	deleteBackup: (backupId: string) => invoke<void>('delete_backup', { backupId }),
+	deleteAllBackups: () => invoke<void>('delete_all_backups'),
 	getDebugInfo: () => invoke<DebugInfo>('get_debug_info'),
 	openLogsFolder: () => invoke<void>('open_logs_folder'),
 }
