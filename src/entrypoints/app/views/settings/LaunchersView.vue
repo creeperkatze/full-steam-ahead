@@ -41,9 +41,6 @@ async function pickLauncherPath(key: string) {
 <template>
 	<section class="max-w-2xl">
 		<SectionHeader title="Launchers" />
-		<p class="mb-3 text-xs text-secondary">
-			Disable launchers you don't want scanned, or point at a non-standard install location.
-		</p>
 		<div class="grid gap-2">
 			<OptionLauncher
 				v-for="launcher in launcherRows"

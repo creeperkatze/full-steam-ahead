@@ -10,12 +10,18 @@ export interface LauncherSettings {
 	customPath: string | null
 }
 
+export interface SteamGridDbSettings {
+	enabled: boolean
+	apiKey: string | null
+}
+
 export interface PersistedSettings {
 	stopSteam: boolean
 	restartSteam: boolean
 	createCollections: boolean
 	steamLocation: string | null
 	launchers: Record<string, LauncherSettings>
+	steamGridDb: SteamGridDbSettings
 }
 
 export interface PreviewPlan {

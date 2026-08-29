@@ -41,10 +41,17 @@ export interface EditableLauncherSettings {
 const availableLaunchers = ref<ImportSource[]>([])
 const launcherSettings = ref<Record<string, EditableLauncherSettings>>({})
 
+export interface EditableSteamGridDbSettings {
+	enabled: boolean
+	apiKey: string
+}
+
+const steamGridDb = ref<EditableSteamGridDbSettings>({ enabled: false, apiKey: '' })
+
 let settingsLoaded = false
 
 watch(
-	[options, steamLocation, launcherSettings],
+	[options, steamLocation, launcherSettings, steamGridDb],
 	() => {
 		if (!settingsLoaded) return
 		api.saveSettings({
@@ -58,6 +65,10 @@ watch(
 					{ enabled: settings.enabled, customPath: settings.customPath.trim() || null },
 				]),
 			),
+			steamGridDb: {
+				enabled: steamGridDb.value.enabled,
+				apiKey: steamGridDb.value.apiKey.trim() || null,
+			},
 		})
 		invalidatePreview()
 	},
@@ -129,6 +140,10 @@ async function loadSettingsFromDisk() {
 				return [key, { enabled: entry?.enabled ?? true, customPath: entry?.customPath ?? '' }]
 			}),
 		)
+		steamGridDb.value = {
+			enabled: saved.steamGridDb.enabled,
+			apiKey: saved.steamGridDb.apiKey ?? '',
+		}
 	} catch {
 		// Keep defaults
 	} finally {
@@ -153,6 +168,7 @@ export function useAppState() {
 		steamLocation,
 		availableLaunchers,
 		launcherSettings,
+		steamGridDb,
 		selectedUser,
 		selectedCandidates,
 		usesUrlLaunch,

@@ -10,7 +10,8 @@ pub mod steam;
 use commands::{
     apply_plan, available_launchers, close_app, create_manual_candidate, create_preview_plan,
     delete_backup, detect_steam, list_backups, load_settings, read_shortcuts_for_user,
-    restore_backup, save_settings, scan_sources, validate_steam_location,
+    restore_backup, save_settings, scan_sources, steamgriddb_images, steamgriddb_search,
+    validate_steam_location,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -84,6 +85,8 @@ pub fn run() {
             load_settings,
             save_settings,
             available_launchers,
+            steamgriddb_search,
+            steamgriddb_images,
             close_app,
             list_backups,
             restore_backup,

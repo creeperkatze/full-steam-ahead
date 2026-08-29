@@ -1,4 +1,5 @@
 mod fetch;
+pub mod steamgriddb;
 
 use crate::{
     error::{io_context, AppResult},
@@ -129,6 +130,13 @@ pub fn selected_artwork_assets(candidate: &ImportCandidate) -> Vec<ArtworkAsset>
             .proposed
             .iter()
             .find(|asset| asset.kind == kind && asset.source == ArtworkSource::LocalFile)
+            .or_else(|| {
+                candidate
+                    .artwork
+                    .proposed
+                    .iter()
+                    .find(|asset| asset.kind == kind && asset.source == ArtworkSource::SteamGridDb)
+            })
             .or_else(|| {
                 candidate.artwork.proposed.iter().find(|asset| {
                     asset.kind == kind && asset.source == ArtworkSource::OfficialSteam

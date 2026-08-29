@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ImagePlus, RotateCcw } from '@lucide/vue'
+import { ImagePlus, Images, RotateCcw } from '@lucide/vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import GameIcon from '../../../components/GameIcon.vue'
+import SteamGridDbBrowser from '../../../components/SteamGridDbBrowser.vue'
 import UiButton from '../../../components/ui/Button.vue'
 import { useAppState } from '../../../composables/useAppState'
-import type { ArtworkAsset, ArtworkKind, ImportCandidate } from '../../../types'
+import type { ArtworkAsset, ArtworkKind, ImportCandidate, SteamGridDbImage } from '../../../types'
 
 const state = useAppState()
 
@@ -41,6 +42,12 @@ const slots: Array<{ kind: ArtworkKind; label: string; preview: string }> = [
 
 const brokenPreviewUrls = ref<Record<string, true>>({})
 
+const steamGridDbAvailable = computed(
+	() => state.steamGridDb.value.enabled && state.steamGridDb.value.apiKey.trim().length > 0,
+)
+
+const browsingSlot = ref<{ candidateId: string; kind: ArtworkKind; name: string } | null>(null)
+
 function artworkKey(candidateId: string, kind: ArtworkKind) {
 	return `${candidateId}:${kind}`
 }
@@ -55,7 +62,12 @@ function selectedAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAs
 			willReplaceExisting: true,
 		}
 	}
-	return candidate.artwork.proposed.find((asset) => asset.kind === kind)
+	const matches = candidate.artwork.proposed.filter((asset) => asset.kind === kind)
+	return (
+		matches.find((asset) => asset.source === 'steamGridDb') ??
+		matches.find((asset) => asset.source === 'officialSteam') ??
+		matches[0]
+	)
 }
 
 function existingAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAsset | undefined {
@@ -114,6 +126,22 @@ async function pickArtwork(candidateId: string, kind: ArtworkKind) {
 	})
 }
 
+function openSteamGridDbBrowser(candidate: ImportCandidate, kind: ArtworkKind) {
+	browsingSlot.value = { candidateId: candidate.id, kind, name: candidate.name }
+}
+
+function onSteamGridDbSelect(image: SteamGridDbImage) {
+	if (!browsingSlot.value) return
+	const { candidateId, kind } = browsingSlot.value
+	upsertArtworkAsset(candidateId, {
+		kind,
+		pathOrUrl: image.url,
+		source: 'steamGridDb',
+		willReplaceExisting: true,
+	})
+	browsingSlot.value = null
+}
+
 function useOfficialArtwork(candidateId: string, kind: ArtworkKind) {
 	const candidate = state.candidates.value.find((candidate) => candidate.id === candidateId)
 	const official = candidate?.artwork.proposed.find(
@@ -121,7 +149,7 @@ function useOfficialArtwork(candidateId: string, kind: ArtworkKind) {
 	)
 	if (!official) return
 
-	removeLocalArtworkAsset(candidateId, kind)
+	removeArtworkOverride(candidateId, kind)
 	const updated = { ...state.customArtwork.value }
 	delete updated[artworkKey(candidateId, kind)]
 	state.customArtwork.value = updated
@@ -137,7 +165,10 @@ function upsertArtworkAsset(candidateId: string, asset: ArtworkAsset) {
 			...candidate,
 			artwork: {
 				...candidate.artwork,
-				mode: asset.source === 'localFile' ? 'localOverride' : candidate.artwork.mode,
+				mode:
+					asset.source === 'localFile' || asset.source === 'steamGridDb'
+						? 'localOverride'
+						: candidate.artwork.mode,
 				proposed: [...proposed, asset],
 			},
 		}
@@ -145,7 +176,7 @@ function upsertArtworkAsset(candidateId: string, asset: ArtworkAsset) {
 	state.invalidatePreview()
 }
 
-function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
+function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 	state.candidates.value = state.candidates.value.map((candidate) => {
 		if (candidate.id !== candidateId) return candidate
 		return {
@@ -153,7 +184,11 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
 			artwork: {
 				...candidate.artwork,
 				proposed: candidate.artwork.proposed.filter(
-					(asset) => !(asset.kind === kind && asset.source === 'localFile'),
+					(asset) =>
+						!(
+							asset.kind === kind &&
+							(asset.source === 'localFile' || asset.source === 'steamGridDb')
+						),
 				),
 			},
 		}
@@ -225,9 +260,9 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
 							<span v-else class="px-2 text-xs text-secondary">Missing</span>
 						</div>
 
-						<div class="grid grid-cols-[1fr_36px] gap-2">
+						<div class="flex gap-2">
 							<UiButton
-								class="h-9 min-w-0 px-2 text-xs"
+								class="h-9 min-w-0 flex-1 px-2 text-xs"
 								variant="secondary"
 								size="sm"
 								title="Pick local artwork"
@@ -239,7 +274,17 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
 								</template>
 							</UiButton>
 							<UiButton
-								class="h-9 w-9"
+								v-if="steamGridDbAvailable"
+								class="h-9 w-9 shrink-0"
+								size="icon"
+								variant="secondary"
+								title="Browse SteamGridDB"
+								@click="openSteamGridDbBrowser(candidate, slot.kind)"
+							>
+								<Images :size="14" />
+							</UiButton>
+							<UiButton
+								class="h-9 w-9 shrink-0"
 								size="icon"
 								variant="ghost"
 								title="Use official Steam artwork"
@@ -258,4 +303,13 @@ function removeLocalArtworkAsset(candidateId: string, kind: ArtworkKind) {
 			</article>
 		</div>
 	</section>
+
+	<SteamGridDbBrowser
+		v-if="browsingSlot"
+		:api-key="state.steamGridDb.value.apiKey"
+		:kind="browsingSlot.kind"
+		:initial-query="browsingSlot.name"
+		@close="browsingSlot = null"
+		@select="onSteamGridDbSelect"
+	/>
 </template>

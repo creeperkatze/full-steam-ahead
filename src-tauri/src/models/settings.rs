@@ -18,6 +18,13 @@ impl Default for LauncherSettings {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SteamGridDbSettings {
+    pub enabled: bool,
+    pub api_key: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct UserSettings {
@@ -26,6 +33,7 @@ pub struct UserSettings {
     pub create_collections: bool,
     pub steam_location: Option<String>,
     pub launchers: HashMap<String, LauncherSettings>,
+    pub steam_grid_db: SteamGridDbSettings,
 }
 
 impl Default for UserSettings {
@@ -36,6 +44,7 @@ impl Default for UserSettings {
             create_collections: true,
             steam_location: None,
             launchers: HashMap::new(),
+            steam_grid_db: SteamGridDbSettings::default(),
         }
     }
 }

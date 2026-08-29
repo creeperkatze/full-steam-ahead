@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 import type {
 	ApplyResult,
+	ArtworkKind,
 	BackupInfo,
 	ImportCandidate,
 	ImportSource,
@@ -11,6 +12,8 @@ import type {
 	PreviewPlan,
 	ScanRequest,
 	ShortcutEntry,
+	SteamGridDbGame,
+	SteamGridDbImage,
 	SteamInstallation,
 } from '../types'
 
@@ -29,6 +32,10 @@ export const api = {
 	loadSettings: () => invoke<PersistedSettings>('load_settings'),
 	saveSettings: (settings: PersistedSettings) => invoke<void>('save_settings', { settings }),
 	availableLaunchers: () => invoke<ImportSource[]>('available_launchers'),
+	steamGridDbSearch: (apiKey: string, query: string) =>
+		invoke<SteamGridDbGame[]>('steamgriddb_search', { apiKey, query }),
+	steamGridDbImages: (apiKey: string, gameId: number, kind: ArtworkKind) =>
+		invoke<SteamGridDbImage[]>('steamgriddb_images', { apiKey, gameId, kind }),
 	listBackups: () => invoke<BackupInfo[]>('list_backups'),
 	restoreBackup: (backupId: string) => invoke<number>('restore_backup', { backupId }),
 	deleteBackup: (backupId: string) => invoke<void>('delete_backup', { backupId }),

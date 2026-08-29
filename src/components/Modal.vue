@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 
-const props = defineProps<{ modelValue: boolean }>()
+const props = withDefaults(defineProps<{ modelValue: boolean; fullscreen?: boolean }>(), {
+	fullscreen: false,
+})
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 function onKeydown(e: KeyboardEvent) {
@@ -20,7 +22,12 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 			@click="$emit('update:modelValue', false)"
 		>
 			<div
-				class="mx-4 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-xl"
+				class="rounded-xl border border-border bg-surface-2 shadow-xl"
+				:class="
+					fullscreen
+						? 'flex h-[85vh] w-[90vw] max-w-5xl flex-col overflow-hidden'
+						: 'mx-4 w-full max-w-sm p-6'
+				"
 				@click.stop
 			>
 				<slot />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Gamepad2, Rocket } from '@lucide/vue'
+import { Archive, Gamepad2, Images, Rocket } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import GitHubIcon from '../../../../assets/icons/github.svg?component'
@@ -13,6 +13,7 @@ const router = useRouter()
 const sections = [
 	{ name: 'settings-steam', label: 'Steam', icon: Gamepad2 },
 	{ name: 'settings-launchers', label: 'Launchers', icon: Rocket },
+	{ name: 'settings-artwork', label: 'Artwork', icon: Images },
 	{ name: 'settings-backups', label: 'Backups', icon: Archive },
 ] as const
 </script>

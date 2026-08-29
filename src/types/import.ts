@@ -62,3 +62,16 @@ export interface ArtworkAsset {
 	source: ArtworkSource
 	willReplaceExisting: boolean
 }
+
+export interface SteamGridDbGame {
+	id: number
+	name: string
+}
+
+export interface SteamGridDbImage {
+	id: number
+	url: string
+	thumbnailUrl: string
+	width: number
+	height: number
+}
