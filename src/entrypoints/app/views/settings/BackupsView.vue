@@ -100,8 +100,11 @@ async function confirmAction() {
 			<div v-else class="max-h-72 divide-y divide-border/50 overflow-y-auto">
 				<div v-for="backup in backups" :key="backup.id" class="flex items-center gap-3 px-4 py-2.5">
 					<div class="min-w-0 flex-1">
-						<p class="font-mono text-sm">{{ formatBackupDate(backup.createdAt) }}</p>
-						<p class="text-xs text-secondary">
+						<code
+							class="-ml-1.5 inline-block max-w-full rounded bg-surface-4 px-1.5 py-0.5 font-mono text-xs"
+							>{{ formatBackupDate(backup.createdAt) }}</code
+						>
+						<p class="mt-1 text-xs text-secondary">
 							{{ backup.fileCount }} {{ backup.fileCount === 1 ? 'file' : 'files' }} ·
 							{{ formatSize(backup.sizeBytes) }}
 						</p>
