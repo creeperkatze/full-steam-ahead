@@ -138,7 +138,9 @@ pub fn apply_plan_with_progress(
         current,
         total,
     });
-    collections::update_modern_collections(&user.collections_path, &request.candidates)?;
+    if request.options.create_collections {
+        collections::update_modern_collections(&user.collections_path, &request.candidates)?;
+    }
 
     if request.options.restart_steam {
         current += 1;
