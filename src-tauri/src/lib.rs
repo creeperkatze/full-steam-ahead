@@ -8,9 +8,9 @@ mod process;
 pub mod steam;
 
 use commands::{
-    apply_plan, close_app, create_manual_candidate, create_preview_plan, delete_backup,
-    detect_steam, list_backups, load_settings, read_shortcuts_for_user, restore_backup,
-    save_settings, scan_sources, validate_steam_location,
+    apply_plan, available_launchers, close_app, create_manual_candidate, create_preview_plan,
+    delete_backup, detect_steam, list_backups, load_settings, read_shortcuts_for_user,
+    restore_backup, save_settings, scan_sources, validate_steam_location,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -83,6 +83,7 @@ pub fn run() {
             apply_plan,
             load_settings,
             save_settings,
+            available_launchers,
             close_app,
             list_backups,
             restore_backup,

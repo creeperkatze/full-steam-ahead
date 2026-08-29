@@ -4,31 +4,28 @@ use crate::{
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use sqlite::State;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let Some(sqlite_path) = local_app_data()
-        .map(|path| {
-            path.join("Amazon Games")
-                .join("Data")
-                .join("Games")
-                .join("Sql")
-                .join("GameInstallInfo.sqlite")
-        })
-        .filter(|path| path.exists())
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let Some(amazon_root) = custom_path
+        .map(PathBuf::from)
+        .or_else(|| local_app_data().map(|path| path.join("Amazon Games")))
     else {
         return Ok(Vec::new());
     };
-    let Some(launcher_path) = local_app_data()
-        .map(|path| {
-            path.join("Amazon Games")
-                .join("App")
-                .join("Amazon Games.exe")
-        })
-        .filter(|path| path.exists())
-    else {
+
+    let sqlite_path = amazon_root
+        .join("Data")
+        .join("Games")
+        .join("Sql")
+        .join("GameInstallInfo.sqlite");
+    if !sqlite_path.exists() {
         return Ok(Vec::new());
-    };
+    }
+    let launcher_path = amazon_root.join("App").join("Amazon Games.exe");
+    if !launcher_path.exists() {
+        return Ok(Vec::new());
+    }
 
     let connection = sqlite::open(&sqlite_path).map_err(|error| {
         AppError::Message(format!(

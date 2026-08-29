@@ -3,10 +3,13 @@ use crate::{
     importers::gog,
     models::{ImportCandidate, ImportSource, SteamUser},
 };
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let games_dir = default_games_dir()?;
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let games_dir = match custom_path {
+        Some(p) => p.to_path_buf(),
+        None => default_games_dir()?,
+    };
     if !games_dir.exists() {
         return Ok(Vec::new());
     }

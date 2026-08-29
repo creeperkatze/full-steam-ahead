@@ -16,8 +16,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let itch_dir = default_itch_location();
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let itch_dir = custom_path
+        .map(PathBuf::from)
+        .unwrap_or_else(default_itch_location);
     let wal_path = itch_dir.join("db").join("butler.db-wal");
     if !wal_path.exists() {
         return Ok(Vec::new());

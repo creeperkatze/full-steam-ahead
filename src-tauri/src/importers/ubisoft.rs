@@ -5,29 +5,33 @@ use crate::{
 };
 use std::path::{Path, PathBuf};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     #[cfg(windows)]
-    return scan_windows(user);
+    return scan_windows(user, custom_path);
 
     #[cfg(unix)]
-    return scan_unix(user);
+    return scan_unix(user, custom_path);
 
     #[cfg(not(any(windows, unix)))]
     Ok(Vec::new())
 }
 
 #[cfg(windows)]
-fn scan_windows(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
+fn scan_windows(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     let Ok(launcher_key) = hklm.open_subkey("SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher") else {
         return Ok(Vec::new());
     };
-    let launcher_path = launcher_key
-        .get_value::<String, _>("InstallDir")
-        .ok()
-        .and_then(|dir| launcher_from_dir(Path::new(&dir)))
+    let launcher_path = custom_path
+        .and_then(launcher_from_dir)
+        .or_else(|| {
+            launcher_key
+                .get_value::<String, _>("InstallDir")
+                .ok()
+                .and_then(|dir| launcher_from_dir(Path::new(&dir)))
+        })
         .or_else(default_launcher_path);
     let Some(launcher_path) = launcher_path else {
         return Ok(Vec::new());
@@ -93,8 +97,8 @@ fn default_launcher_path() -> Option<PathBuf> {
 }
 
 #[cfg(unix)]
-fn scan_unix(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let Some(launcher_info) = find_uplay_launcher_unix() else {
+fn scan_unix(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let Some(launcher_info) = find_uplay_launcher_unix(custom_path) else {
         return Ok(Vec::new());
     };
 
@@ -168,7 +172,16 @@ struct UplayLauncherInfo {
 }
 
 #[cfg(unix)]
-fn find_uplay_launcher_unix() -> Option<UplayLauncherInfo> {
+fn find_uplay_launcher_unix(custom_path: Option<&Path>) -> Option<UplayLauncherInfo> {
+    if let Some(custom) = custom_path {
+        let exe = custom.join("upc.exe");
+        let games = custom.join("games");
+        return (exe.exists() && games.exists()).then_some(UplayLauncherInfo {
+            exe_path: exe,
+            compat_folder: None,
+        });
+    }
+
     let compat_dir = super::compat_data_dir()?;
 
     for entry in std::fs::read_dir(compat_dir).ok()?.flatten() {

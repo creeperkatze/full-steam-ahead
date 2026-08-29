@@ -63,8 +63,8 @@ impl EpicManifest {
     }
 }
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let Some(paths) = find_epic_paths() else {
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let Some(paths) = find_epic_paths(custom_path) else {
         return Ok(Vec::new());
     };
 
@@ -183,11 +183,12 @@ fn is_launchable(manifest: &EpicManifest) -> bool {
     !manifest.launch_executable.is_empty() || manifest.is_managed
 }
 
-fn find_epic_paths() -> Option<EpicPaths> {
+fn find_epic_paths(custom_path: Option<&Path>) -> Option<EpicPaths> {
     #[cfg(windows)]
     {
-        let manifest_folder_path =
-            manifest_location_from_registry().unwrap_or_else(default_manifest_location);
+        let manifest_folder_path = custom_path.map(PathBuf::from).unwrap_or_else(|| {
+            manifest_location_from_registry().unwrap_or_else(default_manifest_location)
+        });
         let launcher_path =
             launcher_location_from_registry().unwrap_or_else(default_launcher_location);
         (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
@@ -200,7 +201,9 @@ fn find_epic_paths() -> Option<EpicPaths> {
     #[cfg(target_os = "macos")]
     {
         let home = std::env::var("HOME").ok()?;
-        let manifest_folder_path = macos_manifest_location(&home);
+        let manifest_folder_path = custom_path
+            .map(PathBuf::from)
+            .unwrap_or_else(|| macos_manifest_location(&home));
         let launcher_path = macos_launcher_location();
         (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
             launcher_path,
@@ -229,15 +232,17 @@ fn find_epic_paths() -> Option<EpicPaths> {
                 .map(|arch| binaries.join(arch).join("EpicGamesLauncher.exe"))
                 .find(|p| p.exists())?;
 
-            let manifest_folder_path = entry
-                .path()
-                .join("pfx")
-                .join("drive_c")
-                .join("ProgramData")
-                .join("Epic")
-                .join("EpicGamesLauncher")
-                .join("Data")
-                .join("Manifests");
+            let manifest_folder_path = custom_path.map(PathBuf::from).unwrap_or_else(|| {
+                entry
+                    .path()
+                    .join("pfx")
+                    .join("drive_c")
+                    .join("ProgramData")
+                    .join("Epic")
+                    .join("EpicGamesLauncher")
+                    .join("Data")
+                    .join("Manifests")
+            });
 
             if manifest_folder_path.exists() {
                 return Some(EpicPaths {

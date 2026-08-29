@@ -7,7 +7,7 @@ use crate::{
 use serde::Deserialize;
 use std::{path::Path, process::Command};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
+pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     let output = process::command_output_no_window(Command::new("powershell").args([
         "/NoProfile",
         "/Command",

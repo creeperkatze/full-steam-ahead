@@ -4,13 +4,19 @@ use crate::{
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
-use std::process::Command;
+use std::{path::Path, process::Command};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    // Try `legendary` first, then `rare` (alternative CLI)
-    let games = run_legendary("legendary")
-        .or_else(|_| run_legendary("rare"))
-        .unwrap_or_default();
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let executable = custom_path.map(|p| p.to_string_lossy().to_string());
+    let games = match &executable {
+        // A custom executable was explicitly chosen, so don't fall back to `rare`
+        Some(exe) => run_legendary(exe).unwrap_or_default(),
+        // Try `legendary` first, then `rare` (alternative CLI)
+        None => run_legendary("legendary")
+            .or_else(|_| run_legendary("rare"))
+            .unwrap_or_default(),
+    };
+    let executable = executable.unwrap_or_else(|| "legendary".to_string());
 
     let candidates = games
         .into_iter()
@@ -21,7 +27,7 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
                 ImportSource::Legendary,
                 "legendary",
                 game.title,
-                "legendary".into(),
+                executable.clone().into(),
                 format!("launch {}", game.app_name),
                 vec!["Legendary".to_string()],
             )

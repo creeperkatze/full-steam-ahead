@@ -9,7 +9,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    if let Some(custom) = custom_path {
+        return scan_root(user, custom);
+    }
+
     let mut all_candidates = Vec::new();
 
     for source in find_galaxy_configs() {
@@ -40,33 +44,47 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
 
         for root in roots {
             let root = PathBuf::from(root);
-            if !root.exists() {
-                continue;
-            }
-            for entry in fs::read_dir(&root).map_err(io_context(&root))?.flatten() {
-                let folder = entry.path();
-                if !folder.is_dir() {
-                    continue;
+            let mut found = scan_root_with_compat(user, &root, source.compat_folder.as_deref())?;
+            // Ensures Steam launches this shortcut through Proton, since it was found in a Wine/Proton prefix.
+            if source.wine_c_drive.is_some() {
+                for candidate in &mut found {
+                    candidate.needs_proton = true;
                 }
-                let game_folder = if folder.join("game").exists() {
-                    folder.join("game")
-                } else {
-                    folder
-                };
-                let mut found =
-                    scan_gog_folder(user, &game_folder, source.compat_folder.as_deref())?;
-                // Ensures Steam launches this shortcut through Proton, since it was found in a Wine/Proton prefix.
-                if source.wine_c_drive.is_some() {
-                    for candidate in &mut found {
-                        candidate.needs_proton = true;
-                    }
-                }
-                all_candidates.extend(found);
             }
+            all_candidates.extend(found);
         }
     }
 
     Ok(all_candidates)
+}
+
+/// Scans a directory of GOG game folders, as found directly under a Galaxy install root.
+fn scan_root(user: &SteamUser, root: &Path) -> AppResult<Vec<ImportCandidate>> {
+    scan_root_with_compat(user, root, None)
+}
+
+fn scan_root_with_compat(
+    user: &SteamUser,
+    root: &Path,
+    compat_folder: Option<&Path>,
+) -> AppResult<Vec<ImportCandidate>> {
+    if !root.exists() {
+        return Ok(Vec::new());
+    }
+    let mut candidates = Vec::new();
+    for entry in fs::read_dir(root).map_err(io_context(root))?.flatten() {
+        let folder = entry.path();
+        if !folder.is_dir() {
+            continue;
+        }
+        let game_folder = if folder.join("game").exists() {
+            folder.join("game")
+        } else {
+            folder
+        };
+        candidates.extend(scan_gog_folder(user, &game_folder, compat_folder)?);
+    }
+    Ok(candidates)
 }
 
 #[cfg(unix)]

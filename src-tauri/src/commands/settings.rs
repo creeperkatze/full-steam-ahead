@@ -1,11 +1,18 @@
 use crate::{
     error::{io_context, AppError, CommandError},
-    models::UserSettings,
+    models::{ImportSource, UserSettings},
+    steam,
 };
 use std::{fs, path::PathBuf};
 use tracing::instrument;
 
 type CommandResult<T> = Result<T, CommandError>;
+
+#[tauri::command]
+#[instrument]
+pub fn available_launchers() -> Vec<ImportSource> {
+    steam::sources::scannable_sources()
+}
 
 #[tauri::command]
 #[instrument(skip_all)]

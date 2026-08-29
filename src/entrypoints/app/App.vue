@@ -20,7 +20,7 @@ onMounted(() => state.loadSettingsFromDisk())
 const reviewPlan = useReviewPlan()
 const task = useTaskStatus()
 const { scan } = useScanSources()
-const settingsOpen = computed(() => route.name === 'settings')
+const settingsOpen = computed(() => route.path.startsWith('/settings'))
 
 const activeStepIndex = computed(() => {
 	if (state.step.value === 'sources') return 1

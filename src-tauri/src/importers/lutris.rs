@@ -4,12 +4,22 @@ use crate::{
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
-use std::process::Command;
+use std::{path::Path, process::Command};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let games = run_lutris_native()
-        .or_else(|_| run_lutris_flatpak())
-        .unwrap_or_default();
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let (games, is_flatpak, custom_exe) = if let Some(custom) = custom_path {
+        let exe = custom.to_string_lossy().to_string();
+        (
+            run_lutris_custom(&exe).unwrap_or_default(),
+            false,
+            Some(exe),
+        )
+    } else {
+        match run_lutris_native() {
+            Ok(games) => (games, false, None),
+            Err(_) => (run_lutris_flatpak().unwrap_or_default(), true, None),
+        }
+    };
 
     let candidates = games
         .into_iter()
@@ -18,7 +28,8 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
             g.runner.as_deref() != Some("steam") && g.service.as_deref() != Some("steam")
         })
         .map(|game| {
-            let (exe, opts) = lutris_launch_args(&game, false);
+            let (default_exe, opts) = lutris_launch_args(&game, is_flatpak);
+            let exe = custom_exe.clone().unwrap_or(default_exe);
             launcher_candidate(
                 user,
                 ImportSource::Lutris,
@@ -60,6 +71,13 @@ fn run_lutris_flatpak() -> Result<Vec<LutrisGame>, Box<dyn std::error::Error>> {
     let output = Command::new("flatpak")
         .args(["run", "net.lutris.Lutris", "--json", "-lo"])
         .output()?;
+    Ok(serde_json::from_str(&String::from_utf8_lossy(
+        &output.stdout,
+    ))?)
+}
+
+fn run_lutris_custom(executable: &str) -> Result<Vec<LutrisGame>, Box<dyn std::error::Error>> {
+    let output = Command::new(executable).args(["--json", "-lo"]).output()?;
     Ok(serde_json::from_str(&String::from_utf8_lossy(
         &output.stdout,
     ))?)

@@ -50,12 +50,14 @@ pub fn scan_sources(
     request: ScanRequest,
 ) -> CommandResult<Vec<ImportCandidate>> {
     let user = steam::detect::find_user(&request.user_steam_id)?;
+    let settings = super::load_settings().unwrap_or_default();
     let result = steam::sources::scan_sources_with_progress(
         |event| {
             let _ = app.emit("scan-progress", event);
         },
         &user,
         &request,
+        &settings,
     )
     .map_err(Into::into);
     if let Ok(ref candidates) = result {

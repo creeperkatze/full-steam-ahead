@@ -5,11 +5,17 @@ export interface Options {
 	createCollections: boolean
 }
 
+export interface LauncherSettings {
+	enabled: boolean
+	customPath: string | null
+}
+
 export interface PersistedSettings {
 	stopSteam: boolean
 	restartSteam: boolean
 	createCollections: boolean
 	steamLocation: string | null
+	launchers: Record<string, LauncherSettings>
 }
 
 export interface PreviewPlan {

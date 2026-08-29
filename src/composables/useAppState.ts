@@ -4,6 +4,7 @@ import { api } from '../helpers/api'
 import type {
 	ApplyResult,
 	ImportCandidate,
+	ImportSource,
 	Options,
 	PreviewPlan,
 	SteamInstallation,
@@ -32,14 +33,31 @@ const options = ref<Options>({
 })
 const steamLocation = ref('')
 
+export interface EditableLauncherSettings {
+	enabled: boolean
+	customPath: string
+}
+
+const availableLaunchers = ref<ImportSource[]>([])
+const launcherSettings = ref<Record<string, EditableLauncherSettings>>({})
+
+let settingsLoaded = false
+
 watch(
-	[options, steamLocation],
+	[options, steamLocation, launcherSettings],
 	() => {
+		if (!settingsLoaded) return
 		api.saveSettings({
 			stopSteam: options.value.stopSteam,
 			restartSteam: options.value.restartSteam,
 			createCollections: options.value.createCollections,
 			steamLocation: steamLocation.value.trim() || null,
+			launchers: Object.fromEntries(
+				Object.entries(launcherSettings.value).map(([key, settings]) => [
+					key,
+					{ enabled: settings.enabled, customPath: settings.customPath.trim() || null },
+				]),
+			),
 		})
 		invalidatePreview()
 	},
@@ -96,7 +114,7 @@ function invalidatePreview() {
 
 async function loadSettingsFromDisk() {
 	try {
-		const saved = await api.loadSettings()
+		const [saved, sources] = await Promise.all([api.loadSettings(), api.availableLaunchers()])
 		options.value = {
 			...options.value,
 			stopSteam: saved.stopSteam,
@@ -104,8 +122,17 @@ async function loadSettingsFromDisk() {
 			createCollections: saved.createCollections,
 		}
 		steamLocation.value = saved.steamLocation ?? ''
+		availableLaunchers.value = sources
+		launcherSettings.value = Object.fromEntries(
+			(sources as string[]).map((key) => {
+				const entry = saved.launchers[key]
+				return [key, { enabled: entry?.enabled ?? true, customPath: entry?.customPath ?? '' }]
+			}),
+		)
 	} catch {
 		// Keep defaults
+	} finally {
+		settingsLoaded = true
 	}
 }
 
@@ -124,6 +151,8 @@ export function useAppState() {
 		manualName,
 		options,
 		steamLocation,
+		availableLaunchers,
+		launcherSettings,
 		selectedUser,
 		selectedCandidates,
 		usesUrlLaunch,

@@ -3,10 +3,14 @@ use crate::{
     importers::launcher_candidate,
     models::{ImportCandidate, ImportSource, SteamUser},
 };
-use std::process::Command;
+use std::{path::Path, process::Command};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let stdout = Command::new("flatpak")
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let exe = custom_path
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| "flatpak".to_string());
+
+    let stdout = Command::new(&exe)
         .args(["list", "--app", "--columns=name,application"])
         .output()
         .map(|o| o.stdout)
@@ -22,7 +26,7 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
                 ImportSource::Flatpak,
                 "flatpak",
                 name,
-                "flatpak".into(),
+                exe.clone().into(),
                 format!("run {app_id}"),
                 vec!["Flatpak".to_string()],
             ))

@@ -14,8 +14,8 @@ use nom::{
 };
 use std::path::{Path, PathBuf};
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let (launcher_path, db_path) = find_paths()?;
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let (launcher_path, db_path) = find_paths(custom_path)?;
     if !db_path.exists() {
         return Ok(Vec::new());
     }
@@ -51,12 +51,16 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     Ok(candidates)
 }
 
-fn find_paths() -> AppResult<(PathBuf, PathBuf)> {
-    let local = std::env::var("LOCALAPPDATA")
-        .map_err(|_| AppError::Message("LOCALAPPDATA not set".to_string()))?;
-    let launcher = Path::new(&local)
-        .join("Playnite")
-        .join("Playnite.DesktopApp.exe");
+fn find_paths(custom_path: Option<&Path>) -> AppResult<(PathBuf, PathBuf)> {
+    let launcher = if let Some(custom) = custom_path {
+        custom.join("Playnite.DesktopApp.exe")
+    } else {
+        let local = std::env::var("LOCALAPPDATA")
+            .map_err(|_| AppError::Message("LOCALAPPDATA not set".to_string()))?;
+        Path::new(&local)
+            .join("Playnite")
+            .join("Playnite.DesktopApp.exe")
+    };
     if !launcher.exists() {
         return Err(AppError::Message("Playnite is not installed".to_string()));
     }

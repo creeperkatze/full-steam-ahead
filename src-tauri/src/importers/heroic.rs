@@ -9,12 +9,15 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let Ok(home) = std::env::var("HOME") else {
-        return Ok(Vec::new());
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let (install_mode, heroic_config_dir) = if let Some(custom) = custom_path {
+        (install_mode_for(custom), custom.to_path_buf())
+    } else {
+        let Ok(home) = std::env::var("HOME") else {
+            return Ok(Vec::new());
+        };
+        detect_install_mode(&home)
     };
-
-    let (install_mode, heroic_config_dir) = detect_install_mode(&home);
 
     let mut candidates = Vec::new();
 
@@ -47,6 +50,17 @@ fn detect_install_mode(home: &str) -> (InstallMode, PathBuf) {
     }
     let user_bin_config = PathBuf::from(home).join(".config").join("heroic");
     (InstallMode::UserBin, user_bin_config)
+}
+
+fn install_mode_for(config_dir: &Path) -> InstallMode {
+    if config_dir
+        .to_string_lossy()
+        .contains(".var/app/com.heroicgameslauncher.hgl")
+    {
+        InstallMode::FlatPak
+    } else {
+        InstallMode::UserBin
+    }
 }
 
 fn heroic_launch_candidate(

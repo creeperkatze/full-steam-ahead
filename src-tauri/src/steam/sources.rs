@@ -3,7 +3,7 @@ use crate::{
     importers::{self, quote_path},
     models::{
         ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanProgressEvent, ScanRequest,
-        ShortcutEntry, SteamUser,
+        ShortcutEntry, SteamUser, UserSettings,
     },
     steam::{artwork, non_steam_app_id},
 };
@@ -13,9 +13,10 @@ pub fn scan_sources_with_progress(
     on_progress: impl Fn(ScanProgressEvent),
     user: &SteamUser,
     request: &ScanRequest,
+    settings: &UserSettings,
 ) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
-    let enabled_sources = enabled_sources(request);
+    let enabled_sources = enabled_sources(request, settings);
 
     for source in &enabled_sources {
         on_progress(ScanProgressEvent {
@@ -24,7 +25,9 @@ pub fn scan_sources_with_progress(
             found: 0,
         });
 
-        let found = scan_single_source(source, user);
+        let launcher_settings = settings.launcher(source);
+        let custom_path = launcher_settings.custom_path.as_deref().map(Path::new);
+        let found = scan_single_source(source, user, custom_path);
         let found_count = found.len();
         candidates.extend(found);
 
@@ -44,46 +47,53 @@ pub fn scan_sources_with_progress(
     Ok(candidates)
 }
 
-fn scan_single_source(source: &ImportSource, user: &SteamUser) -> Vec<ImportCandidate> {
+fn scan_single_source(
+    source: &ImportSource,
+    user: &SteamUser,
+    custom_path: Option<&Path>,
+) -> Vec<ImportCandidate> {
     match source {
         // Cross-platform (each importer handles OS internally)
-        ImportSource::Gog => importers::gog::scan(user).unwrap_or_default(),
-        ImportSource::Epic => importers::epic::scan(user).unwrap_or_default(),
-        ImportSource::Origin => importers::origin::scan(user).unwrap_or_default(),
-        ImportSource::UbisoftConnect => importers::ubisoft::scan(user).unwrap_or_default(),
-        ImportSource::Itch => importers::itch::scan(user).unwrap_or_default(),
+        ImportSource::Gog => importers::gog::scan(user, custom_path).unwrap_or_default(),
+        ImportSource::Epic => importers::epic::scan(user, custom_path).unwrap_or_default(),
+        ImportSource::Origin => importers::origin::scan(user, custom_path).unwrap_or_default(),
+        ImportSource::UbisoftConnect => {
+            importers::ubisoft::scan(user, custom_path).unwrap_or_default()
+        }
+        ImportSource::Itch => importers::itch::scan(user, custom_path).unwrap_or_default(),
 
         // Windows-only
         #[cfg(windows)]
-        ImportSource::Playnite => importers::playnite::scan(user).unwrap_or_default(),
+        ImportSource::Playnite => importers::playnite::scan(user, custom_path).unwrap_or_default(),
         #[cfg(windows)]
-        ImportSource::Amazon => importers::amazon::scan(user).unwrap_or_default(),
+        ImportSource::Amazon => importers::amazon::scan(user, custom_path).unwrap_or_default(),
         #[cfg(windows)]
-        ImportSource::GamePass => importers::gamepass::scan(user).unwrap_or_default(),
+        ImportSource::GamePass => importers::gamepass::scan(user, custom_path).unwrap_or_default(),
 
         // Unix-only
         #[cfg(unix)]
-        ImportSource::Heroic => importers::heroic::scan(user).unwrap_or_default(),
+        ImportSource::Heroic => importers::heroic::scan(user, custom_path).unwrap_or_default(),
         #[cfg(unix)]
-        ImportSource::Legendary => importers::legendary::scan(user).unwrap_or_default(),
+        ImportSource::Legendary => {
+            importers::legendary::scan(user, custom_path).unwrap_or_default()
+        }
         #[cfg(unix)]
-        ImportSource::Lutris => importers::lutris::scan(user).unwrap_or_default(),
+        ImportSource::Lutris => importers::lutris::scan(user, custom_path).unwrap_or_default(),
         #[cfg(unix)]
-        ImportSource::Flatpak => importers::flatpak::scan(user).unwrap_or_default(),
+        ImportSource::Flatpak => importers::flatpak::scan(user, custom_path).unwrap_or_default(),
         #[cfg(unix)]
-        ImportSource::Bottles => importers::bottles::scan(user).unwrap_or_default(),
+        ImportSource::Bottles => importers::bottles::scan(user, custom_path).unwrap_or_default(),
         #[cfg(unix)]
-        ImportSource::MiniGalaxy => importers::minigalaxy::scan(user).unwrap_or_default(),
+        ImportSource::MiniGalaxy => {
+            importers::minigalaxy::scan(user, custom_path).unwrap_or_default()
+        }
 
         _ => vec![],
     }
 }
 
-fn enabled_sources(request: &ScanRequest) -> Vec<ImportSource> {
-    if !request.include_sources.is_empty() {
-        return request.include_sources.clone();
-    }
-
+/// All launcher sources this build knows how to scan for, in OS-appropriate order.
+pub fn scannable_sources() -> Vec<ImportSource> {
     let mut sources = vec![
         ImportSource::Gog,
         ImportSource::Epic,
@@ -110,6 +120,19 @@ fn enabled_sources(request: &ScanRequest) -> Vec<ImportSource> {
     ]);
 
     sources
+}
+
+fn enabled_sources(request: &ScanRequest, settings: &UserSettings) -> Vec<ImportSource> {
+    let sources = if !request.include_sources.is_empty() {
+        request.include_sources.clone()
+    } else {
+        scannable_sources()
+    };
+
+    sources
+        .into_iter()
+        .filter(|source| settings.launcher(source).enabled)
+        .collect()
 }
 
 pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) -> ShortcutEntry {

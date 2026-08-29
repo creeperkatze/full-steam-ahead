@@ -47,6 +47,26 @@ impl ImportSource {
     pub fn collection_name(&self) -> String {
         self.display_name()
     }
+
+    pub fn settings_key(&self) -> Option<&'static str> {
+        match self {
+            ImportSource::Playnite => Some("playnite"),
+            ImportSource::Epic => Some("epic"),
+            ImportSource::Gog => Some("gog"),
+            ImportSource::Amazon => Some("amazon"),
+            ImportSource::Bottles => Some("bottles"),
+            ImportSource::Flatpak => Some("flatpak"),
+            ImportSource::GamePass => Some("gamePass"),
+            ImportSource::Heroic => Some("heroic"),
+            ImportSource::Itch => Some("itch"),
+            ImportSource::Legendary => Some("legendary"),
+            ImportSource::Lutris => Some("lutris"),
+            ImportSource::MiniGalaxy => Some("miniGalaxy"),
+            ImportSource::Origin => Some("origin"),
+            ImportSource::UbisoftConnect => Some("ubisoftConnect"),
+            ImportSource::Manual | ImportSource::Other(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

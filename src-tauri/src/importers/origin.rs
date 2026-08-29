@@ -15,8 +15,8 @@ struct OriginPaths {
     compat_folder: Option<PathBuf>,
 }
 
-pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
-    let Some(paths) = find_origin_paths() else {
+pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
+    let Some(paths) = find_origin_paths(custom_path) else {
         return Ok(Vec::new());
     };
 
@@ -81,12 +81,14 @@ pub fn scan(user: &SteamUser) -> AppResult<Vec<ImportCandidate>> {
     Ok(candidates)
 }
 
-fn find_origin_paths() -> Option<OriginPaths> {
+fn find_origin_paths(custom_path: Option<&Path>) -> Option<OriginPaths> {
     #[cfg(windows)]
     {
-        let program_data =
-            std::env::var("PROGRAMDATA").unwrap_or_else(|_| "C:\\ProgramData".to_string());
-        let local_content = PathBuf::from(&program_data).join("Origin");
+        let local_content = custom_path.map(PathBuf::from).unwrap_or_else(|| {
+            let program_data =
+                std::env::var("PROGRAMDATA").unwrap_or_else(|_| "C:\\ProgramData".to_string());
+            PathBuf::from(&program_data).join("Origin")
+        });
         if !local_content.exists() {
             return None;
         }
@@ -109,7 +111,9 @@ fn find_origin_paths() -> Option<OriginPaths> {
                 .join("Program Files (x86)")
                 .join("Origin")
                 .join("Origin.exe");
-            let local_content = drive_c.join("ProgramData").join("Origin");
+            let local_content = custom_path
+                .map(PathBuf::from)
+                .unwrap_or_else(|| drive_c.join("ProgramData").join("Origin"));
 
             if exe_path.exists() && local_content.exists() {
                 return Some(OriginPaths {
