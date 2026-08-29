@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ExternalLink, Images, KeyRound } from '@lucide/vue'
+import { ExternalLink, Eye, Images, KeyRound } from '@lucide/vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
 
 import OptionToggle from '../../../../components/options/OptionToggle.vue'
@@ -19,6 +19,12 @@ const state = useAppState()
 				:icon="Images"
 				label="Enable SteamGridDB"
 				description="Adds a button to pick custom artwork from SteamGridDB when reviewing games"
+			/>
+			<OptionToggle
+				v-model="state.steamGridDb.value.allowNsfw"
+				:icon="Eye"
+				label="Allow NSFW artwork"
+				description="Includes NSFW-tagged images in SteamGridDB results"
 			/>
 			<div
 				class="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2"

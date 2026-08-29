@@ -11,6 +11,7 @@ const props = defineProps<{
 	apiKey: string
 	kind: ArtworkKind
 	initialQuery: string
+	allowNsfw: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,6 +28,18 @@ const loadingImages = ref(false)
 const error = ref<string | null>(null)
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
+
+function describeError(e: unknown, fallback: string): string {.
+	console.error(e)
+	if (typeof e === 'string' && e) return e
+	const message = (e as { message?: unknown } | null)?.message
+	if (typeof message === 'string' && message) return message
+	try {
+		return JSON.stringify(e)
+	} catch {
+		return fallback
+	}
+}
 
 async function runSearch() {
 	const term = query.value.trim()
@@ -47,7 +60,7 @@ async function runSearch() {
 			images.value = []
 		}
 	} catch (e: unknown) {
-		error.value = (e as { message?: string })?.message ?? 'Search failed.'
+		error.value = describeError(e, 'Search failed.')
 	} finally {
 		searching.value = false
 	}
@@ -58,9 +71,9 @@ async function selectGame(game: SteamGridDbGame) {
 	loadingImages.value = true
 	error.value = null
 	try {
-		images.value = await api.steamGridDbImages(props.apiKey, game.id, props.kind)
+		images.value = await api.steamGridDbImages(props.apiKey, game.id, props.kind, props.allowNsfw)
 	} catch (e: unknown) {
-		error.value = (e as { message?: string })?.message ?? 'Could not load images.'
+		error.value = describeError(e, 'Could not load images.')
 		images.value = []
 	} finally {
 		loadingImages.value = false

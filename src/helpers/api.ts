@@ -34,8 +34,8 @@ export const api = {
 	availableLaunchers: () => invoke<ImportSource[]>('available_launchers'),
 	steamGridDbSearch: (apiKey: string, query: string) =>
 		invoke<SteamGridDbGame[]>('steamgriddb_search', { apiKey, query }),
-	steamGridDbImages: (apiKey: string, gameId: number, kind: ArtworkKind) =>
-		invoke<SteamGridDbImage[]>('steamgriddb_images', { apiKey, gameId, kind }),
+	steamGridDbImages: (apiKey: string, gameId: number, kind: ArtworkKind, allowNsfw: boolean) =>
+		invoke<SteamGridDbImage[]>('steamgriddb_images', { apiKey, gameId, kind, allowNsfw }),
 	listBackups: () => invoke<BackupInfo[]>('list_backups'),
 	restoreBackup: (backupId: string) => invoke<number>('restore_backup', { backupId }),
 	deleteBackup: (backupId: string) => invoke<void>('delete_backup', { backupId }),

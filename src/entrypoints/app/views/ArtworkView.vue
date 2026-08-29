@@ -309,6 +309,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 		:api-key="state.steamGridDb.value.apiKey"
 		:kind="browsingSlot.kind"
 		:initial-query="browsingSlot.name"
+		:allow-nsfw="state.steamGridDb.value.allowNsfw"
 		@close="browsingSlot = null"
 		@select="onSteamGridDbSelect"
 	/>

@@ -23,6 +23,7 @@ impl Default for LauncherSettings {
 pub struct SteamGridDbSettings {
     pub enabled: bool,
     pub api_key: Option<String>,
+    pub allow_nsfw: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

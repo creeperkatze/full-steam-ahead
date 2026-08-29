@@ -25,6 +25,7 @@ pub fn fetch_images(
     api_key: &str,
     game_id: u32,
     kind: &ArtworkKind,
+    allow_nsfw: bool,
 ) -> AppResult<Vec<SteamGridDbImage>> {
     let (endpoint, dimensions) = match kind {
         ArtworkKind::Header => ("grids", Some("460x215,920x430")),
@@ -34,9 +35,18 @@ pub fn fetch_images(
         ArtworkKind::Icon => ("icons", None),
     };
 
-    let mut url = format!("{BASE_URL}/{endpoint}/game/{game_id}");
+    let mut params = Vec::new();
     if let Some(dimensions) = dimensions {
-        url.push_str(&format!("?dimensions={dimensions}"));
+        params.push(format!("dimensions={dimensions}"));
+    }
+    if allow_nsfw {
+        params.push("nsfw=any".to_string());
+    }
+
+    let mut url = format!("{BASE_URL}/{endpoint}/game/{game_id}");
+    if !params.is_empty() {
+        url.push('?');
+        url.push_str(&params.join("&"));
     }
 
     let response: ApiResponse<RawImage> = request(api_key, &url)?;
@@ -54,23 +64,36 @@ pub fn fetch_images(
 }
 
 fn request<T: for<'de> Deserialize<'de>>(api_key: &str, url: &str) -> AppResult<ApiResponse<T>> {
+    tracing::debug!(url, "SteamGridDB request");
+
     let response = http_client()
         .get(url)
         .bearer_auth(api_key)
         .send()
         .map_err(|error| AppError::Message(format!("SteamGridDB request failed: {error}")))?;
 
-    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+    let status = response.status();
+    if status == reqwest::StatusCode::UNAUTHORIZED {
         return Err(AppError::Message(
             "SteamGridDB rejected the API key. Check it in Settings.".to_string(),
         ));
     }
 
-    response
-        .error_for_status()
-        .map_err(|error| AppError::Message(format!("SteamGridDB request failed: {error}")))?
-        .json::<ApiResponse<T>>()
-        .map_err(|error| AppError::Message(format!("SteamGridDB response was invalid: {error}")))
+    let body = response.text().map_err(|error| {
+        AppError::Message(format!("SteamGridDB response could not be read: {error}"))
+    })?;
+
+    if !status.is_success() {
+        tracing::warn!(%status, body, "SteamGridDB request failed");
+        return Err(AppError::Message(format!(
+            "SteamGridDB request failed ({status}): {body}"
+        )));
+    }
+
+    serde_json::from_str::<ApiResponse<T>>(&body).map_err(|error| {
+        tracing::warn!(%error, body, "SteamGridDB response was not the expected shape");
+        AppError::Message(format!("SteamGridDB response was invalid: {error}"))
+    })
 }
 
 #[derive(Debug, Deserialize)]

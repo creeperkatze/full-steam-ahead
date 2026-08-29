@@ -44,9 +44,14 @@ const launcherSettings = ref<Record<string, EditableLauncherSettings>>({})
 export interface EditableSteamGridDbSettings {
 	enabled: boolean
 	apiKey: string
+	allowNsfw: boolean
 }
 
-const steamGridDb = ref<EditableSteamGridDbSettings>({ enabled: false, apiKey: '' })
+const steamGridDb = ref<EditableSteamGridDbSettings>({
+	enabled: false,
+	apiKey: '',
+	allowNsfw: false,
+})
 
 let settingsLoaded = false
 
@@ -68,6 +73,7 @@ watch(
 			steamGridDb: {
 				enabled: steamGridDb.value.enabled,
 				apiKey: steamGridDb.value.apiKey.trim() || null,
+				allowNsfw: steamGridDb.value.allowNsfw,
 			},
 		})
 		invalidatePreview()
@@ -143,6 +149,7 @@ async function loadSettingsFromDisk() {
 		steamGridDb.value = {
 			enabled: saved.steamGridDb.enabled,
 			apiKey: saved.steamGridDb.apiKey ?? '',
+			allowNsfw: saved.steamGridDb.allowNsfw,
 		}
 	} catch {
 		// Keep defaults

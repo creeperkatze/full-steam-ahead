@@ -13,6 +13,7 @@ export interface LauncherSettings {
 export interface SteamGridDbSettings {
 	enabled: boolean
 	apiKey: string | null
+	allowNsfw: boolean
 }
 
 export interface PersistedSettings {
