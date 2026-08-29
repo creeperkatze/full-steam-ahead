@@ -95,6 +95,7 @@ async function pickArtwork(candidateId: string, kind: ArtworkKind) {
 	})
 	if (typeof picked !== 'string') return
 
+	removeArtworkOverride(candidateId, kind)
 	state.customArtwork.value = {
 		...state.customArtwork.value,
 		[artworkKey(candidateId, kind)]: picked,
@@ -114,6 +115,10 @@ function openSteamGridDbBrowser(candidate: ImportCandidate, kind: ArtworkKind) {
 function onSteamGridDbSelect(image: SteamGridDbImage) {
 	if (!browsingSlot.value) return
 	const { candidateId, kind } = browsingSlot.value
+	removeArtworkOverride(candidateId, kind)
+	const updatedCustomArtwork = { ...state.customArtwork.value }
+	delete updatedCustomArtwork[artworkKey(candidateId, kind)]
+	state.customArtwork.value = updatedCustomArtwork
 	upsertArtworkAsset(candidateId, {
 		kind,
 		pathOrUrl: image.url,
