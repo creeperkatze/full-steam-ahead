@@ -21,6 +21,7 @@ const selectedUserId = ref('')
 const candidates = ref<ImportCandidate[]>([])
 const selectedCandidateIds = ref<Set<string>>(new Set())
 const previewPlan = ref<PreviewPlan | null>(null)
+const previewVersion = ref(0)
 const applyResult = ref<ApplyResult | null>(null)
 const customArtwork = ref<Record<string, string>>({})
 const manualPath = ref('')
@@ -54,29 +55,33 @@ const steamGridDb = ref<EditableSteamGridDbSettings>({
 })
 
 let settingsLoaded = false
+let settingsSaveTimer: ReturnType<typeof setTimeout> | undefined
 
 watch(
 	[options, steamLocation, sourceSettings, steamGridDb],
 	() => {
 		if (!settingsLoaded) return
-		api.saveSettings({
-			stopSteam: options.value.stopSteam,
-			restartSteam: options.value.restartSteam,
-			createCollections: options.value.createCollections,
-			steamLocation: steamLocation.value.trim() || null,
-			sources: Object.fromEntries(
-				Object.entries(sourceSettings.value).map(([key, settings]) => [
-					key,
-					{ enabled: settings.enabled, customPath: settings.customPath.trim() || null },
-				]),
-			),
-			steamGridDb: {
-				enabled: steamGridDb.value.enabled,
-				apiKey: steamGridDb.value.apiKey.trim() || null,
-				allowNsfw: steamGridDb.value.allowNsfw,
-			},
-		})
 		invalidatePreview()
+		clearTimeout(settingsSaveTimer)
+		settingsSaveTimer = setTimeout(() => {
+			api.saveSettings({
+				stopSteam: options.value.stopSteam,
+				restartSteam: options.value.restartSteam,
+				createCollections: options.value.createCollections,
+				steamLocation: steamLocation.value.trim() || null,
+				sources: Object.fromEntries(
+					Object.entries(sourceSettings.value).map(([key, settings]) => [
+						key,
+						{ enabled: settings.enabled, customPath: settings.customPath.trim() || null },
+					]),
+				),
+				steamGridDb: {
+					enabled: steamGridDb.value.enabled,
+					apiKey: steamGridDb.value.apiKey.trim() || null,
+					allowNsfw: steamGridDb.value.allowNsfw,
+				},
+			})
+		}, 400)
 	},
 	{ deep: true },
 )
@@ -127,6 +132,7 @@ function toggleUrlLaunch(id: string) {
 function invalidatePreview() {
 	previewPlan.value = null
 	applyResult.value = null
+	previewVersion.value++
 }
 
 async function loadSettingsFromDisk() {
@@ -167,6 +173,7 @@ export function useAppState() {
 		candidates,
 		selectedCandidateIds,
 		previewPlan,
+		previewVersion,
 		applyResult,
 		customArtwork,
 		manualPath,
