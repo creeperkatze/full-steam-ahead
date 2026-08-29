@@ -21,7 +21,7 @@ const sections = [
 
 <template>
 	<div class="flex h-full min-h-0 flex-1">
-		<nav class="flex w-48 shrink-0 flex-col gap-1 pr-4">
+		<nav class="flex w-48 shrink-0 flex-col gap-1.5 pr-4">
 			<SidebarTab
 				v-for="section in sections"
 				:key="section.name"
