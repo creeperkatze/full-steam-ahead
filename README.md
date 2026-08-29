@@ -1,4 +1,4 @@
-# <img src=".github/assets/logo.png" alt="Full Steam Ahead" height="100">
+# <img src=".github/assets/logo.svg" alt="Full Steam Ahead" height="100">
 
 A desktop app to import games from other launchers into Steam.
 
