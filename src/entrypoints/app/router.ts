@@ -4,8 +4,8 @@ import ImportFlowView from './views/ImportFlowView.vue'
 import ArtworkSettingsView from './views/settings/ArtworkView.vue'
 import BackupsView from './views/settings/BackupsView.vue'
 import DebugView from './views/settings/DebugView.vue'
-import LaunchersView from './views/settings/LaunchersView.vue'
 import SettingsShell from './views/settings/SettingsShell.vue'
+import SourcesView from './views/settings/SourcesView.vue'
 import SteamView from './views/settings/SteamView.vue'
 
 export const router = createRouter({
@@ -19,7 +19,7 @@ export const router = createRouter({
 			redirect: '/settings/steam',
 			children: [
 				{ path: 'steam', name: 'settings-steam', component: SteamView },
-				{ path: 'launchers', name: 'settings-launchers', component: LaunchersView },
+				{ path: 'sources', name: 'settings-sources', component: SourcesView },
 				{ path: 'artwork', name: 'settings-artwork', component: ArtworkSettingsView },
 				{ path: 'backups', name: 'settings-backups', component: BackupsView },
 				{ path: 'debug', name: 'settings-debug', component: DebugView },

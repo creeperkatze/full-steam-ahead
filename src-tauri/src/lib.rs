@@ -8,7 +8,7 @@ mod process;
 pub mod steam;
 
 use commands::{
-    apply_plan, available_launchers, close_app, create_manual_candidate, create_preview_plan,
+    apply_plan, available_sources, close_app, create_manual_candidate, create_preview_plan,
     delete_backup, detect_steam, get_debug_info, list_backups, load_settings, open_logs_folder,
     read_shortcuts_for_user, restore_backup, save_settings, scan_sources, steamgriddb_images,
     steamgriddb_search, validate_steam_location,
@@ -84,7 +84,7 @@ pub fn run() {
             apply_plan,
             load_settings,
             save_settings,
-            available_launchers,
+            available_sources,
             steamgriddb_search,
             steamgriddb_images,
             close_app,

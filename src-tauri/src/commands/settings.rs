@@ -10,7 +10,7 @@ type CommandResult<T> = Result<T, CommandError>;
 
 #[tauri::command]
 #[instrument]
-pub fn available_launchers() -> Vec<ImportSource> {
+pub fn available_sources() -> Vec<ImportSource> {
     steam::sources::scannable_sources()
 }
 

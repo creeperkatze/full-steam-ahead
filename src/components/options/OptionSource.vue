@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { FolderOpen, X } from '@lucide/vue'
 
+import SourceIcon from '../SourceIcon.vue'
 import UiButton from '../ui/Button.vue'
 import UiToggle from '../ui/Toggle.vue'
 
 defineProps<{
+	source: string
 	label: string
 	enabled: boolean
 	customPath: string
@@ -21,6 +23,7 @@ defineEmits<{
 <template>
 	<div class="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-surface-3 px-3 py-2">
 		<div class="flex min-w-0 items-center gap-3">
+			<SourceIcon :source="source" class="size-4.5 shrink-0" />
 			<p class="min-w-0 flex-1 truncate text-sm font-medium">{{ label }}</p>
 			<UiToggle :model-value="enabled" @update:model-value="$emit('update:enabled', $event)" />
 		</div>

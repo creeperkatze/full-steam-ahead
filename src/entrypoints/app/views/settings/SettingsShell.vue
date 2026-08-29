@@ -12,7 +12,7 @@ const router = useRouter()
 
 const sections = [
 	{ name: 'settings-steam', label: 'Steam', icon: Gamepad2 },
-	{ name: 'settings-launchers', label: 'Launchers', icon: Rocket },
+	{ name: 'settings-sources', label: 'Sources', icon: Rocket },
 	{ name: 'settings-artwork', label: 'Artwork', icon: Images },
 	{ name: 'settings-backups', label: 'Backups', icon: Archive },
 	{ name: 'settings-debug', label: 'Debug', icon: Bug },

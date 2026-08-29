@@ -5,7 +5,7 @@ export interface Options {
 	createCollections: boolean
 }
 
-export interface LauncherSettings {
+export interface SourceSettings {
 	enabled: boolean
 	customPath: string | null
 }
@@ -21,7 +21,7 @@ export interface PersistedSettings {
 	restartSteam: boolean
 	createCollections: boolean
 	steamLocation: string | null
-	launchers: Record<string, LauncherSettings>
+	sources: Record<string, SourceSettings>
 	steamGridDb: SteamGridDbSettings
 }
 

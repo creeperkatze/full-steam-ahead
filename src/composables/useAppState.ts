@@ -33,13 +33,13 @@ const options = ref<Options>({
 })
 const steamLocation = ref('')
 
-export interface EditableLauncherSettings {
+export interface EditableSourceSettings {
 	enabled: boolean
 	customPath: string
 }
 
-const availableLaunchers = ref<ImportSource[]>([])
-const launcherSettings = ref<Record<string, EditableLauncherSettings>>({})
+const availableSources = ref<ImportSource[]>([])
+const sourceSettings = ref<Record<string, EditableSourceSettings>>({})
 
 export interface EditableSteamGridDbSettings {
 	enabled: boolean
@@ -56,7 +56,7 @@ const steamGridDb = ref<EditableSteamGridDbSettings>({
 let settingsLoaded = false
 
 watch(
-	[options, steamLocation, launcherSettings, steamGridDb],
+	[options, steamLocation, sourceSettings, steamGridDb],
 	() => {
 		if (!settingsLoaded) return
 		api.saveSettings({
@@ -64,8 +64,8 @@ watch(
 			restartSteam: options.value.restartSteam,
 			createCollections: options.value.createCollections,
 			steamLocation: steamLocation.value.trim() || null,
-			launchers: Object.fromEntries(
-				Object.entries(launcherSettings.value).map(([key, settings]) => [
+			sources: Object.fromEntries(
+				Object.entries(sourceSettings.value).map(([key, settings]) => [
 					key,
 					{ enabled: settings.enabled, customPath: settings.customPath.trim() || null },
 				]),
@@ -131,7 +131,7 @@ function invalidatePreview() {
 
 async function loadSettingsFromDisk() {
 	try {
-		const [saved, sources] = await Promise.all([api.loadSettings(), api.availableLaunchers()])
+		const [saved, sources] = await Promise.all([api.loadSettings(), api.availableSources()])
 		options.value = {
 			...options.value,
 			stopSteam: saved.stopSteam,
@@ -139,10 +139,10 @@ async function loadSettingsFromDisk() {
 			createCollections: saved.createCollections,
 		}
 		steamLocation.value = saved.steamLocation ?? ''
-		availableLaunchers.value = sources
-		launcherSettings.value = Object.fromEntries(
+		availableSources.value = sources
+		sourceSettings.value = Object.fromEntries(
 			(sources as string[]).map((key) => {
-				const entry = saved.launchers[key]
+				const entry = saved.sources[key]
 				return [key, { enabled: entry?.enabled ?? true, customPath: entry?.customPath ?? '' }]
 			}),
 		)
@@ -173,8 +173,8 @@ export function useAppState() {
 		manualName,
 		options,
 		steamLocation,
-		availableLaunchers,
-		launcherSettings,
+		availableSources,
+		sourceSettings,
 		steamGridDb,
 		selectedUser,
 		selectedCandidates,

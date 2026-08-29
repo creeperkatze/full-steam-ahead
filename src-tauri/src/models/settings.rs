@@ -4,12 +4,12 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct LauncherSettings {
+pub struct SourceSettings {
     pub enabled: bool,
     pub custom_path: Option<String>,
 }
 
-impl Default for LauncherSettings {
+impl Default for SourceSettings {
     fn default() -> Self {
         Self {
             enabled: true,
@@ -33,7 +33,8 @@ pub struct UserSettings {
     pub restart_steam: bool,
     pub create_collections: bool,
     pub steam_location: Option<String>,
-    pub launchers: HashMap<String, LauncherSettings>,
+    #[serde(alias = "launchers")]
+    pub sources: HashMap<String, SourceSettings>,
     pub steam_grid_db: SteamGridDbSettings,
 }
 
@@ -44,18 +45,18 @@ impl Default for UserSettings {
             restart_steam: true,
             create_collections: true,
             steam_location: None,
-            launchers: HashMap::new(),
+            sources: HashMap::new(),
             steam_grid_db: SteamGridDbSettings::default(),
         }
     }
 }
 
 impl UserSettings {
-    /// Returns the configured settings for a launcher, or defaults (enabled, auto-detected) if unset.
-    pub fn launcher(&self, source: &ImportSource) -> LauncherSettings {
+    /// Returns the configured settings for an import source, or defaults (enabled, auto-detected) if unset.
+    pub fn source_settings(&self, source: &ImportSource) -> SourceSettings {
         source
             .settings_key()
-            .and_then(|key| self.launchers.get(key))
+            .and_then(|key| self.sources.get(key))
             .cloned()
             .unwrap_or_default()
     }

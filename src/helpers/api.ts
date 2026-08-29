@@ -32,7 +32,7 @@ export const api = {
 		invoke<ApplyResult>('apply_plan', { request: { plan, candidates, options } }),
 	loadSettings: () => invoke<PersistedSettings>('load_settings'),
 	saveSettings: (settings: PersistedSettings) => invoke<void>('save_settings', { settings }),
-	availableLaunchers: () => invoke<ImportSource[]>('available_launchers'),
+	availableSources: () => invoke<ImportSource[]>('available_sources'),
 	steamGridDbSearch: (apiKey: string, query: string) =>
 		invoke<SteamGridDbGame[]>('steamgriddb_search', { apiKey, query }),
 	steamGridDbImages: (apiKey: string, gameId: number, kind: ArtworkKind, allowNsfw: boolean) =>

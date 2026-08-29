@@ -25,8 +25,8 @@ pub fn scan_sources_with_progress(
             found: 0,
         });
 
-        let launcher_settings = settings.launcher(source);
-        let custom_path = launcher_settings.custom_path.as_deref().map(Path::new);
+        let source_settings = settings.source_settings(source);
+        let custom_path = source_settings.custom_path.as_deref().map(Path::new);
         let found = scan_single_source(source, user, custom_path);
         let found_count = found.len();
         candidates.extend(found);
@@ -131,7 +131,7 @@ fn enabled_sources(request: &ScanRequest, settings: &UserSettings) -> Vec<Import
 
     sources
         .into_iter()
-        .filter(|source| settings.launcher(source).enabled)
+        .filter(|source| settings.source_settings(source).enabled)
         .collect()
 }
 
