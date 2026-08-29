@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const props = withDefaults(defineProps<{ modelValue: boolean; fullscreen?: boolean }>(), {
 	fullscreen: false,
@@ -12,6 +12,19 @@ function onKeydown(e: KeyboardEvent) {
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+
+const pressStartedOnBackdrop = ref(false)
+
+function onBackdropMousedown(e: MouseEvent) {
+	pressStartedOnBackdrop.value = e.target === e.currentTarget
+}
+
+function onBackdropClick(e: MouseEvent) {
+	if (pressStartedOnBackdrop.value && e.target === e.currentTarget) {
+		emit('update:modelValue', false)
+	}
+	pressStartedOnBackdrop.value = false
+}
 </script>
 
 <template>
@@ -19,7 +32,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 		<div
 			v-if="modelValue"
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-			@click="$emit('update:modelValue', false)"
+			@mousedown="onBackdropMousedown"
+			@click="onBackdropClick"
 		>
 			<div
 				class="rounded-xl border border-border bg-surface-2 shadow-xl"
