@@ -238,7 +238,7 @@ async function confirmAction() {
 									{{ formatSize(backup.sizeBytes) }}
 								</p>
 							</div>
-							<UiButton size="sm" variant="ghost" :disabled="busy" @click="startRestore(backup.id)">
+							<UiButton variant="ghost" :disabled="busy" @click="startRestore(backup.id)">
 								<RotateCcw :size="14" />
 								Restore
 							</UiButton>
