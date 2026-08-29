@@ -72,6 +72,12 @@ pub fn apply_candidate_artwork(
             continue;
         }
 
+        remove_stale_variants(
+            grid_path,
+            &artwork_stem(&asset.kind, shortcut_app_id),
+            &target,
+        );
+
         match asset.source {
             ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb => {
                 tracing::debug!(kind = ?asset.kind, game = %candidate.name, url = %asset.path_or_url, "Downloading artwork");
@@ -105,14 +111,36 @@ pub fn target_path(
     source_path_or_url: &str,
 ) -> PathBuf {
     let extension = extension_for(kind, source_path_or_url);
-    let stem = match kind {
+    let stem = artwork_stem(kind, app_id);
+    grid_path.join(format!("{stem}.{extension}"))
+}
+
+fn artwork_stem(kind: &ArtworkKind, app_id: u32) -> String {
+    match kind {
         ArtworkKind::Header => app_id.to_string(),
         ArtworkKind::Capsule => format!("{app_id}p"),
         ArtworkKind::Hero => format!("{app_id}_hero"),
         ArtworkKind::Logo => format!("{app_id}_logo"),
         ArtworkKind::Icon => format!("{app_id}_icon"),
+    }
+}
+
+fn remove_stale_variants(grid_path: &Path, stem: &str, keep: &Path) {
+    let Ok(entries) = fs::read_dir(grid_path) else {
+        return;
     };
-    grid_path.join(format!("{stem}.{extension}"))
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path == keep {
+            continue;
+        }
+        if path.file_stem().and_then(|value| value.to_str()) != Some(stem) {
+            continue;
+        }
+        if let Err(error) = fs::remove_file(&path) {
+            tracing::warn!(path = %path.display(), %error, "Failed to remove stale artwork variant");
+        }
+    }
 }
 
 pub fn selected_artwork_assets(candidate: &ImportCandidate) -> Vec<ArtworkAsset> {
@@ -156,12 +184,13 @@ pub fn selected_artwork_assets(candidate: &ImportCandidate) -> Vec<ArtworkAsset>
 
 fn existing_assets(grid_path: &Path, app_id: u32) -> Vec<ArtworkAsset> {
     let prefixes = [
-        (ArtworkKind::Header, app_id.to_string()),
-        (ArtworkKind::Capsule, format!("{app_id}p")),
-        (ArtworkKind::Hero, format!("{app_id}_hero")),
-        (ArtworkKind::Logo, format!("{app_id}_logo")),
-        (ArtworkKind::Icon, format!("{app_id}_icon")),
-    ];
+        ArtworkKind::Header,
+        ArtworkKind::Capsule,
+        ArtworkKind::Hero,
+        ArtworkKind::Logo,
+        ArtworkKind::Icon,
+    ]
+    .map(|kind| (kind.clone(), artwork_stem(&kind, app_id)));
 
     let mut existing = Vec::new();
     if let Ok(entries) = fs::read_dir(grid_path) {
@@ -317,7 +346,75 @@ fn extension_for(kind: &ArtworkKind, source_path_or_url: &str) -> &'static str {
 mod tests {
     use super::*;
     use crate::models::{ArtworkMode, ArtworkPlan, ImportSource};
-    use std::path::PathBuf;
+    use std::{
+        path::PathBuf,
+        sync::atomic::{AtomicU64, Ordering},
+    };
+
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    struct TmpDir(PathBuf);
+
+    impl TmpDir {
+        fn new() -> Self {
+            let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+            let dir =
+                std::env::temp_dir().join(format!("fsa_artwork_test_{}_{}", std::process::id(), n));
+            fs::create_dir_all(&dir).unwrap();
+            Self(dir)
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TmpDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    // remove_stale_variants
+
+    #[test]
+    fn remove_stale_variants_deletes_other_extension() {
+        let dir = TmpDir::new();
+        let stale = dir.path().join("12345.jpg");
+        let keep = dir.path().join("12345.png");
+        fs::write(&stale, b"old official jpg").unwrap();
+        fs::write(&keep, b"new steamgriddb png").unwrap();
+
+        remove_stale_variants(dir.path(), "12345", &keep);
+
+        assert!(!stale.exists());
+        assert!(keep.exists());
+    }
+
+    #[test]
+    fn remove_stale_variants_ignores_other_stems() {
+        let dir = TmpDir::new();
+        let unrelated = dir.path().join("12345p.jpg");
+        let keep = dir.path().join("12345.png");
+        fs::write(&unrelated, b"capsule, different stem").unwrap();
+        fs::write(&keep, b"header png").unwrap();
+
+        remove_stale_variants(dir.path(), "12345", &keep);
+
+        assert!(unrelated.exists());
+        assert!(keep.exists());
+    }
+
+    #[test]
+    fn remove_stale_variants_no_op_when_nothing_stale() {
+        let dir = TmpDir::new();
+        let keep = dir.path().join("12345.jpg");
+        fs::write(&keep, b"only file").unwrap();
+
+        remove_stale_variants(dir.path(), "12345", &keep);
+
+        assert!(keep.exists());
+    }
 
     // target_path
 
