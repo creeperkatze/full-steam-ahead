@@ -84,10 +84,6 @@ function displayAsset(candidate: ImportCandidate, kind: ArtworkKind) {
 	return selectedAsset(candidate, kind) || existingAsset(candidate, kind)
 }
 
-function selectedSlotCount(candidate: ImportCandidate) {
-	return slots.filter((slot) => selectedAsset(candidate, slot.kind)).length
-}
-
 async function pickArtwork(candidateId: string, kind: ArtworkKind) {
 	const picked = await open({
 		multiple: false,
@@ -198,16 +194,9 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 				:key="candidate.id"
 				class="overflow-hidden rounded-lg border border-border bg-surface-3"
 			>
-				<header
-					class="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface-4 p-2"
-				>
-					<div class="flex min-w-0 items-center gap-2">
-						<GameIcon :candidate="candidate" :size="20" />
-						<strong class="min-w-0 truncate text-base">{{ candidate.name }}</strong>
-					</div>
-					<span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
-						{{ selectedSlotCount(candidate) }} / {{ slots.length }} selected
-					</span>
+				<header class="flex min-h-12 items-center gap-2 border-b border-border bg-surface-4 p-2">
+					<GameIcon :candidate="candidate" :size="20" />
+					<strong class="min-w-0 truncate text-base">{{ candidate.name }}</strong>
 				</header>
 
 				<div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3 p-2">
