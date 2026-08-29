@@ -13,9 +13,20 @@ type CommandResult<T> = Result<T, CommandError>;
 #[serde(rename_all = "camelCase")]
 pub struct DebugInfo {
     pub app_version: String,
+    pub os: String,
+    pub arch: String,
     pub logs_dir: String,
     pub backups_dir: String,
     pub settings_path: String,
+}
+
+fn format_os(os: &str) -> String {
+    match os {
+        "windows" => "Windows".to_string(),
+        "macos" => "macOS".to_string(),
+        "linux" => "Linux".to_string(),
+        other => other.to_string(),
+    }
 }
 
 #[tauri::command]
@@ -23,6 +34,8 @@ pub struct DebugInfo {
 pub fn get_debug_info() -> CommandResult<DebugInfo> {
     Ok(DebugInfo {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
+        os: format_os(std::env::consts::OS),
+        arch: std::env::consts::ARCH.to_string(),
         logs_dir: paths::logs_dir().display().to_string(),
         backups_dir: paths::backups_dir().display().to_string(),
         settings_path: paths::settings_path().display().to_string(),
