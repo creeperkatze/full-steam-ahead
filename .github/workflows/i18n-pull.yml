@@ -1,0 +1,42 @@
+name: Crowdin (pull)
+
+on:
+  schedule:
+    - cron: '0 7 * * MON'
+  workflow_dispatch:
+
+concurrency:
+  group: i18n-management
+
+jobs:
+  pull_translations:
+    name: Pull translations from Crowdin
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: i18n-pull:${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Download translations from Crowdin
+        uses: crowdin/github-action@8868a33591d21088edfc398968173a3b98d51706 # v2.16.2
+        with:
+          upload_sources: false
+          upload_translations: false
+          download_translations: true
+          push_translations: false
+          create_pull_request: false
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Commit translations
+        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
+        with:
+          commit_message: 'New translations from Crowdin'
