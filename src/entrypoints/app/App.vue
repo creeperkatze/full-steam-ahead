@@ -12,17 +12,13 @@ import { useAppState } from '../../composables/useAppState'
 import { useReviewPlan } from '../../composables/useReviewPlan'
 import { useScanSources } from '../../composables/useScanSources'
 import { useTaskStatus } from '../../composables/useTaskStatus'
-import { api } from '../../helpers/api'
 
 const router = useRouter()
 const route = useRoute()
 const state = useAppState()
 const { t } = useI18n()
 
-onMounted(() => {
-	state.loadSettingsFromDisk()
-	void api.showMainWindow()
-})
+onMounted(() => state.loadSettingsFromDisk())
 const reviewPlan = useReviewPlan()
 const task = useTaskStatus()
 const { scan } = useScanSources()
