@@ -1,0 +1,248 @@
+{
+	"common": {
+		"clear": "",
+		"browse": "",
+		"cancel": "",
+		"close": "",
+		"loading": "",
+		"autoDetected": "",
+		"select": ""
+	},
+	"artworkSource": {
+		"missing": "",
+		"officialSteam": "",
+		"localFile": "",
+		"existingCustom": "",
+		"steamGridDb": "",
+		"unknown": ""
+	},
+	"titleBar": {
+		"logoAlt": "",
+		"viewOnGithub": "",
+		"importProgress": "",
+		"steps": {
+			"start": "",
+			"sources": "",
+			"artwork": "",
+			"review": "",
+			"done": ""
+		},
+		"settings": "",
+		"closeSettings": "",
+		"minimize": "",
+		"maximize": "",
+		"restore": "",
+		"close": ""
+	},
+	"app": {
+		"actions": {
+			"back": "",
+			"scan": "",
+			"continue": "",
+			"apply": "",
+			"close": ""
+		}
+	},
+	"startView": {
+		"title": "",
+		"subtitle": "",
+		"detectingSteam": "",
+		"steamNotFound": "",
+		"tryAgain": "",
+		"noUsersFound": "",
+		"steamUser": "",
+		"unnamedUser": "",
+		"scanningTitle": "",
+		"sourceFound": "",
+		"sourcePending": "",
+		"sourcesScanned": ""
+	},
+	"sourcesView": {
+		"pickExecutable": "",
+		"executablePathPlaceholder": "",
+		"displayNamePlaceholder": "",
+		"add": "",
+		"noManualGames": ""
+	},
+	"sourceCard": {
+		"viaLauncher": "",
+		"urlOnlyTitle": ""
+	},
+	"artworkView": {
+		"selectGamesPrompt": "",
+		"slots": {
+			"header": "",
+			"capsule": "",
+			"hero": "",
+			"logo": "",
+			"icon": ""
+		},
+		"replace": "",
+		"pickLocalArtworkTitle": "",
+		"browseSteamGridDbTitle": "",
+		"useOfficialArtworkTitle": ""
+	},
+	"reviewView": {
+		"preparingPreview": "",
+		"steamEntry": "",
+		"new": "",
+		"update": "",
+		"alreadyAdded": "",
+		"add": "",
+		"backup": "",
+		"filesCount": "",
+		"managedCollection": "",
+		"changeCount": ""
+	},
+	"doneView": {
+		"steps": {
+			"stoppingSteam": "",
+			"creatingBackups": "",
+			"applyingArtworkFor": "",
+			"applyingArtwork": "",
+			"updatingShortcuts": "",
+			"updatingCollections": "",
+			"restartingSteam": ""
+		},
+		"allDoneTitle": "",
+		"allDoneSubtitle": "",
+		"changesApplied": "",
+		"backupsCreated": "",
+		"starting": ""
+	},
+	"appShell": {
+		"checkingForUpdates": "",
+		"latestVersion": "",
+		"updateAvailable": "",
+		"donate": "",
+		"onGithub": ""
+	},
+	"steamGridDbBrowser": {
+		"searchPlaceholder": "",
+		"searchFailed": "",
+		"loadImagesFailed": "",
+		"noImagesFound": ""
+	},
+	"settingsShell": {
+		"tabs": {
+			"customization": "",
+			"steam": "",
+			"sources": "",
+			"artwork": "",
+			"backups": "",
+			"debug": ""
+		},
+		"donateCard": {
+			"title": "",
+			"description": ""
+		},
+		"crowdinCard": {
+			"title": "",
+			"description": ""
+		},
+		"githubCard": {
+			"title": "",
+			"description": ""
+		}
+	},
+	"settings": {
+		"customization": {
+			"title": "",
+			"language": {
+				"label": "",
+				"description": ""
+			},
+			"colorScheme": {
+				"label": "",
+				"description": "",
+				"auto": "",
+				"light": "",
+				"dark": ""
+			}
+		},
+		"steam": {
+			"title": "",
+			"stopSteam": {
+				"label": "",
+				"description": ""
+			},
+			"restartSteam": {
+				"label": "",
+				"description": ""
+			},
+			"createCollections": {
+				"label": "",
+				"description": ""
+			},
+			"steamLocation": {
+				"label": "",
+				"description": ""
+			}
+		},
+		"artwork": {
+			"title": "",
+			"enableSteamGridDb": {
+				"label": "",
+				"description": ""
+			},
+			"apiKey": {
+				"label": "",
+				"description": "",
+				"placeholder": "",
+				"getKeyTitle": ""
+			},
+			"allowNsfw": {
+				"label": "",
+				"description": ""
+			}
+		},
+		"sources": {
+			"title": ""
+		},
+		"backups": {
+			"title": "",
+			"deleteAll": {
+				"label": "",
+				"description": "",
+				"buttonLabel": ""
+			},
+			"loading": "",
+			"noBackups": "",
+			"fileCount": "",
+			"restore": "",
+			"deleteBackupTitle": "",
+			"restoredMessage": "",
+			"confirm": {
+				"deleteAllTitle": "",
+				"deleteTitle": "",
+				"restoreTitle": "",
+				"deleteAllBody": "",
+				"deleteBody": "",
+				"restoreBody": "",
+				"confirmDeleteAll": "",
+				"confirmDelete": "",
+				"confirmRestore": ""
+			},
+			"errors": {
+				"restoreFailed": "",
+				"deleteFailed": "",
+				"deleteAllFailed": ""
+			}
+		},
+		"debug": {
+			"title": "",
+			"loadingMetadata": "",
+			"fields": {
+				"version": "",
+				"platform": "",
+				"dataPath": ""
+			},
+			"logsFolder": {
+				"label": "",
+				"description": "",
+				"open": ""
+			},
+			"openError": ""
+		}
+	}
+}

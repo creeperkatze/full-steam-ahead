@@ -1,0 +1,248 @@
+{
+	"common": {
+		"clear": "Löschen",
+		"browse": "Durchsuchen",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"loading": "Wird geladen…",
+		"autoDetected": "Automatisch erkannt",
+		"select": "Auswählen…"
+	},
+	"artworkSource": {
+		"missing": "Fehlt",
+		"officialSteam": "Offizielles Steam",
+		"localFile": "Lokale Datei",
+		"existingCustom": "Vorhandenes Custom",
+		"steamGridDb": "SteamGridDB",
+		"unknown": "Unbekannt"
+	},
+	"titleBar": {
+		"logoAlt": "Full Steam Ahead",
+		"viewOnGithub": "Auf GitHub ansehen",
+		"importProgress": "Importfortschritt",
+		"steps": {
+			"start": "Start",
+			"sources": "Quellen",
+			"artwork": "Artwork",
+			"review": "Überprüfen",
+			"done": "Fertig"
+		},
+		"settings": "Einstellungen",
+		"closeSettings": "Einstellungen schließen",
+		"minimize": "Minimieren",
+		"maximize": "Maximieren",
+		"restore": "Wiederherstellen",
+		"close": "Schließen"
+	},
+	"app": {
+		"actions": {
+			"back": "Zurück",
+			"scan": "Scannen",
+			"continue": "Weiter",
+			"apply": "Übernehmen",
+			"close": "Schließen"
+		}
+	},
+	"startView": {
+		"title": "Finde deine Spiele",
+		"subtitle": "Durchsuche deine installierten Launcher, um sie in Steam zu importieren.",
+		"detectingSteam": "Steam-Installation wird erkannt…",
+		"steamNotFound": "Keine Steam-Installation gefunden. Überprüfe den Speicherort in den Einstellungen.",
+		"tryAgain": "Erneut versuchen",
+		"noUsersFound": "Keine Steam-Benutzer gefunden.",
+		"steamUser": "Steam-Benutzer",
+		"unnamedUser": "Unbenannter Steam-Benutzer",
+		"scanningTitle": "Suche nach Spielen",
+		"sourceFound": "{count} gefunden",
+		"sourcePending": "keine",
+		"sourcesScanned": "{done} von {total} Quellen durchsucht"
+	},
+	"sourcesView": {
+		"pickExecutable": "Ausführbare Datei auswählen",
+		"executablePathPlaceholder": "Pfad zur ausführbaren Datei",
+		"displayNamePlaceholder": "Anzeigename",
+		"add": "Hinzufügen",
+		"noManualGames": "Noch keine manuellen Spiele hinzugefügt."
+	},
+	"sourceCard": {
+		"viaLauncher": "Über Launcher",
+		"urlOnlyTitle": "Dieses Spiel kann nur über sein URL-Schema gestartet werden"
+	},
+	"artworkView": {
+		"selectGamesPrompt": "Wähle Spiele aus, bevor du das Artwork überprüfst.",
+		"slots": {
+			"header": "Kopfzeile",
+			"capsule": "Kapsel",
+			"hero": "Hintergrund",
+			"logo": "Logo",
+			"icon": "Symbol"
+		},
+		"replace": "Ersetzen",
+		"pickLocalArtworkTitle": "Lokales Artwork auswählen",
+		"browseSteamGridDbTitle": "SteamGridDB durchsuchen",
+		"useOfficialArtworkTitle": "Offizielles Steam-Artwork verwenden"
+	},
+	"reviewView": {
+		"preparingPreview": "Vorschau wird vorbereitet...",
+		"steamEntry": "Steam-Eintrag",
+		"new": "Neu",
+		"update": "Aktualisierung",
+		"alreadyAdded": "Bereits hinzugefügt",
+		"add": "Hinzufügen",
+		"backup": "Sicherung",
+		"filesCount": "{count} Dateien",
+		"managedCollection": "Verwaltet",
+		"changeCount": "{count} Änderung | {count} Änderungen"
+	},
+	"doneView": {
+		"steps": {
+			"stoppingSteam": "Steam wird beendet",
+			"creatingBackups": "Sicherungen werden erstellt",
+			"applyingArtworkFor": "Artwork für {name} wird heruntergeladen",
+			"applyingArtwork": "Artwork wird angewendet",
+			"updatingShortcuts": "Verknüpfungen werden aktualisiert",
+			"updatingCollections": "Sammlungen werden aktualisiert",
+			"restartingSteam": "Steam wird neu gestartet"
+		},
+		"allDoneTitle": "Fertig!",
+		"allDoneSubtitle": "Steam-Verknüpfungen und Artwork wurden aktualisiert.",
+		"changesApplied": "Änderungen angewendet",
+		"backupsCreated": "Sicherungen erstellt",
+		"starting": "Wird gestartet..."
+	},
+	"appShell": {
+		"checkingForUpdates": "Suche nach Updates",
+		"latestVersion": "Neueste Version",
+		"updateAvailable": "Update verfügbar",
+		"donate": "Spenden",
+		"onGithub": "Auf GitHub"
+	},
+	"steamGridDbBrowser": {
+		"searchPlaceholder": "SteamGridDB durchsuchen…",
+		"searchFailed": "Suche fehlgeschlagen.",
+		"loadImagesFailed": "Bilder konnten nicht geladen werden.",
+		"noImagesFound": "Keine Bilder gefunden."
+	},
+	"settingsShell": {
+		"tabs": {
+			"customization": "Anpassung",
+			"steam": "Steam",
+			"sources": "Quellen",
+			"artwork": "Artwork",
+			"backups": "Sicherungen",
+			"debug": "Debug"
+		},
+		"donateCard": {
+			"title": "Auf Ko-fi spenden",
+			"description": "Kauf mir einen Kaffee"
+		},
+		"crowdinCard": {
+			"title": "Auf Crowdin ansehen",
+			"description": "Hilf beim Übersetzen"
+		},
+		"githubCard": {
+			"title": "Auf GitHub ansehen",
+			"description": "Hinterlasse einen Stern"
+		}
+	},
+	"settings": {
+		"customization": {
+			"title": "Anpassung",
+			"language": {
+				"label": "Sprache",
+				"description": "Legt die Anzeigesprache der App fest. Hilf beim Übersetzen auf {crowdin}."
+			},
+			"colorScheme": {
+				"label": "Farbschema",
+				"description": "Wähle zwischen Hell, Dunkel oder folge deinem System.",
+				"auto": "Systemstandard",
+				"light": "Hell",
+				"dark": "Dunkel"
+			}
+		},
+		"steam": {
+			"title": "Steam",
+			"stopSteam": {
+				"label": "Steam vor dem Anwenden beenden",
+				"description": "Steam muss geschlossen sein, um Verknüpfungsdateien zu ändern."
+			},
+			"restartSteam": {
+				"label": "Steam nach dem Anwenden neu starten",
+				"description": "Startet Steam neu, damit importierte Spiele sofort erscheinen."
+			},
+			"createCollections": {
+				"label": "Sammlungen pro Plattform erstellen",
+				"description": "Gruppiert importierte Spiele in eine Sammlung für jeden Launcher."
+			},
+			"steamLocation": {
+				"label": "Steam-Installationsort",
+				"description": "Überschreibt die automatische Erkennung, falls Steam nicht automatisch gefunden wird."
+			}
+		},
+		"artwork": {
+			"title": "Artwork",
+			"enableSteamGridDb": {
+				"label": "SteamGridDB aktivieren",
+				"description": "Fügt eine Schaltfläche hinzu, um beim Überprüfen von Spielen benutzerdefiniertes Artwork von SteamGridDB auszuwählen."
+			},
+			"apiKey": {
+				"label": "SteamGridDB-API-Schlüssel",
+				"description": "Erforderlich für SteamGridDB. Erstelle kostenlos einen auf deiner Kontoseite.",
+				"placeholder": "API-Schlüssel einfügen",
+				"getKeyTitle": "API-Schlüssel auf steamgriddb.com erstellen"
+			},
+			"allowNsfw": {
+				"label": "NSFW-Artwork zulassen",
+				"description": "Bezieht NSFW-markierte Bilder in SteamGridDB-Ergebnisse ein."
+			}
+		},
+		"sources": {
+			"title": "Quellen"
+		},
+		"backups": {
+			"title": "Sicherungen",
+			"deleteAll": {
+				"label": "Alle Sicherungen löschen",
+				"description": "Entfernt dauerhaft alle gespeicherten Sicherungen.",
+				"buttonLabel": "Alle löschen"
+			},
+			"loading": "Sicherungen werden geladen…",
+			"noBackups": "Keine Sicherungen gefunden.",
+			"fileCount": "{count} Datei | {count} Dateien",
+			"restore": "Wiederherstellen",
+			"deleteBackupTitle": "Sicherung löschen",
+			"restoredMessage": "{count} Datei erfolgreich wiederhergestellt. | {count} Dateien erfolgreich wiederhergestellt.",
+			"confirm": {
+				"deleteAllTitle": "Alle Sicherungen löschen?",
+				"deleteTitle": "Sicherung löschen?",
+				"restoreTitle": "Sicherung wiederherstellen?",
+				"deleteAllBody": "Dadurch wird die eine gespeicherte Sicherung dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden. | Dadurch werden alle {count} gespeicherten Sicherungen dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+				"deleteBody": "Dadurch wird die Sicherung vom {date} dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+				"restoreBody": "Dadurch werden die aktuellen Steam-Dateien für dieses Konto mit der Sicherung vom {date} überschrieben. Dies kann nicht rückgängig gemacht werden.",
+				"confirmDeleteAll": "Ja, alle löschen",
+				"confirmDelete": "Ja, löschen",
+				"confirmRestore": "Ja, wiederherstellen"
+			},
+			"errors": {
+				"restoreFailed": "Wiederherstellung fehlgeschlagen.",
+				"deleteFailed": "Löschen fehlgeschlagen.",
+				"deleteAllFailed": "Alle löschen fehlgeschlagen."
+			}
+		},
+		"debug": {
+			"title": "Debug",
+			"loadingMetadata": "Metadaten werden geladen…",
+			"fields": {
+				"version": "Version",
+				"platform": "Plattform",
+				"dataPath": "Datenpfad"
+			},
+			"logsFolder": {
+				"label": "Protokollordner",
+				"description": "Öffnet den Ordner mit den Sitzungsprotokolldateien.",
+				"open": "Öffnen"
+			},
+			"openError": "Protokollordner konnte nicht geöffnet werden."
+		}
+	}
+}
