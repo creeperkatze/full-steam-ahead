@@ -18,6 +18,7 @@ defineEmits<{
 
 defineSlots<{
 	leading?: (props: { option: T }) => unknown
+	description?: () => unknown
 }>()
 </script>
 
@@ -29,7 +30,10 @@ defineSlots<{
 		<component :is="icon" v-if="icon" :size="18" class="shrink-0 text-secondary" />
 		<div class="min-w-0 flex-1">
 			<p class="text-sm font-medium">{{ label }}</p>
-			<p v-if="description" class="mt-0.5 text-xs text-secondary">{{ description }}</p>
+			<p v-if="$slots.description" class="mt-0.5 text-xs text-secondary">
+				<slot name="description" />
+			</p>
+			<p v-else-if="description" class="mt-0.5 text-xs text-secondary">{{ description }}</p>
 		</div>
 		<Dropdown
 			class="w-40 shrink-0"

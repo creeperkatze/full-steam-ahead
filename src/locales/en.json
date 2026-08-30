@@ -150,7 +150,7 @@
 			"title": "Customization",
 			"language": {
 				"label": "Language",
-				"description": "Sets the display language for the app."
+				"description": "Sets the display language for the app. Help translate on {crowdin}."
 			}
 		},
 		"steam": {

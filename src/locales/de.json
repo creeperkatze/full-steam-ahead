@@ -150,7 +150,7 @@
 			"title": "Anpassung",
 			"language": {
 				"label": "Sprache",
-				"description": "Legt die Anzeigesprache der App fest."
+				"description": "Legt die Anzeigesprache der App fest. Hilf beim Übersetzen auf {crowdin}."
 			}
 		},
 		"steam": {
