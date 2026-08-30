@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Bug, Gamepad2, Images, Palette, Rocket } from '@lucide/vue'
+import { Archive, Bug, FolderInput, Gamepad2, Images, Palette } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -23,7 +23,7 @@ const sections = computed(
 				icon: Palette,
 			},
 			{ name: 'settings-steam', label: t('settingsShell.tabs.steam'), icon: Gamepad2 },
-			{ name: 'settings-sources', label: t('settingsShell.tabs.sources'), icon: Rocket },
+			{ name: 'settings-sources', label: t('settingsShell.tabs.sources'), icon: FolderInput },
 			{ name: 'settings-artwork', label: t('settingsShell.tabs.artwork'), icon: Images },
 			{ name: 'settings-backups', label: t('settingsShell.tabs.backups'), icon: Archive },
 			{ name: 'settings-debug', label: t('settingsShell.tabs.debug'), icon: Bug },
