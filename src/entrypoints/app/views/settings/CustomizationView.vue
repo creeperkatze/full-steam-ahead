@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Languages } from '@lucide/vue'
+import { Languages, Monitor } from '@lucide/vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import type { Component } from 'vue'
 import { computed } from 'vue'
@@ -11,6 +11,7 @@ import OptionSelect from '../../../../components/options/OptionSelect.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import { useAppState } from '../../../../composables/useAppState'
 import { detectBrowserLocale, LOCALES, type SupportedLocale } from '../../../../i18n'
+import type { ColorScheme } from '../../../../theme'
 
 const FLAGS: Record<SupportedLocale, Component> = {
 	en: GbFlag,
@@ -24,6 +25,17 @@ const languageOptions = computed(() =>
 	LOCALES.map((l) => ({ value: l.code, label: l.name, flag: FLAGS[l.code] })),
 )
 const selectedLocale = computed(() => state.locale.value ?? detectBrowserLocale())
+
+const colorSchemeOptions = computed(() => [
+	{ value: 'auto', label: t('settings.customization.colorScheme.auto') },
+	{ value: 'light', label: t('settings.customization.colorScheme.light') },
+	{ value: 'dark', label: t('settings.customization.colorScheme.dark') },
+])
+const selectedColorScheme = computed(() => state.colorScheme.value ?? 'auto')
+
+function setColorScheme(value: string) {
+	state.colorScheme.value = value === 'auto' ? null : (value as ColorScheme)
+}
 </script>
 
 <template>
@@ -54,6 +66,14 @@ const selectedLocale = computed(() => state.locale.value ?? detectBrowserLocale(
 					</i18n-t>
 				</template>
 			</OptionSelect>
+			<OptionSelect
+				:model-value="selectedColorScheme"
+				:icon="Monitor"
+				:label="t('settings.customization.colorScheme.label')"
+				:description="t('settings.customization.colorScheme.description')"
+				:options="colorSchemeOptions"
+				@update:model-value="setColorScheme($event)"
+			/>
 		</div>
 	</section>
 </template>

@@ -24,6 +24,7 @@ export interface PersistedSettings {
 	sources: Record<string, SourceSettings>
 	steamGridDb: SteamGridDbSettings
 	locale: string | null
+	colorScheme: string | null
 }
 
 export interface PreviewPlan {

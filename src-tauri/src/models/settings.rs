@@ -37,6 +37,7 @@ pub struct UserSettings {
     pub sources: HashMap<String, SourceSettings>,
     pub steam_grid_db: SteamGridDbSettings,
     pub locale: Option<String>,
+    pub color_scheme: Option<String>,
 }
 
 impl Default for UserSettings {
@@ -49,6 +50,7 @@ impl Default for UserSettings {
             sources: HashMap::new(),
             steam_grid_db: SteamGridDbSettings::default(),
             locale: None,
+            color_scheme: None,
         }
     }
 }

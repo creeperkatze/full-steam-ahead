@@ -151,6 +151,13 @@
 			"language": {
 				"label": "Sprache",
 				"description": "Legt die Anzeigesprache der App fest. Hilf beim Übersetzen auf {crowdin}."
+			},
+			"colorScheme": {
+				"label": "Farbschema",
+				"description": "Wähle zwischen Hell, Dunkel oder folge deinem System.",
+				"auto": "Systemstandard",
+				"light": "Hell",
+				"dark": "Dunkel"
 			}
 		},
 		"steam": {

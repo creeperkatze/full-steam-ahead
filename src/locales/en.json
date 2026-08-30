@@ -151,6 +151,13 @@
 			"language": {
 				"label": "Language",
 				"description": "Sets the display language for the app. Help translate on {crowdin}."
+			},
+			"colorScheme": {
+				"label": "Color scheme",
+				"description": "Choose between light, dark, or match your system.",
+				"auto": "System default",
+				"light": "Light",
+				"dark": "Dark"
 			}
 		},
 		"steam": {

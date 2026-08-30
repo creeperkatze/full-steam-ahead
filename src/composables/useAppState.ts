@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 
 import { api } from '../helpers/api'
 import { applyLocale, type SupportedLocale } from '../i18n'
+import { applyColorScheme, type ColorScheme } from '../theme'
 import type {
 	ApplyResult,
 	ImportCandidate,
@@ -35,6 +36,7 @@ const options = ref<Options>({
 })
 const steamLocation = ref('')
 const locale = ref<SupportedLocale | null>(null)
+const colorScheme = ref<ColorScheme | null>(null)
 
 export interface EditableSourceSettings {
 	enabled: boolean
@@ -60,7 +62,7 @@ let settingsLoaded = false
 let settingsSaveTimer: ReturnType<typeof setTimeout> | undefined
 
 watch(
-	[options, steamLocation, sourceSettings, steamGridDb, locale],
+	[options, steamLocation, sourceSettings, steamGridDb, locale, colorScheme],
 	() => {
 		if (!settingsLoaded) return
 		invalidatePreview()
@@ -83,6 +85,7 @@ watch(
 					allowNsfw: steamGridDb.value.allowNsfw,
 				},
 				locale: locale.value,
+				colorScheme: colorScheme.value,
 			})
 		}, 400)
 	},
@@ -90,6 +93,7 @@ watch(
 )
 
 watch(locale, (value) => applyLocale(value))
+watch(colorScheme, (value) => applyColorScheme(value))
 
 let steamLocationRefreshTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -163,6 +167,7 @@ async function loadSettingsFromDisk() {
 			allowNsfw: saved.steamGridDb.allowNsfw,
 		}
 		locale.value = (saved.locale as SupportedLocale | null) ?? null
+		colorScheme.value = (saved.colorScheme as ColorScheme | null) ?? null
 	} catch {
 		// Keep defaults
 	} finally {
@@ -187,6 +192,7 @@ export function useAppState() {
 		options,
 		steamLocation,
 		locale,
+		colorScheme,
 		availableSources,
 		sourceSettings,
 		steamGridDb,
