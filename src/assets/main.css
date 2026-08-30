@@ -135,7 +135,7 @@
     body
     {
         @apply m-0 min-h-screen min-w-260 bg-surface-1 font-sans text-sm tracking-normal text-primary;
-        scrollbar-color: theme(colors.border) transparent;
+        scrollbar-color: var(--color-border) transparent;
         scrollbar-width: thin;
     }
 
@@ -166,7 +166,22 @@
 
     input[type="checkbox"]
     {
-        accent-color: theme(colors.accent);
+        accent-color: var(--color-accent);
+    }
+
+    input,
+    textarea,
+    select
+    {
+        outline: none;
+    }
+
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible
+    {
+        outline: 2px solid var(--color-accent);
+        outline-offset: -1px;
     }
 
     table
