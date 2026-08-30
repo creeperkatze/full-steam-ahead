@@ -6,6 +6,7 @@ A desktop app to import games from other launchers into Steam.
 ![Codecov](https://img.shields.io/codecov/c/github/creeperkatze/full-steam-ahead)
 ![GitHub Issues](https://img.shields.io/github/issues/creeperkatze/full-steam-ahead)
 ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/creeperkatze/full-steam-ahead)
+[![Crowdin](https://badges.crowdin.net/full-steam-ahead/localized.svg)](https://crowdin.com/project/full-steam-ahead)
 ![GitHub Repo stars](https://img.shields.io/github/stars/creeperkatze/full-steam-ahead?style=flat)
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/creeperkatze)
@@ -102,6 +103,12 @@ pnpm install
 ```bash
 pnpm dev
 ```
+
+## 🌐 Translating
+
+Translations are managed on [Crowdin](https://crowdin.com/project/full-steam-ahead). You can contribute without any technical knowledge, just pick your language and start translating.
+
+New translations are automatically pulled every Monday.
 
 ## 🤝 Contributing
 
