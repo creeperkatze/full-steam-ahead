@@ -2,6 +2,7 @@
 import { ArrowRight, Check, Search, X } from '@lucide/vue'
 import { invoke } from '@tauri-apps/api/core'
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import AppShell from '../../components/AppShell.vue'
@@ -15,6 +16,7 @@ import { useTaskStatus } from '../../composables/useTaskStatus'
 const router = useRouter()
 const route = useRoute()
 const state = useAppState()
+const { t } = useI18n()
 
 onMounted(() => state.loadSettingsFromDisk())
 const reviewPlan = useReviewPlan()
@@ -39,8 +41,8 @@ const navigableSteps = computed(() => [
 ])
 
 const nextLabel = computed(() => {
-	if (state.step.value === 'review') return 'Apply'
-	return 'Continue'
+	if (state.step.value === 'review') return t('app.actions.apply')
+	return t('app.actions.continue')
 })
 
 const nextDisabled = computed(() => {
@@ -144,7 +146,7 @@ async function goNext() {
 				<div v-if="showActionBar" class="flex shrink-0 justify-center px-2">
 					<div class="flex items-center gap-2">
 						<UiButton v-if="state.step.value !== 'start'" variant="ghost" @click="goBack">
-							Back
+							{{ t('app.actions.back') }}
 						</UiButton>
 
 						<!-- Start view: scan button, plus continue when results exist -->
@@ -154,11 +156,11 @@ async function goNext() {
 								:disabled="scanDisabled"
 								@click="doScan"
 							>
-								Scan
+								{{ t('app.actions.scan') }}
 								<template #icon><Search :size="16" /></template>
 							</UiButton>
 							<UiButton v-if="state.scanPhase.value === 'done'" @click="continueToSources">
-								Continue
+								{{ t('app.actions.continue') }}
 								<template #icon><ArrowRight :size="16" /></template>
 							</UiButton>
 						</template>
@@ -180,7 +182,7 @@ async function goNext() {
 							v-else-if="state.step.value === 'done' && !task.loading.value"
 							@click="invoke('close_app')"
 						>
-							Close
+							{{ t('app.actions.close') }}
 							<template #icon><X :size="16" /></template>
 						</UiButton>
 					</div>

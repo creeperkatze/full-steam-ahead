@@ -1,0 +1,38 @@
+{
+	"titleBar": {
+		"logoAlt": "Full Steam Ahead",
+		"viewOnGithub": "Auf GitHub ansehen",
+		"importProgress": "Importfortschritt",
+		"steps": {
+			"start": "Start",
+			"sources": "Quellen",
+			"artwork": "Kunst",
+			"review": "Überprüfen",
+			"done": "Fertig"
+		},
+		"settings": "Einstellungen",
+		"closeSettings": "Einstellungen schließen",
+		"minimize": "Minimieren",
+		"maximize": "Maximieren",
+		"restore": "Wiederherstellen",
+		"close": "Schließen"
+	},
+	"app": {
+		"actions": {
+			"back": "Zurück",
+			"scan": "Scannen",
+			"continue": "Weiter",
+			"apply": "Übernehmen",
+			"close": "Schließen"
+		}
+	},
+	"settings": {
+		"customization": {
+			"title": "Anpassung",
+			"language": {
+				"label": "Sprache",
+				"description": "Legt die Anzeigesprache der App fest."
+			}
+		}
+	}
+}

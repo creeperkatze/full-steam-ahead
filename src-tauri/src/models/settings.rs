@@ -36,6 +36,7 @@ pub struct UserSettings {
     #[serde(alias = "launchers")]
     pub sources: HashMap<String, SourceSettings>,
     pub steam_grid_db: SteamGridDbSettings,
+    pub locale: Option<String>,
 }
 
 impl Default for UserSettings {
@@ -47,6 +48,7 @@ impl Default for UserSettings {
             steam_location: None,
             sources: HashMap::new(),
             steam_grid_db: SteamGridDbSettings::default(),
+            locale: None,
         }
     }
 }

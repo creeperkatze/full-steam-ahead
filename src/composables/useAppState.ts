@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 
 import { api } from '../helpers/api'
+import { applyLocale, type SupportedLocale } from '../i18n'
 import type {
 	ApplyResult,
 	ImportCandidate,
@@ -33,6 +34,7 @@ const options = ref<Options>({
 	createCollections: true,
 })
 const steamLocation = ref('')
+const locale = ref<SupportedLocale | null>(null)
 
 export interface EditableSourceSettings {
 	enabled: boolean
@@ -58,7 +60,7 @@ let settingsLoaded = false
 let settingsSaveTimer: ReturnType<typeof setTimeout> | undefined
 
 watch(
-	[options, steamLocation, sourceSettings, steamGridDb],
+	[options, steamLocation, sourceSettings, steamGridDb, locale],
 	() => {
 		if (!settingsLoaded) return
 		invalidatePreview()
@@ -80,11 +82,14 @@ watch(
 					apiKey: steamGridDb.value.apiKey.trim() || null,
 					allowNsfw: steamGridDb.value.allowNsfw,
 				},
+				locale: locale.value,
 			})
 		}, 400)
 	},
 	{ deep: true },
 )
+
+watch(locale, (value) => applyLocale(value))
 
 let steamLocationRefreshTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -157,6 +162,7 @@ async function loadSettingsFromDisk() {
 			apiKey: saved.steamGridDb.apiKey ?? '',
 			allowNsfw: saved.steamGridDb.allowNsfw,
 		}
+		locale.value = (saved.locale as SupportedLocale | null) ?? null
 	} catch {
 		// Keep defaults
 	} finally {
@@ -180,6 +186,7 @@ export function useAppState() {
 		manualName,
 		options,
 		steamLocation,
+		locale,
 		availableSources,
 		sourceSettings,
 		steamGridDb,

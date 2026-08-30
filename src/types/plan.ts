@@ -23,6 +23,7 @@ export interface PersistedSettings {
 	steamLocation: string | null
 	sources: Record<string, SourceSettings>
 	steamGridDb: SteamGridDbSettings
+	locale: string | null
 }
 
 export interface PreviewPlan {

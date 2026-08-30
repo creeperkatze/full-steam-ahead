@@ -2,7 +2,8 @@
 import { Maximize2, Minimize2, Minus, Settings, Undo2, X } from '@lucide/vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import Logo from '../assets/logo.svg?component'
 import UiButton from './ui/Button.vue'
@@ -18,7 +19,15 @@ defineEmits<{
 	'toggle-settings': []
 }>()
 
-const steps = ['Start', 'Sources', 'Artwork', 'Review', 'Done']
+const { t } = useI18n()
+
+const steps = computed(() => [
+	t('titleBar.steps.start'),
+	t('titleBar.steps.sources'),
+	t('titleBar.steps.artwork'),
+	t('titleBar.steps.review'),
+	t('titleBar.steps.done'),
+])
 
 const isMac = ref(false)
 const win = getCurrentWindow()
@@ -51,14 +60,14 @@ onUnmounted(() => unlisten?.())
 			<button
 				type="button"
 				class="cursor-pointer rounded opacity-90 transition-opacity hover:opacity-100"
-				title="View on GitHub"
+				:title="t('titleBar.viewOnGithub')"
 				@click="openUrl('https://github.com/creeperkatze/full-steam-ahead')"
 			>
-				<Logo class="h-9 w-auto" aria-label="Full Steam Ahead" />
+				<Logo class="h-9 w-auto" :aria-label="t('titleBar.logoAlt')" />
 			</button>
 		</div>
 
-		<nav v-if="!settingsOpen" class="flex gap-2 px-2" aria-label="Import progress">
+		<nav v-if="!settingsOpen" class="flex gap-2 px-2" :aria-label="t('titleBar.importProgress')">
 			<button
 				v-for="(step, index) in steps"
 				:key="step"
@@ -89,7 +98,7 @@ onUnmounted(() => unlisten?.())
 			<UiButton
 				size="icon"
 				variant="ghost"
-				:title="settingsOpen ? 'Close settings' : 'Settings'"
+				:title="settingsOpen ? t('titleBar.closeSettings') : t('titleBar.settings')"
 				:active="settingsOpen"
 				@click="$emit('toggle-settings')"
 			>
@@ -97,13 +106,18 @@ onUnmounted(() => unlisten?.())
 				<Settings v-else :size="17" />
 			</UiButton>
 			<template v-if="!isMac">
-				<UiButton size="icon" variant="ghost" title="Minimize" @click="win.minimize()">
+				<UiButton
+					size="icon"
+					variant="ghost"
+					:title="t('titleBar.minimize')"
+					@click="win.minimize()"
+				>
 					<Minus :size="14" />
 				</UiButton>
 				<UiButton
 					size="icon"
 					variant="ghost"
-					:title="isMaximized ? 'Restore' : 'Maximize'"
+					:title="isMaximized ? t('titleBar.restore') : t('titleBar.maximize')"
 					@click="win.toggleMaximize()"
 				>
 					<Minimize2 v-if="isMaximized" :size="13" />
@@ -112,7 +126,7 @@ onUnmounted(() => unlisten?.())
 				<UiButton
 					size="icon"
 					variant="ghost"
-					title="Close"
+					:title="t('titleBar.close')"
 					class="hover:bg-red-800! hover:border-red-700!"
 					@click="win.close()"
 				>

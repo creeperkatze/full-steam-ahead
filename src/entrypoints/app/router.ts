@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import ImportFlowView from './views/ImportFlowView.vue'
 import ArtworkSettingsView from './views/settings/ArtworkView.vue'
 import BackupsView from './views/settings/BackupsView.vue'
+import CustomizationView from './views/settings/CustomizationView.vue'
 import DebugView from './views/settings/DebugView.vue'
 import SettingsShell from './views/settings/SettingsShell.vue'
 import SourcesView from './views/settings/SourcesView.vue'
@@ -22,6 +23,7 @@ export const router = createRouter({
 				{ path: 'sources', name: 'settings-sources', component: SourcesView },
 				{ path: 'artwork', name: 'settings-artwork', component: ArtworkSettingsView },
 				{ path: 'backups', name: 'settings-backups', component: BackupsView },
+				{ path: 'customization', name: 'settings-customization', component: CustomizationView },
 				{ path: 'debug', name: 'settings-debug', component: DebugView },
 			],
 		},
