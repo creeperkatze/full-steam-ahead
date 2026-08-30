@@ -11,7 +11,7 @@ use commands::{
     apply_plan, available_sources, close_app, create_manual_candidate, create_preview_plan,
     delete_all_backups, delete_backup, detect_steam, get_debug_info, list_backups, load_settings,
     open_logs_folder, read_shortcuts_for_user, restore_backup, save_settings, scan_sources,
-    steamgriddb_images, steamgriddb_search, validate_steam_location,
+    show_main_window, steamgriddb_images, steamgriddb_search, validate_steam_location,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -94,6 +94,7 @@ pub fn run() {
             steamgriddb_search,
             steamgriddb_images,
             close_app,
+            show_main_window,
             list_backups,
             restore_backup,
             delete_backup,

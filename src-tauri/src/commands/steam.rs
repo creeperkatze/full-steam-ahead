@@ -7,7 +7,7 @@ use crate::{
     steam,
 };
 use chrono::Utc;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tracing::{debug, info, instrument};
 
 type CommandResult<T> = Result<T, CommandError>;
@@ -121,4 +121,13 @@ pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult
 pub fn close_app(app: tauri::AppHandle) {
     info!("Application closing");
     app.exit(0);
+}
+
+#[tauri::command]
+#[instrument(skip_all)]
+pub fn show_main_window(app: tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
 }

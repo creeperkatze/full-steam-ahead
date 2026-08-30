@@ -42,4 +42,5 @@ export const api = {
 	deleteAllBackups: () => invoke<void>('delete_all_backups'),
 	getDebugInfo: () => invoke<DebugInfo>('get_debug_info'),
 	openLogsFolder: () => invoke<void>('open_logs_folder'),
+	showMainWindow: () => invoke<void>('show_main_window'),
 }
