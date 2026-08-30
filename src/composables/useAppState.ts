@@ -7,9 +7,8 @@ import type {
 	ApplyResult,
 	ImportCandidate,
 	ImportSource,
-	Options,
-	PersistedSettings,
 	PreviewPlan,
+	Settings,
 	SteamInstallation,
 	SteamUser,
 } from '../types'
@@ -32,15 +31,8 @@ const manualName = ref('')
 
 const availableSources = ref<ImportSource[]>([])
 
-const settings = reactive<PersistedSettings>({} as PersistedSettings)
+const settings = reactive<Settings>({} as Settings)
 const settingsReady = ref(false)
-
-const applyOptions = computed<Options>(() => ({
-	stopSteam: settings.stopSteam,
-	restartSteam: settings.restartSteam,
-	createCollections: settings.createCollections,
-	replaceExistingArtwork: true,
-}))
 
 let settingsSaveTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -165,7 +157,6 @@ export function useAppState() {
 		manualName,
 		settings,
 		settingsReady,
-		applyOptions,
 		availableSources,
 		selectedUser,
 		selectedCandidates,

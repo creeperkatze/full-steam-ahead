@@ -71,7 +71,7 @@ pub fn scan_sources(
 pub fn create_preview_plan(
     user_steam_id: String,
     candidates: Vec<ImportCandidate>,
-    options: crate::models::Options,
+    options: crate::models::Settings,
 ) -> CommandResult<PreviewPlan> {
     let user = steam::detect::find_user(&user_steam_id)?;
     let backup_root =

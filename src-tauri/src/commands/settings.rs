@@ -1,6 +1,6 @@
 use crate::{
     error::{io_context, AppError, CommandError},
-    models::{ImportSource, UserSettings},
+    models::{ImportSource, Settings},
     paths, steam,
 };
 use std::fs;
@@ -16,10 +16,10 @@ pub fn available_sources() -> Vec<ImportSource> {
 
 #[tauri::command]
 #[instrument(skip_all)]
-pub fn load_settings() -> CommandResult<UserSettings> {
+pub fn load_settings() -> CommandResult<Settings> {
     let path = paths::settings_path();
     if !path.exists() {
-        return Ok(UserSettings::default());
+        return Ok(Settings::default());
     }
     let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
     Ok(serde_json::from_str(&raw).unwrap_or_default())
@@ -27,7 +27,7 @@ pub fn load_settings() -> CommandResult<UserSettings> {
 
 #[tauri::command]
 #[instrument(skip_all)]
-pub fn save_settings(settings: UserSettings) -> CommandResult<()> {
+pub fn save_settings(settings: Settings) -> CommandResult<()> {
     let path = paths::settings_path();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(io_context(parent))?;

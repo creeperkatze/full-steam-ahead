@@ -8,10 +8,9 @@ import type {
 	ImportCandidate,
 	ImportSource,
 	ManualImportRequest,
-	Options,
-	PersistedSettings,
 	PreviewPlan,
 	ScanRequest,
+	Settings,
 	ShortcutEntry,
 	SteamGridDbGame,
 	SteamGridDbImage,
@@ -26,12 +25,12 @@ export const api = {
 	scanSources: (request: ScanRequest) => invoke<ImportCandidate[]>('scan_sources', { request }),
 	createManualCandidate: (request: ManualImportRequest) =>
 		invoke<ImportCandidate>('create_manual_candidate', { request }),
-	createPreviewPlan: (userSteamId: string, candidates: ImportCandidate[], options: Options) =>
+	createPreviewPlan: (userSteamId: string, candidates: ImportCandidate[], options: Settings) =>
 		invoke<PreviewPlan>('create_preview_plan', { userSteamId, candidates, options }),
-	applyPlan: (plan: PreviewPlan, candidates: ImportCandidate[], options: Options) =>
+	applyPlan: (plan: PreviewPlan, candidates: ImportCandidate[], options: Settings) =>
 		invoke<ApplyResult>('apply_plan', { request: { plan, candidates, options } }),
-	loadSettings: () => invoke<PersistedSettings>('load_settings'),
-	saveSettings: (settings: PersistedSettings) => invoke<void>('save_settings', { settings }),
+	loadSettings: () => invoke<Settings>('load_settings'),
+	saveSettings: (settings: Settings) => invoke<void>('save_settings', { settings }),
 	availableSources: () => invoke<ImportSource[]>('available_sources'),
 	steamGridDbSearch: (apiKey: string, query: string) =>
 		invoke<SteamGridDbGame[]>('steamgriddb_search', { apiKey, query }),

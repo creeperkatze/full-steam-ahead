@@ -3,7 +3,7 @@ use crate::{
     importers::{self, quote_path},
     models::{
         ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanProgressEvent, ScanRequest,
-        ShortcutEntry, SteamUser, UserSettings,
+        Settings, ShortcutEntry, SteamUser,
     },
     steam::{artwork, non_steam_app_id},
 };
@@ -13,7 +13,7 @@ pub fn scan_sources_with_progress(
     on_progress: impl Fn(ScanProgressEvent),
     user: &SteamUser,
     request: &ScanRequest,
-    settings: &UserSettings,
+    settings: &Settings,
 ) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
     let enabled_sources = enabled_sources(request, settings);
@@ -122,7 +122,7 @@ pub fn scannable_sources() -> Vec<ImportSource> {
     sources
 }
 
-fn enabled_sources(request: &ScanRequest, settings: &UserSettings) -> Vec<ImportSource> {
+fn enabled_sources(request: &ScanRequest, settings: &Settings) -> Vec<ImportSource> {
     let sources = if !request.include_sources.is_empty() {
         request.include_sources.clone()
     } else {

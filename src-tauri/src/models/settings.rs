@@ -28,7 +28,7 @@ pub struct SteamGridDbSettings {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct UserSettings {
+pub struct Settings {
     pub stop_steam: bool,
     pub restart_steam: bool,
     pub create_collections: bool,
@@ -40,7 +40,7 @@ pub struct UserSettings {
     pub color_scheme: Option<String>,
 }
 
-impl Default for UserSettings {
+impl Default for Settings {
     fn default() -> Self {
         Self {
             stop_steam: true,
@@ -55,7 +55,7 @@ impl Default for UserSettings {
     }
 }
 
-impl UserSettings {
+impl Settings {
     /// Returns the configured settings for an import source, or defaults (enabled, auto-detected) if unset.
     pub fn source_settings(&self, source: &ImportSource) -> SourceSettings {
         source

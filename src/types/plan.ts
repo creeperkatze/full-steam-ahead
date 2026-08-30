@@ -1,32 +1,3 @@
-export interface Options {
-	stopSteam: boolean
-	restartSteam: boolean
-	replaceExistingArtwork: boolean
-	createCollections: boolean
-}
-
-export interface SourceSettings {
-	enabled: boolean
-	customPath: string | null
-}
-
-export interface SteamGridDbSettings {
-	enabled: boolean
-	apiKey: string | null
-	allowNsfw: boolean
-}
-
-export interface PersistedSettings {
-	stopSteam: boolean
-	restartSteam: boolean
-	createCollections: boolean
-	steamLocation: string | null
-	sources: Record<string, SourceSettings>
-	steamGridDb: SteamGridDbSettings
-	locale: string | null
-	colorScheme: string | null
-}
-
 export interface PreviewPlan {
 	userSteamId: string
 	changes: PlannedChange[]

@@ -1,4 +1,5 @@
 use super::importers::{ArtworkKind, ArtworkSource, ImportCandidate};
+use super::settings::Settings;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -46,16 +47,7 @@ pub enum ChangeKind {
 pub struct ApplyRequest {
     pub plan: PreviewPlan,
     pub candidates: Vec<ImportCandidate>,
-    pub options: Options,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Options {
-    pub stop_steam: bool,
-    pub restart_steam: bool,
-    pub replace_existing_artwork: bool,
-    pub create_collections: bool,
+    pub options: Settings,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

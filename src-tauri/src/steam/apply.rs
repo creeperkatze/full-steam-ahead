@@ -89,11 +89,7 @@ pub fn apply_plan_with_progress(
                 current,
                 total,
             });
-            let candidate_skipped = artwork::apply_candidate_artwork(
-                &user.grid_path,
-                candidate,
-                request.options.replace_existing_artwork,
-            )?;
+            let candidate_skipped = artwork::apply_candidate_artwork(&user.grid_path, candidate)?;
             for skip in candidate_skipped {
                 skipped_change_ids.insert(skip.change_id);
             }

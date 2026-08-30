@@ -1,8 +1,8 @@
 use crate::{
     error::AppResult,
     models::{
-        ArtworkSource, BackupPlan, ChangeKind, ImportCandidate, Options, PlannedChange,
-        PreviewPlan, ShortcutEntry, SteamUser,
+        ArtworkSource, BackupPlan, ChangeKind, ImportCandidate, PlannedChange, PreviewPlan,
+        Settings, ShortcutEntry, SteamUser,
     },
 };
 use std::{
@@ -13,7 +13,7 @@ use std::{
 pub fn build_preview_plan(
     user: &SteamUser,
     candidates: &[ImportCandidate],
-    options: &Options,
+    options: &Settings,
     backup_root: &Path,
 ) -> AppResult<PreviewPlan> {
     let mut files = BTreeSet::<PathBuf>::new();
@@ -68,7 +68,7 @@ fn candidate_changes(
     shortcuts_path: &Path,
     collections_path: &Path,
     grid_path: &Path,
-    options: &Options,
+    options: &Settings,
     existing_shortcuts: &[ShortcutEntry],
     existing_collection_app_ids: &HashMap<String, HashSet<u32>>,
 ) -> (Vec<PlannedChange>, Vec<PathBuf>) {
@@ -130,15 +130,6 @@ fn candidate_changes(
     let app_id = super::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
     for asset in super::artwork::selected_artwork_assets(candidate) {
         let is_official_steam = asset.source == ArtworkSource::OfficialSteam;
-
-        // Skip if apply would skip it too (file exists, replace disabled, not a local override)
-        if asset.will_replace_existing
-            && !options.replace_existing_artwork
-            && !is_official_steam
-            && asset.source != ArtworkSource::LocalFile
-        {
-            continue;
-        }
 
         let file = super::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
         if asset.will_replace_existing {

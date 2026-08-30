@@ -54,7 +54,6 @@ pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
 pub fn apply_candidate_artwork(
     grid_path: &Path,
     candidate: &ImportCandidate,
-    replace_existing: bool,
 ) -> AppResult<Vec<ArtworkSkip>> {
     let shortcut_app_id = crate::steam::non_steam_app_id(
         &format!("\"{}\"", candidate.executable_path.display()),
@@ -64,13 +63,6 @@ pub fn apply_candidate_artwork(
     let mut skipped = Vec::new();
     for asset in selected_artwork_assets(candidate) {
         let target = target_path(grid_path, shortcut_app_id, &asset.kind, &asset.path_or_url);
-        if target.exists() && !replace_existing && asset.source != ArtworkSource::LocalFile {
-            tracing::debug!(kind = ?asset.kind, game = %candidate.name, "Preserving existing artwork");
-            skipped.push(ArtworkSkip {
-                change_id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
-            });
-            continue;
-        }
 
         remove_stale_variants(
             grid_path,
