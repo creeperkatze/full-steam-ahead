@@ -15,6 +15,10 @@ defineProps<{
 defineEmits<{
 	'update:modelValue': [value: string]
 }>()
+
+defineSlots<{
+	leading?: (props: { option: T }) => unknown
+}>()
 </script>
 
 <template>
@@ -33,6 +37,10 @@ defineEmits<{
 			:options="options"
 			:disabled="disabled"
 			@update:model-value="$emit('update:modelValue', $event)"
-		/>
+		>
+			<template v-if="$slots.leading" #leading="slotProps">
+				<slot name="leading" v-bind="slotProps" />
+			</template>
+		</Dropdown>
 	</div>
 </template>
