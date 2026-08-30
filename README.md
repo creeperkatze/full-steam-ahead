@@ -20,6 +20,40 @@ Download the latest release for your platform from the [Releases page](https://g
 
 Prefer to build from source? See [Building from source](#-building-from-source) below.
 
+## 📸 Screenshots
+
+<table>
+<tr>
+<td width="33%"><img src=".github/assets/screenshots/start.png"><p align="center"><sub>Pick your Steam user</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/sources.png"><p align="center"><sub>Choose which games to import</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/steamgriddb.png"><p align="center"><sub>Browse custom artwork on SteamGridDB</sub></p></td>
+</tr>
+<tr>
+<td width="33%"><img src=".github/assets/screenshots/artwork.png"><p align="center"><sub>Review matched grid images, heroes, and logos</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/review.png"><p align="center"><sub>Review every change before it's applied</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/done.png"><p align="center"><sub>All done, with an automatic backup</sub></p></td>
+</tr>
+</table>
+
+<details>
+<summary>Settings</summary>
+<br>
+
+<table>
+<tr>
+<td width="33%"><img src=".github/assets/screenshots/settings_sources.png"><p align="center"><sub>Toggle and configure sources</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_artwork.png"><p align="center"><sub>Artwork options</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_steam.png"><p align="center"><sub>Steam behavior</sub></p></td>
+</tr>
+<tr>
+<td width="33%"><img src=".github/assets/screenshots/settings_backups.png"><p align="center"><sub>Manage and restore backups</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_customization.png"><p align="center"><sub>Language and color scheme</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_debug.png"><p align="center"><sub>Debug info and logs</sub></p></td>
+</tr>
+</table>
+
+</details>
+
 ## ✨ Features
 
 ### Platforms
