@@ -16,8 +16,8 @@
     --color-control-hover: #e2e7ee;
 
     --color-primary: #1e293b;
-    --color-secondary: #64748b;
-    --color-path: #3b5166;
+    --color-secondary: #475569;
+    --color-path: #2c4a63;
 
     --color-border: #d7dee6;
     --color-border-muted: #e2e8f0;
@@ -27,6 +27,7 @@
     --color-accent-strong: #1a9fff;
     --color-accent-bg: #e5f2fc;
     --color-accent-contrast: #07131f;
+    --color-accent-icon: #ffffff;
 
     --color-danger: #c0362b;
     --color-danger-bg: #fdecea;
@@ -73,6 +74,7 @@
         --color-accent-strong: #1a9fff;
         --color-accent-bg: #0d1e2e;
         --color-accent-contrast: #07131f;
+        --color-accent-icon: #07131f;
 
         --color-danger: #f0a397;
         --color-danger-bg: #2b1d1a;
@@ -113,6 +115,7 @@
     --color-accent-strong: #1a9fff;
     --color-accent-bg: #0d1e2e;
     --color-accent-contrast: #07131f;
+    --color-accent-icon: #07131f;
 
     --color-danger: #f0a397;
     --color-danger-bg: #2b1d1a;
@@ -184,6 +187,23 @@
         outline-offset: -1px;
     }
 
+    ::placeholder
+    {
+        color: var(--color-secondary);
+        opacity: 1;
+    }
+
+    a
+    {
+        color: var(--color-accent);
+        text-decoration: none;
+    }
+
+    a:hover
+    {
+        text-decoration: underline;
+    }
+
     table
     {
         @apply w-full table-fixed border-collapse;
@@ -198,6 +218,21 @@
     th
     {
         @apply font-semibold text-secondary;
+    }
+}
+
+@layer components
+{
+    .link
+    {
+        color: var(--color-accent);
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .link:hover
+    {
+        text-decoration: underline;
     }
 }
 

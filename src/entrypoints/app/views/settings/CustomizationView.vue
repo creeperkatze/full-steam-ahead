@@ -57,7 +57,7 @@ function setColorScheme(value: string) {
 						<template #crowdin>
 							<button
 								type="button"
-								class="cursor-pointer text-accent hover:underline"
+								class="link"
 								@click.stop="openUrl('https://crowdin.com/project/full-steam-ahead')"
 							>
 								Crowdin

@@ -79,7 +79,7 @@ onMounted(async () => {
 				<button
 					v-else-if="latestVersion"
 					type="button"
-					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-yellow-500 transition-colors hover:text-yellow-400"
+					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-warning transition-opacity hover:opacity-80"
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
 				>
 					<Clock class="size-3.5 shrink-0" aria-hidden="true" />

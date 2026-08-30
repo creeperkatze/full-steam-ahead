@@ -64,7 +64,7 @@ async function refreshSteam() {
 			v-if="state.scanPhase.value !== 'scanning'"
 			class="flex flex-1 flex-col items-center justify-center gap-6 rounded-lg border border-accent/30 bg-accent-bg px-8 py-8 text-center"
 		>
-			<div class="grid size-16 place-items-center rounded-full bg-accent text-accent-contrast">
+			<div class="grid size-16 place-items-center rounded-full bg-accent text-accent-icon">
 				<Search :size="28" />
 			</div>
 

@@ -24,7 +24,7 @@ onMounted(() =>
 		:disabled="disabled"
 		class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
 		:class="[
-			modelValue ? 'bg-accent-strong' : 'bg-surface-5',
+			modelValue ? 'bg-accent-strong' : 'bg-border',
 			disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
 			mounted ? 'transition-colors duration-200' : '',
 		]"

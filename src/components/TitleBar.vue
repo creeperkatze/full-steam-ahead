@@ -84,9 +84,7 @@ onUnmounted(() => unlisten?.())
 				<b
 					class="grid size-5 place-items-center rounded-full text-xs"
 					:class="
-						activeStep >= index
-							? 'bg-accent text-accent-contrast'
-							: 'bg-border-muted text-secondary'
+						activeStep >= index ? 'bg-accent text-accent-icon' : 'bg-border-muted text-secondary'
 					"
 				>
 					{{ index + 1 }}
