@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ChevronDown, FolderArchive, Image, Library, ListChecks } from '@lucide/vue'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import GameIcon from '../../../components/GameIcon.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
@@ -8,6 +9,7 @@ import { useAppState } from '../../../composables/useAppState'
 import type { PlannedChange, PreviewPlan } from '../../../types'
 
 const state = useAppState()
+const { t } = useI18n()
 
 const props = defineProps<{
 	plan: PreviewPlan | null
@@ -44,12 +46,12 @@ const games = computed(() => {
 			game.shortcut = change
 		} else if (change.kind === 'updateCollections') {
 			game.collections.push({
-				name: change.collectionName ?? 'Managed',
+				name: change.collectionName ?? t('reviewView.managedCollection'),
 				destructive: change.destructive,
 			})
 		} else if (change.kind === 'writeArtwork') {
 			game.artwork.push({
-				kind: titleCase(change.artworkKind ?? 'artwork'),
+				kind: artworkKindLabel(change.artworkKind),
 				source: sourceLabel(change.artworkSource ?? ''),
 				destructive: change.destructive,
 			})
@@ -70,20 +72,33 @@ function changeCount(game: GameReview) {
 function sourceLabel(source: string) {
 	switch (source.toLowerCase()) {
 		case 'officialsteam':
-			return 'Official Steam'
+			return t('artworkSource.officialSteam')
 		case 'steamgriddb':
-			return 'SteamGridDB'
+			return t('artworkSource.steamGridDb')
 		case 'localfile':
-			return 'Local file'
+			return t('artworkSource.localFile')
 		case 'existingcustom':
-			return 'Existing'
+			return t('artworkSource.existingCustom')
 		default:
-			return source || 'Unknown'
+			return source || t('artworkSource.unknown')
 	}
 }
 
-function titleCase(value: string) {
-	return value.charAt(0).toUpperCase() + value.slice(1)
+function artworkKindLabel(kind: PlannedChange['artworkKind']) {
+	switch (kind) {
+		case 'header':
+			return t('artworkView.slots.header')
+		case 'capsule':
+			return t('artworkView.slots.capsule')
+		case 'hero':
+			return t('artworkView.slots.hero')
+		case 'logo':
+			return t('artworkView.slots.logo')
+		case 'icon':
+			return t('artworkView.slots.icon')
+		default:
+			return t('artworkSource.unknown')
+	}
 }
 
 function fileName(path: string) {
@@ -99,7 +114,7 @@ function fileName(path: string) {
 			v-if="!plan"
 			class="grid min-h-55 place-items-center rounded-lg border border-border bg-surface-3 p-6 text-secondary"
 		>
-			Preparing preview...
+			{{ t('reviewView.preparingPreview') }}
 		</div>
 
 		<template v-else>
@@ -122,7 +137,7 @@ function fileName(path: string) {
 							<strong class="min-w-0 truncate text-base">{{ game.name }}</strong>
 						</div>
 						<span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
-							{{ changeCount(game) }} change{{ changeCount(game) === 1 ? '' : 's' }}
+							{{ t('reviewView.changeCount', { count: changeCount(game) }, changeCount(game)) }}
 						</span>
 					</div>
 
@@ -131,14 +146,16 @@ function fileName(path: string) {
 							<template #leading>
 								<ListChecks :size="15" class="text-accent" />
 							</template>
-							Steam entry
+							{{ t('reviewView.steamEntry') }}
 							<template #trailing>
 								<span
 									v-if="game.shortcut.kind === 'addShortcut'"
 									class="shrink-0 text-xs text-accent"
-									>New</span
+									>{{ t('reviewView.new') }}</span
 								>
-								<span v-else class="shrink-0 text-xs text-secondary">Update</span>
+								<span v-else class="shrink-0 text-xs text-secondary">{{
+									t('reviewView.update')
+								}}</span>
 							</template>
 						</ItemRow>
 
@@ -149,8 +166,10 @@ function fileName(path: string) {
 							<strong>{{ asset.kind }}</strong>
 							<span class="text-secondary"> · {{ asset.source }}</span>
 							<template #trailing>
-								<span v-if="asset.destructive" class="shrink-0 text-xs text-secondary">Update</span>
-								<span v-else class="shrink-0 text-xs text-accent">New</span>
+								<span v-if="asset.destructive" class="shrink-0 text-xs text-secondary">{{
+									t('reviewView.update')
+								}}</span>
+								<span v-else class="shrink-0 text-xs text-accent">{{ t('reviewView.new') }}</span>
 							</template>
 						</ItemRow>
 
@@ -160,10 +179,10 @@ function fileName(path: string) {
 							</template>
 							{{ coll.name }}
 							<template #trailing>
-								<span v-if="coll.destructive" class="shrink-0 text-xs text-secondary"
-									>Already added</span
-								>
-								<span v-else class="shrink-0 text-xs text-accent">Add</span>
+								<span v-if="coll.destructive" class="shrink-0 text-xs text-secondary">{{
+									t('reviewView.alreadyAdded')
+								}}</span>
+								<span v-else class="shrink-0 text-xs text-accent">{{ t('reviewView.add') }}</span>
 							</template>
 						</ItemRow>
 					</div>
@@ -177,12 +196,12 @@ function fileName(path: string) {
 				>
 					<span class="inline-flex items-center gap-2">
 						<FolderArchive :size="15" />
-						<strong>Backup</strong>
+						<strong>{{ t('reviewView.backup') }}</strong>
 					</span>
 					<span class="flex items-center gap-2">
-						<span class="rounded-md border border-border px-2 py-1 text-xs text-secondary"
-							>{{ plan.backups.length }} files</span
-						>
+						<span class="rounded-md border border-border px-2 py-1 text-xs text-secondary">{{
+							t('reviewView.filesCount', { count: plan.backups.length })
+						}}</span>
 						<ChevronDown
 							:size="14"
 							class="text-secondary transition-transform group-open:rotate-180"

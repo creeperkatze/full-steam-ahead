@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Loader2, Search, X } from '@lucide/vue'
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { api } from '../helpers/api'
 import type { ArtworkKind, SteamGridDbGame, SteamGridDbImage } from '../types'
@@ -18,6 +19,8 @@ const emit = defineEmits<{
 	close: []
 	select: [image: SteamGridDbImage]
 }>()
+
+const { t } = useI18n()
 
 const query = ref(props.initialQuery)
 const games = ref<SteamGridDbGame[]>([])
@@ -60,7 +63,7 @@ async function runSearch() {
 			images.value = []
 		}
 	} catch (e: unknown) {
-		error.value = describeError(e, 'Search failed.')
+		error.value = describeError(e, t('steamGridDbBrowser.searchFailed'))
 	} finally {
 		searching.value = false
 	}
@@ -73,7 +76,7 @@ async function selectGame(game: SteamGridDbGame) {
 	try {
 		images.value = await api.steamGridDbImages(props.apiKey, game.id, props.kind, props.allowNsfw)
 	} catch (e: unknown) {
-		error.value = describeError(e, 'Could not load images.')
+		error.value = describeError(e, t('steamGridDbBrowser.loadImagesFailed'))
 		images.value = []
 	} finally {
 		loadingImages.value = false
@@ -99,10 +102,10 @@ function pick(image: SteamGridDbImage) {
 			<input
 				v-model="query"
 				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
-				placeholder="Search SteamGridDB…"
+				:placeholder="t('steamGridDbBrowser.searchPlaceholder')"
 				@keydown.enter="runSearch"
 			/>
-			<UiButton size="icon" variant="ghost" title="Close" @click="emit('close')">
+			<UiButton size="icon" variant="ghost" :title="t('common.close')" @click="emit('close')">
 				<X :size="16" />
 			</UiButton>
 		</div>
@@ -133,7 +136,7 @@ function pick(image: SteamGridDbImage) {
 				class="flex h-full items-center justify-center gap-2 text-sm text-secondary"
 			>
 				<Loader2 :size="16" class="animate-spin" />
-				Loading…
+				{{ t('common.loading') }}
 			</div>
 			<div v-else-if="error" class="flex h-full items-center justify-center text-sm text-danger">
 				{{ error }}
@@ -142,7 +145,7 @@ function pick(image: SteamGridDbImage) {
 				v-else-if="images.length === 0"
 				class="flex h-full items-center justify-center text-sm text-secondary"
 			>
-				No images found.
+				{{ t('steamGridDbBrowser.noImagesFound') }}
 			</div>
 			<div v-else class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
 				<button

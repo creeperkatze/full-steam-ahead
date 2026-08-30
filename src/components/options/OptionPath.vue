@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CheckCircle2, FolderOpen, X, XCircle } from '@lucide/vue'
 import type { Component } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import UiButton from '../ui/Button.vue'
 
@@ -17,6 +18,8 @@ defineEmits<{
 	'update:modelValue': [value: string]
 	browse: []
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -55,12 +58,12 @@ defineEmits<{
 				v-if="modelValue"
 				size="icon"
 				variant="ghost"
-				title="Clear"
+				:title="t('common.clear')"
 				@click="$emit('update:modelValue', '')"
 			>
 				<X :size="16" />
 			</UiButton>
-			<UiButton size="icon" variant="ghost" title="Browse" @click="$emit('browse')">
+			<UiButton size="icon" variant="ghost" :title="t('common.browse')" @click="$emit('browse')">
 				<FolderOpen :size="16" />
 			</UiButton>
 		</div>

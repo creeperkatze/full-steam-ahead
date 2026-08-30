@@ -2,6 +2,7 @@
 import { HardDrive, Layers, Power, RotateCw } from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import OptionPath from '../../../../components/options/OptionPath.vue'
 import OptionToggle from '../../../../components/options/OptionToggle.vue'
@@ -10,6 +11,7 @@ import { useAppState } from '../../../../composables/useAppState'
 import { api } from '../../../../helpers/api'
 
 const state = useAppState()
+const { t } = useI18n()
 
 async function pickSteamLocation() {
 	const picked = await open({ directory: true, multiple: false })
@@ -45,32 +47,32 @@ onUnmounted(() => clearTimeout(steamLocationCheckTimer))
 
 <template>
 	<section class="max-w-2xl">
-		<SectionHeader title="Steam" />
+		<SectionHeader :title="t('settings.steam.title')" />
 		<div class="flex flex-col gap-2">
 			<OptionToggle
 				v-model="state.options.value.stopSteam"
 				:icon="Power"
-				label="Stop Steam before applying"
-				description="Steam must be closed to modify shortcut files."
+				:label="t('settings.steam.stopSteam.label')"
+				:description="t('settings.steam.stopSteam.description')"
 			/>
 			<OptionToggle
 				v-model="state.options.value.restartSteam"
 				:icon="RotateCw"
-				label="Restart Steam after applying"
-				description="Relaunches Steam so imported games appear immediately."
+				:label="t('settings.steam.restartSteam.label')"
+				:description="t('settings.steam.restartSteam.description')"
 			/>
 			<OptionToggle
 				v-model="state.options.value.createCollections"
 				:icon="Layers"
-				label="Create per-platform collections"
-				description="Groups imported games into a collection for each launcher."
+				:label="t('settings.steam.createCollections.label')"
+				:description="t('settings.steam.createCollections.description')"
 			/>
 			<OptionPath
 				v-model="state.steamLocation.value"
 				:icon="HardDrive"
-				label="Steam installation location"
-				description="Override auto-detection if Steam isn't found automatically."
-				placeholder="Auto-detected"
+				:label="t('settings.steam.steamLocation.label')"
+				:description="t('settings.steam.steamLocation.description')"
+				:placeholder="t('common.autoDetected')"
 				:valid="steamLocationValid"
 				@browse="pickSteamLocation"
 			/>

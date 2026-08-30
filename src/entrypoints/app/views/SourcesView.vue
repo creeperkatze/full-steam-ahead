@@ -2,6 +2,7 @@
 import { FolderPlus, Plus } from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import GameIcon from '../../../components/GameIcon.vue'
 import SourceCard from '../../../components/SourceCard.vue'
@@ -17,6 +18,7 @@ import type { ImportCandidate, ImportSource } from '../../../types'
 
 const state = useAppState()
 const task = useTaskStatus()
+const { t } = useI18n()
 
 interface PlatformCard {
 	key: string
@@ -153,21 +155,26 @@ function toggleCandidate(id: string) {
 				<div
 					class="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-5 px-3 py-2"
 				>
-					<UiButton size="icon" variant="secondary" title="Pick executable" @click="pickExecutable">
+					<UiButton
+						size="icon"
+						variant="secondary"
+						:title="t('sourcesView.pickExecutable')"
+						@click="pickExecutable"
+					>
 						<FolderPlus :size="18" />
 					</UiButton>
 					<input
 						v-model="state.manualPath.value"
 						class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-3 px-2 text-primary"
-						placeholder="Executable path"
+						:placeholder="t('sourcesView.executablePathPlaceholder')"
 					/>
 					<input
 						v-model="state.manualName.value"
 						class="h-9 w-64 rounded-md border border-border bg-surface-3 px-2 text-primary"
-						placeholder="Display name"
+						:placeholder="t('sourcesView.displayNamePlaceholder')"
 					/>
 					<UiButton variant="secondary" :disabled="!state.manualPath.value" @click="addManual">
-						Add
+						{{ t('sourcesView.add') }}
 						<template #icon><Plus :size="20" /></template>
 					</UiButton>
 				</div>
@@ -188,7 +195,7 @@ function toggleCandidate(id: string) {
 					v-if="manualCandidates.length === 0"
 					class="grid min-h-20 place-items-center rounded-lg border border-dashed border-border-dashed p-4 text-center text-sm text-secondary"
 				>
-					No manual games added yet.
+					{{ t('sourcesView.noManualGames') }}
 				</div>
 			</div>
 		</section>

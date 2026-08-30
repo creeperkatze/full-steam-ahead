@@ -2,6 +2,7 @@
 import { Check, Loader2, RotateCw, Search } from '@lucide/vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import SourceIcon from '../../../components/SourceIcon.vue'
 import UiButton from '../../../components/ui/Button.vue'
@@ -16,6 +17,7 @@ import { api } from '../../../helpers/api'
 const state = useAppState()
 const task = useTaskStatus()
 const { sourceStates } = useScanSources()
+const { t } = useI18n()
 
 const steamUsers = computed(() =>
 	[...(state.install.value?.users ?? [])].sort((a, b) =>
@@ -43,7 +45,7 @@ onMounted(async () => {
 })
 
 function steamUserName(user: { accountName?: string | null }) {
-	return user.accountName?.trim() || 'Unnamed Steam User'
+	return user.accountName?.trim() || t('startView.unnamedUser')
 }
 
 async function refreshSteam() {
@@ -67,36 +69,38 @@ async function refreshSteam() {
 			</div>
 
 			<div>
-				<h1 class="text-2xl font-bold">Find your games</h1>
-				<p class="mt-1 text-secondary">Scan your installed launchers to import them into Steam.</p>
+				<h1 class="text-2xl font-bold">{{ t('startView.title') }}</h1>
+				<p class="mt-1 text-secondary">{{ t('startView.subtitle') }}</p>
 			</div>
 
 			<!-- Loading Steam -->
 			<div v-if="task.loading.value" class="flex items-center gap-2 text-sm text-secondary">
 				<Loader2 :size="14" class="animate-spin" />
-				Detecting Steam installation…
+				{{ t('startView.detectingSteam') }}
 			</div>
 
 			<!-- Steam not found -->
 			<div v-else-if="!state.install.value" class="flex flex-col items-center gap-2">
 				<p class="text-sm text-danger">
-					No Steam installation found. Check the location in Settings.
+					{{ t('startView.steamNotFound') }}
 				</p>
 				<UiButton size="sm" variant="ghost" @click="refreshSteam">
 					<RotateCw :size="14" />
-					Try again
+					{{ t('startView.tryAgain') }}
 				</UiButton>
 			</div>
 
 			<!-- No users -->
-			<p v-else-if="steamUsers.length === 0" class="text-sm text-danger">No Steam users found.</p>
+			<p v-else-if="steamUsers.length === 0" class="text-sm text-danger">
+				{{ t('startView.noUsersFound') }}
+			</p>
 
 			<!-- Ready: user selector -->
 			<template v-else>
 				<div
 					class="flex items-center gap-3 rounded-lg border border-border bg-surface-3 px-4 py-2.5"
 				>
-					<span class="shrink-0 text-sm text-secondary">Steam User</span>
+					<span class="shrink-0 text-sm text-secondary">{{ t('startView.steamUser') }}</span>
 					<Dropdown v-model="state.selectedUserId.value" :options="userOptions">
 						<template #leading="{ option }">
 							<UserAvatar :src="option.avatarSrc" :size="18" />
@@ -110,7 +114,7 @@ async function refreshSteam() {
 				class="flex items-center justify-between border-b border-border bg-surface-4 px-3 py-2.5"
 			>
 				<div>
-					<h1 class="text-base font-bold">Scanning for games</h1>
+					<h1 class="text-base font-bold">{{ t('startView.scanningTitle') }}</h1>
 				</div>
 				<Loader2 :size="20" class="animate-spin text-accent" />
 			</div>
@@ -134,7 +138,11 @@ async function refreshSteam() {
 
 					<template #trailing>
 						<span v-if="s.status === 'done'" class="shrink-0 text-xs text-secondary">
-							{{ s.found > 0 ? `${s.found} found` : 'none' }}
+							{{
+								s.found > 0
+									? t('startView.sourceFound', { count: s.found })
+									: t('startView.sourcePending')
+							}}
 						</span>
 					</template>
 				</ItemRow>
@@ -147,7 +155,7 @@ async function refreshSteam() {
 						/>
 					</div>
 					<p class="text-xs text-secondary">
-						{{ doneCount }} of {{ sourceStates.length }} sources scanned
+						{{ t('startView.sourcesScanned', { done: doneCount, total: sourceStates.length }) }}
 					</p>
 				</div>
 			</div>

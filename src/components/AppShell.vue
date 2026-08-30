@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, Loader2, Star } from '@lucide/vue'
 import { getVersion } from '@tauri-apps/api/app'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import KofiIcon from '../assets/icons/kofi.svg?component'
 
@@ -10,6 +11,8 @@ defineSlots<{
 	default?: () => unknown
 	footer?: () => unknown
 }>()
+
+const { t } = useI18n()
 
 const version = ref('')
 const updateChecking = ref(true)
@@ -62,7 +65,7 @@ onMounted(async () => {
 				<span class="shrink-0 text-sm text-secondary">v{{ version }}</span>
 				<span v-if="updateChecking" class="flex min-w-0 items-center gap-1 text-sm text-secondary">
 					<Loader2 class="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
-					<span class="truncate">Checking for updates</span>
+					<span class="truncate">{{ t('appShell.checkingForUpdates') }}</span>
 				</span>
 				<button
 					v-else-if="isLatest"
@@ -71,7 +74,7 @@ onMounted(async () => {
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
 				>
 					<CheckCircle2 class="size-3.5 shrink-0" aria-hidden="true" />
-					<span class="truncate">Latest version</span>
+					<span class="truncate">{{ t('appShell.latestVersion') }}</span>
 				</button>
 				<button
 					v-else-if="latestVersion"
@@ -80,7 +83,7 @@ onMounted(async () => {
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
 				>
 					<Clock class="size-3.5 shrink-0" aria-hidden="true" />
-					<span class="truncate">Update available</span>
+					<span class="truncate">{{ t('appShell.updateAvailable') }}</span>
 				</button>
 			</div>
 			<div class="flex min-h-9 items-center gap-2">
@@ -93,7 +96,7 @@ onMounted(async () => {
 					@click="openUrl('https://ko-fi.com/creeperkatze')"
 				>
 					<KofiIcon class="size-4" aria-hidden="true" />
-					<span>Donate</span>
+					<span>{{ t('appShell.donate') }}</span>
 				</button>
 				<button
 					type="button"
@@ -101,7 +104,7 @@ onMounted(async () => {
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead')"
 				>
 					<Star class="size-4 shrink-0" aria-hidden="true" />
-					<span>On GitHub</span>
+					<span>{{ t('appShell.onGithub') }}</span>
 				</button>
 			</div>
 		</div>

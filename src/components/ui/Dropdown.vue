@@ -1,6 +1,9 @@
 <script setup lang="ts" generic="T extends { value: string; label: string }">
 import { ChevronDown } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
 	modelValue: string
@@ -92,7 +95,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 		>
 			<slot v-if="selectedOption" name="leading" :option="selectedOption" />
 			<span class="min-w-0 flex-1 truncate">
-				{{ selectedOption?.label ?? placeholder ?? 'Select…' }}
+				{{ selectedOption?.label ?? placeholder ?? t('common.select') }}
 			</span>
 			<ChevronDown
 				class="size-4 shrink-0 text-secondary transition-transform duration-150"

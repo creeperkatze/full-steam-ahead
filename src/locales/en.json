@@ -1,4 +1,21 @@
 {
+	"common": {
+		"clear": "Clear",
+		"browse": "Browse",
+		"cancel": "Cancel",
+		"close": "Close",
+		"loading": "Loading…",
+		"autoDetected": "Auto-detected",
+		"select": "Select…"
+	},
+	"artworkSource": {
+		"missing": "Missing",
+		"officialSteam": "Official Steam",
+		"localFile": "Local file",
+		"existingCustom": "Existing custom",
+		"steamGridDb": "SteamGridDB",
+		"unknown": "Unknown"
+	},
 	"titleBar": {
 		"logoAlt": "Full Steam Ahead",
 		"viewOnGithub": "View on GitHub",
@@ -26,6 +43,108 @@
 			"close": "Close"
 		}
 	},
+	"startView": {
+		"title": "Find your games",
+		"subtitle": "Scan your installed launchers to import them into Steam.",
+		"detectingSteam": "Detecting Steam installation…",
+		"steamNotFound": "No Steam installation found. Check the location in Settings.",
+		"tryAgain": "Try again",
+		"noUsersFound": "No Steam users found.",
+		"steamUser": "Steam User",
+		"unnamedUser": "Unnamed Steam User",
+		"scanningTitle": "Scanning for games",
+		"sourceFound": "{count} found",
+		"sourcePending": "none",
+		"sourcesScanned": "{done} of {total} sources scanned"
+	},
+	"sourcesView": {
+		"pickExecutable": "Pick executable",
+		"executablePathPlaceholder": "Executable path",
+		"displayNamePlaceholder": "Display name",
+		"add": "Add",
+		"noManualGames": "No manual games added yet."
+	},
+	"sourceCard": {
+		"viaLauncher": "Via Launcher",
+		"urlOnlyTitle": "This game can only be launched via its URL scheme"
+	},
+	"artworkView": {
+		"selectGamesPrompt": "Select games before reviewing artwork.",
+		"slots": {
+			"header": "Header",
+			"capsule": "Capsule",
+			"hero": "Hero",
+			"logo": "Logo",
+			"icon": "Icon"
+		},
+		"replace": "Replace",
+		"pickLocalArtworkTitle": "Pick local artwork",
+		"browseSteamGridDbTitle": "Browse SteamGridDB",
+		"useOfficialArtworkTitle": "Use official Steam artwork"
+	},
+	"reviewView": {
+		"preparingPreview": "Preparing preview...",
+		"steamEntry": "Steam entry",
+		"new": "New",
+		"update": "Update",
+		"alreadyAdded": "Already added",
+		"add": "Add",
+		"backup": "Backup",
+		"filesCount": "{count} files",
+		"managedCollection": "Managed",
+		"changeCount": "{count} change | {count} changes"
+	},
+	"doneView": {
+		"steps": {
+			"stoppingSteam": "Stopping Steam",
+			"creatingBackups": "Creating backups",
+			"applyingArtworkFor": "Downloading artwork for {name}",
+			"applyingArtwork": "Applying artwork",
+			"updatingShortcuts": "Updating shortcuts",
+			"updatingCollections": "Updating collections",
+			"restartingSteam": "Restarting Steam"
+		},
+		"allDoneTitle": "All done!",
+		"allDoneSubtitle": "Steam shortcuts and artwork have been updated.",
+		"changesApplied": "changes applied",
+		"backupsCreated": "backups created",
+		"starting": "Starting..."
+	},
+	"appShell": {
+		"checkingForUpdates": "Checking for updates",
+		"latestVersion": "Latest version",
+		"updateAvailable": "Update available",
+		"donate": "Donate",
+		"onGithub": "On GitHub"
+	},
+	"steamGridDbBrowser": {
+		"searchPlaceholder": "Search SteamGridDB…",
+		"searchFailed": "Search failed.",
+		"loadImagesFailed": "Could not load images.",
+		"noImagesFound": "No images found."
+	},
+	"settingsShell": {
+		"tabs": {
+			"customization": "Customization",
+			"steam": "Steam",
+			"sources": "Sources",
+			"artwork": "Artwork",
+			"backups": "Backups",
+			"debug": "Debug"
+		},
+		"donateCard": {
+			"title": "Donate on Ko-fi",
+			"description": "Buy me a coffee"
+		},
+		"crowdinCard": {
+			"title": "View on Crowdin",
+			"description": "Help translate"
+		},
+		"githubCard": {
+			"title": "View on GitHub",
+			"description": "Leave a star"
+		}
+	},
 	"settings": {
 		"customization": {
 			"title": "Customization",
@@ -33,6 +152,90 @@
 				"label": "Language",
 				"description": "Sets the display language for the app."
 			}
+		},
+		"steam": {
+			"title": "Steam",
+			"stopSteam": {
+				"label": "Stop Steam before applying",
+				"description": "Steam must be closed to modify shortcut files."
+			},
+			"restartSteam": {
+				"label": "Restart Steam after applying",
+				"description": "Relaunches Steam so imported games appear immediately."
+			},
+			"createCollections": {
+				"label": "Create per-platform collections",
+				"description": "Groups imported games into a collection for each launcher."
+			},
+			"steamLocation": {
+				"label": "Steam installation location",
+				"description": "Override auto-detection if Steam isn't found automatically."
+			}
+		},
+		"artwork": {
+			"title": "Artwork",
+			"enableSteamGridDb": {
+				"label": "Enable SteamGridDB",
+				"description": "Adds a button to pick custom artwork from SteamGridDB when reviewing games."
+			},
+			"apiKey": {
+				"label": "SteamGridDB API key",
+				"description": "Required for SteamGridDB. Generate one for free on your account page.",
+				"placeholder": "Paste your API key",
+				"getKeyTitle": "Get an API key on steamgriddb.com"
+			},
+			"allowNsfw": {
+				"label": "Allow NSFW artwork",
+				"description": "Includes NSFW-tagged images in SteamGridDB results."
+			}
+		},
+		"sources": {
+			"title": "Sources"
+		},
+		"backups": {
+			"title": "Backups",
+			"deleteAll": {
+				"label": "Delete all backups",
+				"description": "Permanently remove every stored backup.",
+				"buttonLabel": "Delete all"
+			},
+			"loading": "Loading backups…",
+			"noBackups": "No backups found.",
+			"fileCount": "{count} file | {count} files",
+			"restore": "Restore",
+			"deleteBackupTitle": "Delete backup",
+			"restoredMessage": "Restored {count} file successfully. | Restored {count} files successfully.",
+			"confirm": {
+				"deleteAllTitle": "Delete all backups?",
+				"deleteTitle": "Delete backup?",
+				"restoreTitle": "Restore backup?",
+				"deleteAllBody": "This will permanently delete all {count} backup. This cannot be undone. | This will permanently delete all {count} backups. This cannot be undone.",
+				"deleteBody": "This will permanently delete the backup from {date}. This cannot be undone.",
+				"restoreBody": "This will overwrite the current Steam files for this account with the backup from {date}. This cannot be undone.",
+				"confirmDeleteAll": "Yes, delete all",
+				"confirmDelete": "Yes, delete",
+				"confirmRestore": "Yes, restore"
+			},
+			"errors": {
+				"restoreFailed": "Restore failed.",
+				"deleteFailed": "Delete failed.",
+				"deleteAllFailed": "Delete all failed."
+			}
+		},
+		"debug": {
+			"title": "Debug",
+			"loadingMetadata": "Loading metadata…",
+			"fields": {
+				"version": "Version",
+				"platform": "Platform",
+				"dataPath": "Data path"
+			},
+			"logsFolder": {
+				"label": "Logs folder",
+				"description": "Open the folder containing session log files.",
+				"open": "Open"
+			},
+			"openError": "Could not open logs folder."
 		}
 	}
 }

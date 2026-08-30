@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, RotateCcw, Trash2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import Modal from '../../../../components/Modal.vue'
 import OptionButton from '../../../../components/options/OptionButton.vue'
@@ -8,6 +9,8 @@ import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import UiButton from '../../../../components/ui/Button.vue'
 import { api } from '../../../../helpers/api'
 import type { BackupInfo } from '../../../../types'
+
+const { t } = useI18n()
 
 const backups = ref<BackupInfo[]>([])
 const backupsLoading = ref(true)
@@ -88,10 +91,10 @@ async function confirmAction() {
 	} catch (e: unknown) {
 		const fallback =
 			action === 'restore'
-				? 'Restore failed.'
+				? t('settings.backups.errors.restoreFailed')
 				: action === 'delete'
-					? 'Delete failed.'
-					: 'Delete all failed.'
+					? t('settings.backups.errors.deleteFailed')
+					: t('settings.backups.errors.deleteAllFailed')
 		actionError.value = (e as { message?: string })?.message ?? fallback
 	} finally {
 		busy.value = false
@@ -101,13 +104,13 @@ async function confirmAction() {
 
 <template>
 	<section class="max-w-2xl">
-		<SectionHeader title="Backups" />
+		<SectionHeader :title="t('settings.backups.title')" />
 		<div class="flex flex-col gap-2">
 			<OptionButton
 				:icon="Trash2"
-				label="Delete all backups"
-				description="Permanently remove every stored backup."
-				button-label="Delete all"
+				:label="t('settings.backups.deleteAll.label')"
+				:description="t('settings.backups.deleteAll.description')"
+				:button-label="t('settings.backups.deleteAll.buttonLabel')"
 				:disabled="busy || backups.length === 0"
 				@click="startDeleteAll"
 			/>
@@ -115,11 +118,11 @@ async function confirmAction() {
 			<div class="overflow-hidden rounded-lg border border-border bg-surface-3">
 				<div v-if="backupsLoading" class="flex items-center gap-2 px-4 py-3 text-sm text-secondary">
 					<Loader2 :size="15" class="animate-spin" />
-					Loading backups…
+					{{ t('settings.backups.loading') }}
 				</div>
 
 				<p v-else-if="backups.length === 0" class="px-4 py-3 text-sm text-secondary">
-					No backups found.
+					{{ t('settings.backups.noBackups') }}
 				</p>
 
 				<div v-else class="max-h-112 divide-y divide-border/50 overflow-y-auto">
@@ -131,18 +134,19 @@ async function confirmAction() {
 						<div class="min-w-0 flex-1">
 							<p class="text-sm font-medium">{{ formatBackupDate(backup.createdAt) }}</p>
 							<p class="mt-0.5 text-xs text-secondary">
-								{{ backup.fileCount }} {{ backup.fileCount === 1 ? 'file' : 'files' }} ·
+								{{ t('settings.backups.fileCount', { count: backup.fileCount }, backup.fileCount) }}
+								·
 								{{ formatSize(backup.sizeBytes) }}
 							</p>
 						</div>
 						<UiButton variant="ghost" :disabled="busy" @click="startRestore(backup.id)">
 							<RotateCcw :size="14" />
-							Restore
+							{{ t('settings.backups.restore') }}
 						</UiButton>
 						<UiButton
 							size="icon"
 							variant="ghost"
-							title="Delete backup"
+							:title="t('settings.backups.deleteBackupTitle')"
 							:disabled="busy"
 							@click="startDelete(backup.id)"
 						>
@@ -154,8 +158,13 @@ async function confirmAction() {
 				<div v-if="restoreResult || actionError" class="border-t border-border px-4 py-3">
 					<div v-if="restoreResult" class="flex items-center gap-2 text-sm">
 						<CheckCircle2 :size="15" class="shrink-0 text-accent" />
-						Restored {{ restoreResult.count }}
-						{{ restoreResult.count === 1 ? 'file' : 'files' }} successfully.
+						{{
+							t(
+								'settings.backups.restoredMessage',
+								{ count: restoreResult.count },
+								restoreResult.count,
+							)
+						}}
 					</div>
 					<div v-if="actionError" class="flex items-center gap-2 text-sm text-danger">
 						<AlertCircle :size="15" class="shrink-0" />
@@ -176,39 +185,44 @@ async function confirmAction() {
 				<h2 class="mb-1.5 text-sm font-semibold">
 					{{
 						confirmingAction === 'delete-all'
-							? 'Delete all backups?'
+							? t('settings.backups.confirm.deleteAllTitle')
 							: confirmingAction === 'delete'
-								? 'Delete backup?'
-								: 'Restore backup?'
+								? t('settings.backups.confirm.deleteTitle')
+								: t('settings.backups.confirm.restoreTitle')
 					}}
 				</h2>
 				<p class="text-xs text-secondary">
 					<template v-if="confirmingAction === 'delete-all'">
-						This will permanently delete all {{ backups.length }}
-						{{ backups.length === 1 ? 'backup' : 'backups' }}. This cannot be undone.
+						{{
+							t('settings.backups.confirm.deleteAllBody', { count: backups.length }, backups.length)
+						}}
 					</template>
 					<template v-else-if="confirmingAction === 'delete'">
-						This will permanently delete the backup from
-						{{ confirmingBackup ? formatBackupDate(confirmingBackup.createdAt) : '' }}. This cannot
-						be undone.
+						{{
+							t('settings.backups.confirm.deleteBody', {
+								date: confirmingBackup ? formatBackupDate(confirmingBackup.createdAt) : '',
+							})
+						}}
 					</template>
 					<template v-else>
-						This will overwrite the current Steam files for this account with the backup from
-						{{ confirmingBackup ? formatBackupDate(confirmingBackup.createdAt) : '' }}. This cannot
-						be undone.
+						{{
+							t('settings.backups.confirm.restoreBody', {
+								date: confirmingBackup ? formatBackupDate(confirmingBackup.createdAt) : '',
+							})
+						}}
 					</template>
 				</p>
 			</div>
 		</div>
 		<div class="flex justify-end gap-2">
-			<UiButton variant="ghost" @click="cancelConfirm">Cancel</UiButton>
+			<UiButton variant="ghost" @click="cancelConfirm">{{ t('common.cancel') }}</UiButton>
 			<UiButton variant="danger" @click="confirmAction">
 				{{
 					confirmingAction === 'delete-all'
-						? 'Yes, delete all'
+						? t('settings.backups.confirm.confirmDeleteAll')
 						: confirmingAction === 'delete'
-							? 'Yes, delete'
-							: 'Yes, restore'
+							? t('settings.backups.confirm.confirmDelete')
+							: t('settings.backups.confirm.confirmRestore')
 				}}
 			</UiButton>
 		</div>

@@ -3,6 +3,7 @@ import { ImagePlus, RotateCcw } from '@lucide/vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import SteamGridDbIcon from '../../../assets/icons/steamgriddb.svg'
 import GameIcon from '../../../components/GameIcon.vue'
@@ -12,14 +13,15 @@ import { useAppState } from '../../../composables/useAppState'
 import type { ArtworkAsset, ArtworkKind, ImportCandidate, SteamGridDbImage } from '../../../types'
 
 const state = useAppState()
+const { t } = useI18n()
 
-const slots: Array<{ kind: ArtworkKind; label: string }> = [
-	{ kind: 'header', label: 'Header' },
-	{ kind: 'capsule', label: 'Capsule' },
-	{ kind: 'hero', label: 'Hero' },
-	{ kind: 'logo', label: 'Logo' },
-	{ kind: 'icon', label: 'Icon' },
-]
+const slots = computed<Array<{ kind: ArtworkKind; label: string }>>(() => [
+	{ kind: 'header', label: t('artworkView.slots.header') },
+	{ kind: 'capsule', label: t('artworkView.slots.capsule') },
+	{ kind: 'hero', label: t('artworkView.slots.hero') },
+	{ kind: 'logo', label: t('artworkView.slots.logo') },
+	{ kind: 'icon', label: t('artworkView.slots.icon') },
+])
 
 const brokenPreviewUrls = ref<Record<string, true>>({})
 
@@ -56,11 +58,11 @@ function existingAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAs
 }
 
 function sourceLabel(asset?: ArtworkAsset) {
-	if (!asset) return 'Missing'
-	if (asset.source === 'officialSteam') return 'Official Steam'
-	if (asset.source === 'localFile') return 'Local file'
-	if (asset.source === 'existingCustom') return 'Existing custom'
-	return 'SteamGridDB'
+	if (!asset) return t('artworkSource.missing')
+	if (asset.source === 'officialSteam') return t('artworkSource.officialSteam')
+	if (asset.source === 'localFile') return t('artworkSource.localFile')
+	if (asset.source === 'existingCustom') return t('artworkSource.existingCustom')
+	return t('artworkSource.steamGridDb')
 }
 
 function previewSrc(asset?: ArtworkAsset) {
@@ -185,7 +187,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 			v-if="state.selectedCandidates.value.length === 0"
 			class="grid min-h-55 place-items-center rounded-lg border border-dashed border-border-dashed bg-surface-3 p-6 text-secondary"
 		>
-			Select games before reviewing artwork.
+			{{ t('artworkView.selectGamesPrompt') }}
 		</div>
 
 		<div v-else class="grid gap-3">
@@ -231,7 +233,9 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								alt=""
 								@error="markPreviewErrored(displayAsset(candidate, slot.kind))"
 							/>
-							<span v-else class="px-2 text-xs text-secondary">Missing</span>
+							<span v-else class="px-2 text-xs text-secondary">{{
+								t('artworkSource.missing')
+							}}</span>
 						</div>
 
 						<div class="flex gap-2">
@@ -239,10 +243,10 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								class="h-9 min-w-0 flex-1 px-2 text-xs"
 								variant="secondary"
 								size="sm"
-								title="Pick local artwork"
+								:title="t('artworkView.pickLocalArtworkTitle')"
 								@click="pickArtwork(candidate.id, slot.kind)"
 							>
-								<span>Replace</span>
+								<span>{{ t('artworkView.replace') }}</span>
 								<template #icon>
 									<ImagePlus :size="14" />
 								</template>
@@ -252,7 +256,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								class="h-9 w-9 shrink-0"
 								size="icon"
 								variant="secondary"
-								title="Browse SteamGridDB"
+								:title="t('artworkView.browseSteamGridDbTitle')"
 								@click="openSteamGridDbBrowser(candidate, slot.kind)"
 							>
 								<SteamGridDbIcon class="h-3 w-auto" />
@@ -261,7 +265,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								class="h-9 w-9 shrink-0"
 								size="icon"
 								variant="ghost"
-								title="Use official Steam artwork"
+								:title="t('artworkView.useOfficialArtworkTitle')"
 								:disabled="
 									!candidate.artwork.proposed.some(
 										(asset) => asset.kind === slot.kind && asset.source === 'officialSteam',

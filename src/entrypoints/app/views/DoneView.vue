@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check, Loader2 } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 
 import type { ApplyProgressEvent, ApplyResult, ApplyStep } from '../../../types'
 
@@ -8,20 +9,24 @@ defineProps<{
 	applyProgress: ApplyProgressEvent | null
 }>()
 
+const { t } = useI18n()
+
 function stepLabel(step: ApplyStep): string {
 	switch (step.kind) {
 		case 'stoppingSteam':
-			return 'Stopping Steam'
+			return t('doneView.steps.stoppingSteam')
 		case 'creatingBackups':
-			return 'Creating backups'
+			return t('doneView.steps.creatingBackups')
 		case 'applyingArtwork':
-			return step.gameName ? `Downloading artwork for ${step.gameName}` : 'Applying artwork'
+			return step.gameName
+				? t('doneView.steps.applyingArtworkFor', { name: step.gameName })
+				: t('doneView.steps.applyingArtwork')
 		case 'updatingShortcuts':
-			return 'Updating shortcuts'
+			return t('doneView.steps.updatingShortcuts')
 		case 'updatingCollections':
-			return 'Updating collections'
+			return t('doneView.steps.updatingCollections')
 		case 'restartingSteam':
-			return 'Restarting Steam'
+			return t('doneView.steps.restartingSteam')
 	}
 }
 </script>
@@ -59,18 +64,18 @@ function stepLabel(step: ApplyStep): string {
 				<Check :size="28" />
 			</div>
 			<div>
-				<h1 class="text-2xl font-bold">All done!</h1>
-				<p class="mt-1 text-secondary">Steam shortcuts and artwork have been updated.</p>
+				<h1 class="text-2xl font-bold">{{ t('doneView.allDoneTitle') }}</h1>
+				<p class="mt-1 text-secondary">{{ t('doneView.allDoneSubtitle') }}</p>
 			</div>
 			<div class="flex items-center gap-6 rounded-lg border border-border bg-surface-3 px-6 py-3">
 				<div class="text-center">
 					<strong class="block text-2xl">{{ applyResult.appliedChanges.length }}</strong>
-					<span class="text-xs text-secondary">changes applied</span>
+					<span class="text-xs text-secondary">{{ t('doneView.changesApplied') }}</span>
 				</div>
 				<div class="h-10 w-px bg-border" />
 				<div class="text-center">
 					<strong class="block text-2xl">{{ applyResult.backupsCreated.length }}</strong>
-					<span class="text-xs text-secondary">backups created</span>
+					<span class="text-xs text-secondary">{{ t('doneView.backupsCreated') }}</span>
 				</div>
 			</div>
 		</section>
@@ -81,7 +86,7 @@ function stepLabel(step: ApplyStep): string {
 			class="flex flex-1 items-center justify-center gap-3 rounded-lg border border-border bg-surface-3 text-secondary"
 		>
 			<Loader2 :size="18" class="animate-spin text-accent" />
-			<span>Starting...</span>
+			<span>{{ t('doneView.starting') }}</span>
 		</section>
 	</div>
 </template>

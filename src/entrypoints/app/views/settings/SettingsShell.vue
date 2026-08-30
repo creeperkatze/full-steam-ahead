@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Archive, Bug, Gamepad2, Images, Palette, Rocket } from '@lucide/vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import CrowdinIcon from '../../../../assets/icons/crowdin.svg?component'
 import GitHubIcon from '../../../../assets/icons/github.svg?component'
 import KofiIcon from '../../../../assets/icons/kofi.svg?component'
 import Card from '../../../../components/Card.vue'
@@ -9,20 +12,28 @@ import SidebarTab from '../../../../components/options/SidebarTab.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
-const sections = [
-	{ name: 'settings-customization', label: 'Customization', icon: Palette },
-	{ name: 'settings-steam', label: 'Steam', icon: Gamepad2 },
-	{ name: 'settings-sources', label: 'Sources', icon: Rocket },
-	{ name: 'settings-artwork', label: 'Artwork', icon: Images },
-	{ name: 'settings-backups', label: 'Backups', icon: Archive },
-	{ name: 'settings-debug', label: 'Debug', icon: Bug },
-] as const
+const sections = computed(
+	() =>
+		[
+			{
+				name: 'settings-customization',
+				label: t('settingsShell.tabs.customization'),
+				icon: Palette,
+			},
+			{ name: 'settings-steam', label: t('settingsShell.tabs.steam'), icon: Gamepad2 },
+			{ name: 'settings-sources', label: t('settingsShell.tabs.sources'), icon: Rocket },
+			{ name: 'settings-artwork', label: t('settingsShell.tabs.artwork'), icon: Images },
+			{ name: 'settings-backups', label: t('settingsShell.tabs.backups'), icon: Archive },
+			{ name: 'settings-debug', label: t('settingsShell.tabs.debug'), icon: Bug },
+		] as const,
+)
 </script>
 
 <template>
 	<div class="flex h-full min-h-0 flex-1">
-		<nav class="flex w-48 shrink-0 flex-col gap-1.5 pr-4">
+		<nav class="flex w-56 shrink-0 flex-col gap-1.5 pr-4">
 			<SidebarTab
 				v-for="section in sections"
 				:key="section.name"
@@ -37,15 +48,22 @@ const sections = [
 					href="https://ko-fi.com/creeperkatze"
 					:icon="KofiIcon"
 					color="#FF5E5B"
-					title="Donate on Ko-fi"
-					description="Buy me a coffee"
+					:title="t('settingsShell.donateCard.title')"
+					:description="t('settingsShell.donateCard.description')"
+				/>
+				<Card
+					href="https://crowdin.com/project/full-steam-ahead"
+					:icon="CrowdinIcon"
+					color="#9ca3af"
+					:title="t('settingsShell.crowdinCard.title')"
+					:description="t('settingsShell.crowdinCard.description')"
 				/>
 				<Card
 					href="https://github.com/creeperkatze/full-steam-ahead"
 					:icon="GitHubIcon"
 					color="#9ca3af"
-					title="View on GitHub"
-					description="Leave a star"
+					:title="t('settingsShell.githubCard.title')"
+					:description="t('settingsShell.githubCard.description')"
 				/>
 			</div>
 		</nav>

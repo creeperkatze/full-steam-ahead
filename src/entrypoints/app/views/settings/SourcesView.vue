@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { open } from '@tauri-apps/plugin-dialog'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import OptionSource from '../../../../components/options/OptionSource.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
@@ -9,6 +10,7 @@ import { importSourceName } from '../../../../helpers/sourceNames'
 import type { ImportSource } from '../../../../types'
 
 const state = useAppState()
+const { t } = useI18n()
 
 const PATHLESS_SOURCES = new Set(['gamePass'])
 
@@ -39,7 +41,7 @@ async function pickSourcePath(key: string) {
 
 <template>
 	<section class="max-w-2xl">
-		<SectionHeader title="Sources" />
+		<SectionHeader :title="t('settings.sources.title')" />
 		<div class="grid gap-2">
 			<OptionSource
 				v-for="source in sourceRows"

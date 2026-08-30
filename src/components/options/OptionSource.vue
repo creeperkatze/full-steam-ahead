@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FolderOpen, X } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 
 import SourceIcon from '../SourceIcon.vue'
 import UiButton from '../ui/Button.vue'
@@ -18,6 +19,8 @@ defineEmits<{
 	'update:customPath': [value: string]
 	browse: []
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -30,7 +33,7 @@ defineEmits<{
 		<div v-if="pathSupported !== false" class="flex items-center gap-2">
 			<input
 				:value="customPath"
-				placeholder="Auto-detected"
+				:placeholder="t('common.autoDetected')"
 				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
 				@input="$emit('update:customPath', ($event.target as HTMLInputElement).value)"
 			/>
@@ -38,12 +41,12 @@ defineEmits<{
 				v-if="customPath"
 				size="icon"
 				variant="ghost"
-				title="Clear"
+				:title="t('common.clear')"
 				@click="$emit('update:customPath', '')"
 			>
 				<X :size="16" />
 			</UiButton>
-			<UiButton size="icon" variant="ghost" title="Browse" @click="$emit('browse')">
+			<UiButton size="icon" variant="ghost" :title="t('common.browse')" @click="$emit('browse')">
 				<FolderOpen :size="16" />
 			</UiButton>
 		</div>

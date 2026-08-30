@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useAppState } from '../composables/useAppState'
 import { importSourceName } from '../helpers/sourceNames'
@@ -11,6 +12,7 @@ import ItemRow from './ui/ItemRow.vue'
 import Toggle from './ui/Toggle.vue'
 
 const state = useAppState()
+const { t } = useI18n()
 
 const props = defineProps<{
 	title: string
@@ -67,13 +69,9 @@ const allSelected = computed(
 					<div
 						v-if="candidate.urlScheme && !showSource"
 						class="flex shrink-0 items-center gap-1.5"
-						:title="
-							!candidate.launcherPath
-								? 'This game can only be launched via its URL scheme'
-								: undefined
-						"
+						:title="!candidate.launcherPath ? t('sourceCard.urlOnlyTitle') : undefined"
 					>
-						<span class="text-xs text-secondary">Via Launcher</span>
+						<span class="text-xs text-secondary">{{ t('sourceCard.viaLauncher') }}</span>
 						<Toggle
 							:model-value="state.usesUrlLaunch(candidate)"
 							:disabled="!candidate.launcherPath"
