@@ -26,10 +26,10 @@ Prefer to build from source? See [Building from source](#-building-from-source) 
 <tr>
 <td width="33%"><img src=".github/assets/screenshots/start.png"><p align="center"><sub>Pick your Steam user</sub></p></td>
 <td width="33%"><img src=".github/assets/screenshots/sources.png"><p align="center"><sub>Choose which games to import</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/steamgriddb.png"><p align="center"><sub>Browse custom artwork on SteamGridDB</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/artwork.png"><p align="center"><sub>Review matched grid images, heroes, and logos</sub></p></td>
 </tr>
 <tr>
-<td width="33%"><img src=".github/assets/screenshots/artwork.png"><p align="center"><sub>Review matched grid images, heroes, and logos</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/steamgriddb.png"><p align="center"><sub>Browse custom artwork on SteamGridDB</sub></p></td>
 <td width="33%"><img src=".github/assets/screenshots/review.png"><p align="center"><sub>Review every change before it's applied</sub></p></td>
 <td width="33%"><img src=".github/assets/screenshots/done.png"><p align="center"><sub>All done, with an automatic backup</sub></p></td>
 </tr>
