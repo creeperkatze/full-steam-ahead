@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ExternalLink, Eye, Images, KeyRound } from '@lucide/vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import OptionToggle from '../../../../components/options/OptionToggle.vue'
@@ -10,6 +11,13 @@ import { useAppState } from '../../../../composables/useAppState'
 
 const state = useAppState()
 const { t } = useI18n()
+
+const apiKey = computed({
+	get: () => state.settings.steamGridDb.apiKey ?? '',
+	set: (value: string) => {
+		state.settings.steamGridDb.apiKey = value.trim() || null
+	},
+})
 </script>
 
 <template>
@@ -17,7 +25,7 @@ const { t } = useI18n()
 		<SectionHeader :title="t('settings.artwork.title')" />
 		<div class="flex flex-col gap-2">
 			<OptionToggle
-				v-model="state.steamGridDb.value.enabled"
+				v-model="state.settings.steamGridDb.enabled"
 				:icon="Images"
 				:label="t('settings.artwork.enableSteamGridDb.label')"
 				:description="t('settings.artwork.enableSteamGridDb.description')"
@@ -36,7 +44,7 @@ const { t } = useI18n()
 				</div>
 				<div class="flex items-center gap-2">
 					<input
-						v-model="state.steamGridDb.value.apiKey"
+						v-model="apiKey"
 						type="password"
 						:placeholder="t('settings.artwork.apiKey.placeholder')"
 						class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
@@ -52,7 +60,7 @@ const { t } = useI18n()
 				</div>
 			</div>
 			<OptionToggle
-				v-model="state.steamGridDb.value.allowNsfw"
+				v-model="state.settings.steamGridDb.allowNsfw"
 				:icon="Eye"
 				:label="t('settings.artwork.allowNsfw.label')"
 				:description="t('settings.artwork.allowNsfw.description')"

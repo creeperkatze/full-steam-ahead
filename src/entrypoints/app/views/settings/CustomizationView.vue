@@ -24,17 +24,17 @@ const { t } = useI18n()
 const languageOptions = computed(() =>
 	LOCALES.map((l) => ({ value: l.code, label: l.name, flag: FLAGS[l.code] })),
 )
-const selectedLocale = computed(() => state.locale.value ?? detectBrowserLocale())
+const selectedLocale = computed(() => state.settings.locale ?? detectBrowserLocale())
 
 const colorSchemeOptions = computed(() => [
 	{ value: 'auto', label: t('settings.customization.colorScheme.auto') },
 	{ value: 'light', label: t('settings.customization.colorScheme.light') },
 	{ value: 'dark', label: t('settings.customization.colorScheme.dark') },
 ])
-const selectedColorScheme = computed(() => state.colorScheme.value ?? 'auto')
+const selectedColorScheme = computed(() => state.settings.colorScheme ?? 'auto')
 
 function setColorScheme(value: string) {
-	state.colorScheme.value = value === 'auto' ? null : (value as ColorScheme)
+	state.settings.colorScheme = value === 'auto' ? null : (value as ColorScheme)
 }
 </script>
 
@@ -47,7 +47,7 @@ function setColorScheme(value: string) {
 				:icon="Languages"
 				:label="t('settings.customization.language.label')"
 				:options="languageOptions"
-				@update:model-value="state.locale.value = $event as SupportedLocale"
+				@update:model-value="state.settings.locale = $event as SupportedLocale"
 			>
 				<template #leading="{ option }">
 					<component :is="option.flag" class="h-3 w-4 shrink-0 rounded-[1px] object-cover" />

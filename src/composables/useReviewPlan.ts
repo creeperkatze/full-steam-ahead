@@ -25,7 +25,7 @@ async function createPreview() {
 				api.createPreviewPlan(
 					state.selectedUserId.value,
 					state.selectedCandidates.value,
-					state.options.value,
+					state.applyOptions.value,
 				),
 			)
 			if (!plan) return false
@@ -54,7 +54,11 @@ async function applyPreview() {
 	})
 
 	const result = await task.runTask('Applying changes', () =>
-		api.applyPlan(state.previewPlan.value!, state.selectedCandidates.value, state.options.value),
+		api.applyPlan(
+			state.previewPlan.value!,
+			state.selectedCandidates.value,
+			state.applyOptions.value,
+		),
 	)
 
 	unlisten()

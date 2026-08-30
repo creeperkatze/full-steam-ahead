@@ -26,7 +26,7 @@ const slots = computed<Array<{ kind: ArtworkKind; label: string }>>(() => [
 const brokenPreviewUrls = ref<Record<string, true>>({})
 
 const steamGridDbAvailable = computed(
-	() => state.steamGridDb.value.enabled && state.steamGridDb.value.apiKey.trim().length > 0,
+	() => state.settings.steamGridDb.enabled && !!state.settings.steamGridDb.apiKey,
 )
 
 const browsingSlot = ref<{ candidateId: string; kind: ArtworkKind; name: string } | null>(null)
@@ -284,10 +284,10 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 
 	<SteamGridDbBrowser
 		v-if="browsingSlot"
-		:api-key="state.steamGridDb.value.apiKey"
+		:api-key="state.settings.steamGridDb.apiKey ?? ''"
 		:kind="browsingSlot.kind"
 		:initial-query="browsingSlot.name"
-		:allow-nsfw="state.steamGridDb.value.allowNsfw"
+		:allow-nsfw="state.settings.steamGridDb.allowNsfw"
 		@close="browsingSlot = null"
 		@select="onSteamGridDbSelect"
 	/>

@@ -25,10 +25,10 @@ const sourceRows = computed(() =>
 )
 
 function sourceSettingsFor(key: string) {
-	if (!state.sourceSettings.value[key]) {
-		state.sourceSettings.value[key] = { enabled: true, customPath: '' }
+	if (!state.settings.sources[key]) {
+		state.settings.sources[key] = { enabled: true, customPath: null }
 	}
-	return state.sourceSettings.value[key]
+	return state.settings.sources[key]
 }
 
 async function pickSourcePath(key: string) {
@@ -49,10 +49,10 @@ async function pickSourcePath(key: string) {
 				:source="source.key"
 				:label="source.label"
 				:enabled="sourceSettingsFor(source.key).enabled"
-				:custom-path="sourceSettingsFor(source.key).customPath"
+				:custom-path="sourceSettingsFor(source.key).customPath ?? ''"
 				:path-supported="source.pathSupported"
 				@update:enabled="sourceSettingsFor(source.key).enabled = $event"
-				@update:custom-path="sourceSettingsFor(source.key).customPath = $event"
+				@update:custom-path="sourceSettingsFor(source.key).customPath = $event.trim() || null"
 				@browse="pickSourcePath(source.key)"
 			/>
 		</div>

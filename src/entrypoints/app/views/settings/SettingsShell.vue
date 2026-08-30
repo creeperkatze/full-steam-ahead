@@ -9,10 +9,12 @@ import GitHubIcon from '../../../../assets/icons/github.svg?component'
 import KofiIcon from '../../../../assets/icons/kofi.svg?component'
 import Card from '../../../../components/Card.vue'
 import SidebarTab from '../../../../components/options/SidebarTab.vue'
+import { useAppState } from '../../../../composables/useAppState'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const state = useAppState()
 
 const sections = computed(
 	() =>
@@ -69,7 +71,7 @@ const sections = computed(
 		</nav>
 
 		<div class="min-h-0 min-w-0 flex-1 overflow-y-auto border-l border-border pl-4">
-			<RouterView />
+			<RouterView v-if="state.settingsReady.value" />
 		</div>
 	</div>
 </template>

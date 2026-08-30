@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 import { api } from '../helpers/api'
 import { applyLocale, type SupportedLocale } from '../i18n'
@@ -8,6 +8,7 @@ import type {
 	ImportCandidate,
 	ImportSource,
 	Options,
+	PersistedSettings,
 	PreviewPlan,
 	SteamInstallation,
 	SteamUser,
@@ -28,91 +29,76 @@ const applyResult = ref<ApplyResult | null>(null)
 const customArtwork = ref<Record<string, string>>({})
 const manualPath = ref('')
 const manualName = ref('')
-const options = ref<Options>({
-	stopSteam: false,
-	restartSteam: false,
-	replaceExistingArtwork: true,
-	createCollections: true,
-})
-const steamLocation = ref('')
-const locale = ref<SupportedLocale | null>(null)
-const colorScheme = ref<ColorScheme | null>(null)
-
-export interface EditableSourceSettings {
-	enabled: boolean
-	customPath: string
-}
 
 const availableSources = ref<ImportSource[]>([])
-const sourceSettings = ref<Record<string, EditableSourceSettings>>({})
 
-export interface EditableSteamGridDbSettings {
-	enabled: boolean
-	apiKey: string
-	allowNsfw: boolean
-}
+const settings = reactive<PersistedSettings>({} as PersistedSettings)
+const settingsReady = ref(false)
 
-const steamGridDb = ref<EditableSteamGridDbSettings>({
-	enabled: false,
-	apiKey: '',
-	allowNsfw: false,
-})
+const applyOptions = computed<Options>(() => ({
+	stopSteam: settings.stopSteam,
+	restartSteam: settings.restartSteam,
+	createCollections: settings.createCollections,
+	replaceExistingArtwork: true,
+}))
 
-let settingsLoaded = false
 let settingsSaveTimer: ReturnType<typeof setTimeout> | undefined
 
+async function flushSettingsSave() {
+	if (!settingsReady.value || !settingsSaveTimer) return
+	clearTimeout(settingsSaveTimer)
+	settingsSaveTimer = undefined
+	await api.saveSettings({ ...settings })
+}
+
+document.addEventListener('visibilitychange', () => {
+	if (document.visibilityState === 'hidden') void flushSettingsSave()
+})
+
 watch(
-	[options, steamLocation, sourceSettings, steamGridDb, locale, colorScheme],
+	settings,
 	() => {
-		if (!settingsLoaded) return
+		if (!settingsReady.value) return
 		invalidatePreview()
 		clearTimeout(settingsSaveTimer)
 		settingsSaveTimer = setTimeout(() => {
-			api.saveSettings({
-				stopSteam: options.value.stopSteam,
-				restartSteam: options.value.restartSteam,
-				createCollections: options.value.createCollections,
-				steamLocation: steamLocation.value.trim() || null,
-				sources: Object.fromEntries(
-					Object.entries(sourceSettings.value).map(([key, settings]) => [
-						key,
-						{ enabled: settings.enabled, customPath: settings.customPath.trim() || null },
-					]),
-				),
-				steamGridDb: {
-					enabled: steamGridDb.value.enabled,
-					apiKey: steamGridDb.value.apiKey.trim() || null,
-					allowNsfw: steamGridDb.value.allowNsfw,
-				},
-				locale: locale.value,
-				colorScheme: colorScheme.value,
-			})
+			settingsSaveTimer = undefined
+			void api.saveSettings({ ...settings })
 		}, 400)
 	},
 	{ deep: true },
 )
 
-watch(locale, (value) => applyLocale(value))
-watch(colorScheme, (value) => applyColorScheme(value))
+watch(
+	() => settings.locale,
+	(value) => applyLocale(value as SupportedLocale | null),
+)
+watch(
+	() => settings.colorScheme,
+	(value) => applyColorScheme(value as ColorScheme | null),
+)
 
 let steamLocationRefreshTimer: ReturnType<typeof setTimeout> | undefined
 
-watch(steamLocation, () => {
-	clearTimeout(steamLocationRefreshTimer)
-	steamLocationRefreshTimer = setTimeout(async () => {
-		try {
-			const detected = await api.detectSteam()
-			install.value = detected
-			if (!detected.users.some((user) => user.steamId === selectedUserId.value)) {
-				selectedUserId.value = detected.users[0]?.steamId ?? ''
+watch(
+	() => settings.steamLocation,
+	() => {
+		clearTimeout(steamLocationRefreshTimer)
+		steamLocationRefreshTimer = setTimeout(async () => {
+			try {
+				const detected = await api.detectSteam()
+				install.value = detected
+				if (!detected.users.some((user) => user.steamId === selectedUserId.value)) {
+					selectedUserId.value = detected.users[0]?.steamId ?? ''
+				}
+			} catch {
+				install.value = null
+				selectedUserId.value = ''
 			}
-		} catch {
-			install.value = null
-			selectedUserId.value = ''
-		}
-		invalidatePreview()
-	}, 400)
-})
+			invalidatePreview()
+		}, 400)
+	},
+)
 
 const selectedUser = computed<SteamUser | undefined>(() =>
 	install.value?.users.find((user) => user.steamId === selectedUserId.value),
@@ -147,31 +133,19 @@ function invalidatePreview() {
 async function loadSettingsFromDisk() {
 	try {
 		const [saved, sources] = await Promise.all([api.loadSettings(), api.availableSources()])
-		options.value = {
-			...options.value,
-			stopSteam: saved.stopSteam,
-			restartSteam: saved.restartSteam,
-			createCollections: saved.createCollections,
-		}
-		steamLocation.value = saved.steamLocation ?? ''
 		availableSources.value = sources
-		sourceSettings.value = Object.fromEntries(
-			(sources as string[]).map((key) => {
-				const entry = saved.sources[key]
-				return [key, { enabled: entry?.enabled ?? true, customPath: entry?.customPath ?? '' }]
-			}),
-		)
-		steamGridDb.value = {
-			enabled: saved.steamGridDb.enabled,
-			apiKey: saved.steamGridDb.apiKey ?? '',
-			allowNsfw: saved.steamGridDb.allowNsfw,
-		}
-		locale.value = (saved.locale as SupportedLocale | null) ?? null
-		colorScheme.value = (saved.colorScheme as ColorScheme | null) ?? null
+		Object.assign(settings, saved, {
+			sources: Object.fromEntries(
+				(sources as string[]).map((key) => [
+					key,
+					saved.sources[key] ?? { enabled: true, customPath: null },
+				]),
+			),
+		})
 	} catch {
-		// Keep defaults
+		// Leave settings empty
 	} finally {
-		settingsLoaded = true
+		settingsReady.value = true
 	}
 }
 
@@ -189,13 +163,10 @@ export function useAppState() {
 		customArtwork,
 		manualPath,
 		manualName,
-		options,
-		steamLocation,
-		locale,
-		colorScheme,
+		settings,
+		settingsReady,
+		applyOptions,
 		availableSources,
-		sourceSettings,
-		steamGridDb,
 		selectedUser,
 		selectedCandidates,
 		usesUrlLaunch,
