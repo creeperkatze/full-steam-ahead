@@ -130,14 +130,15 @@ fn candidate_changes(
     let app_id = super::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
     for asset in super::artwork::selected_artwork_assets(candidate) {
         let is_official_steam = asset.source == ArtworkSource::OfficialSteam;
+        let is_noop_delete = asset.source == ArtworkSource::Missing && !asset.will_replace_existing;
 
         let file = super::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
         if asset.will_replace_existing {
             artwork_files.push(file.clone());
         }
 
-        // Official Steam artwork re-downloads the same content
-        if is_official_steam && asset.will_replace_existing {
+        // Official Steam artwork re-downloads the same content; deleting an empty slot is a no-op.
+        if (is_official_steam && asset.will_replace_existing) || is_noop_delete {
             continue;
         }
 

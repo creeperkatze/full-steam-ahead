@@ -90,6 +90,16 @@ pub fn apply_candidate_artwork(
                 }
             }
             ArtworkSource::ExistingCustom => {}
+            ArtworkSource::Missing => {
+                if target.exists() {
+                    if let Err(error) = fs::remove_file(&target).map_err(io_context(&target)) {
+                        tracing::warn!(kind = ?asset.kind, game = %candidate.name, %error, "Artwork delete failed");
+                        skipped.push(ArtworkSkip {
+                            change_id: format!("artwork:{}:{}", candidate.id, asset.kind.slug()),
+                        });
+                    }
+                }
+            }
         }
     }
 
@@ -145,6 +155,25 @@ pub fn selected_artwork_assets(candidate: &ImportCandidate) -> Vec<ArtworkAsset>
     ]
     .into_iter()
     .filter_map(|kind| {
+        let marked_missing = candidate
+            .artwork
+            .proposed
+            .iter()
+            .any(|asset| asset.kind == kind && asset.source == ArtworkSource::Missing);
+        if marked_missing {
+            let existing = candidate
+                .artwork
+                .existing
+                .iter()
+                .find(|asset| asset.kind == kind);
+            return Some(ArtworkAsset {
+                kind,
+                path_or_url: existing.map_or_else(String::new, |asset| asset.path_or_url.clone()),
+                source: ArtworkSource::Missing,
+                will_replace_existing: existing.is_some(),
+            });
+        }
+
         candidate
             .artwork
             .proposed

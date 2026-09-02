@@ -77,10 +77,10 @@
 			"logo": "Logo",
 			"icon": "Symbol"
 		},
-		"replace": "Ersetzen",
 		"pickLocalArtworkTitle": "Lokales Artwork auswählen",
 		"browseSteamGridDbTitle": "SteamGridDB durchsuchen",
-		"useOfficialArtworkTitle": "Offizielles Steam-Artwork verwenden"
+		"useOfficialArtworkTitle": "Offizielles Steam-Artwork verwenden",
+		"deleteArtworkTitle": "Artwork löschen"
 	},
 	"reviewView": {
 		"preparingPreview": "Vorschau wird vorbereitet...",

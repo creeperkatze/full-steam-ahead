@@ -79,6 +79,8 @@ function sourceLabel(source: string) {
 			return t('artworkSource.localFile')
 		case 'existingcustom':
 			return t('artworkSource.existingCustom')
+		case 'missing':
+			return t('artworkSource.missing')
 		default:
 			return source || t('artworkSource.unknown')
 	}

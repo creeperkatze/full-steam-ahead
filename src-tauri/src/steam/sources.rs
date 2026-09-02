@@ -169,7 +169,9 @@ fn shortcut_icon(candidate: &ImportCandidate, grid_path: &Path) -> String {
     };
 
     let icon_path = match asset.source {
-        ArtworkSource::ExistingCustom => Path::new(&asset.path_or_url).to_path_buf(),
+        ArtworkSource::ExistingCustom | ArtworkSource::Missing => {
+            Path::new(&asset.path_or_url).to_path_buf()
+        }
         ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb | ArtworkSource::LocalFile => {
             let app_id = non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
             artwork::target_path(grid_path, app_id, &ArtworkKind::Icon, &asset.path_or_url)

@@ -77,10 +77,10 @@
 			"logo": "Logo",
 			"icon": "Icon"
 		},
-		"replace": "Replace",
 		"pickLocalArtworkTitle": "Pick local artwork",
 		"browseSteamGridDbTitle": "Browse SteamGridDB",
-		"useOfficialArtworkTitle": "Use official Steam artwork"
+		"useOfficialArtworkTitle": "Use official Steam artwork",
+		"deleteArtworkTitle": "Delete artwork"
 	},
 	"reviewView": {
 		"preparingPreview": "Preparing preview...",

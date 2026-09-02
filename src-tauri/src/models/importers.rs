@@ -195,4 +195,5 @@ pub enum ArtworkSource {
     OfficialSteam,
     SteamGridDb,
     LocalFile,
+    Missing,
 }

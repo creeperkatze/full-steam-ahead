@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ImagePlus, RotateCcw } from '@lucide/vue'
+import { FolderPlus, RotateCcw, Trash2 } from '@lucide/vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { computed, ref } from 'vue'
@@ -47,6 +47,7 @@ function selectedAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAs
 	}
 	const matches = candidate.artwork.proposed.filter((asset) => asset.kind === kind)
 	return (
+		matches.find((asset) => asset.source === 'missing') ??
 		matches.find((asset) => asset.source === 'steamGridDb') ??
 		matches.find((asset) => asset.source === 'officialSteam') ??
 		matches[0]
@@ -62,6 +63,7 @@ function sourceLabel(asset?: ArtworkAsset) {
 	if (asset.source === 'officialSteam') return t('artworkSource.officialSteam')
 	if (asset.source === 'localFile') return t('artworkSource.localFile')
 	if (asset.source === 'existingCustom') return t('artworkSource.existingCustom')
+	if (asset.source === 'missing') return t('artworkSource.missing')
 	return t('artworkSource.steamGridDb')
 }
 
@@ -126,6 +128,19 @@ function onSteamGridDbSelect(image: SteamGridDbImage) {
 	browsingSlot.value = null
 }
 
+function deleteArtwork(candidateId: string, kind: ArtworkKind) {
+	removeArtworkOverride(candidateId, kind)
+	const updated = { ...state.customArtwork.value }
+	delete updated[artworkKey(candidateId, kind)]
+	state.customArtwork.value = updated
+	upsertArtworkAsset(candidateId, {
+		kind,
+		pathOrUrl: '',
+		source: 'missing',
+		willReplaceExisting: true,
+	})
+}
+
 function useOfficialArtwork(candidateId: string, kind: ArtworkKind) {
 	const candidate = state.candidates.value.find((candidate) => candidate.id === candidateId)
 	const official = candidate?.artwork.proposed.find(
@@ -150,7 +165,9 @@ function upsertArtworkAsset(candidateId: string, asset: ArtworkAsset) {
 			artwork: {
 				...candidate.artwork,
 				mode:
-					asset.source === 'localFile' || asset.source === 'steamGridDb'
+					asset.source === 'localFile' ||
+					asset.source === 'steamGridDb' ||
+					asset.source === 'missing'
 						? 'localOverride'
 						: candidate.artwork.mode,
 				proposed: [...proposed, asset],
@@ -171,7 +188,9 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 					(asset) =>
 						!(
 							asset.kind === kind &&
-							(asset.source === 'localFile' || asset.source === 'steamGridDb')
+							(asset.source === 'localFile' ||
+								asset.source === 'steamGridDb' ||
+								asset.source === 'missing')
 						),
 				),
 			},
@@ -240,20 +259,17 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 
 						<div class="flex gap-2">
 							<UiButton
-								class="h-9 min-w-0 flex-1 px-2 text-xs"
+								class="h-9 flex-1"
+								size="icon"
 								variant="secondary"
-								size="sm"
 								:title="t('artworkView.pickLocalArtworkTitle')"
 								@click="pickArtwork(candidate.id, slot.kind)"
 							>
-								<span>{{ t('artworkView.replace') }}</span>
-								<template #icon>
-									<ImagePlus :size="14" />
-								</template>
+								<FolderPlus :size="14" />
 							</UiButton>
 							<UiButton
 								v-if="steamGridDbAvailable"
-								class="h-9 w-9 shrink-0"
+								class="h-9 flex-1"
 								size="icon"
 								variant="secondary"
 								:title="t('artworkView.browseSteamGridDbTitle')"
@@ -262,7 +278,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								<SteamGridDbIcon class="h-3 w-auto" />
 							</UiButton>
 							<UiButton
-								class="h-9 w-9 shrink-0"
+								class="h-9 flex-1"
 								size="icon"
 								variant="ghost"
 								:title="t('artworkView.useOfficialArtworkTitle')"
@@ -274,6 +290,16 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								@click="useOfficialArtwork(candidate.id, slot.kind)"
 							>
 								<RotateCcw :size="14" />
+							</UiButton>
+							<UiButton
+								class="h-9 flex-1"
+								size="icon"
+								variant="danger"
+								:title="t('artworkView.deleteArtworkTitle')"
+								:disabled="!displayAsset(candidate, slot.kind)?.pathOrUrl"
+								@click="deleteArtwork(candidate.id, slot.kind)"
+							>
+								<Trash2 :size="14" />
 							</UiButton>
 						</div>
 					</div>
