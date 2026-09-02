@@ -129,6 +129,7 @@
 			"steam": "Steam",
 			"sources": "Quellen",
 			"artwork": "Artwork",
+			"data": "Daten",
 			"backups": "Sicherungen",
 			"debug": "Debug"
 		},
@@ -198,6 +199,40 @@
 		},
 		"sources": {
 			"title": "Quellen"
+		},
+		"data": {
+			"title": "Daten",
+			"export": {
+				"label": "Einstellungen exportieren",
+				"description": "Speichert deine aktuellen Einstellungen in einer JSON-Datei.",
+				"buttonLabel": "Exportieren",
+				"success": "Einstellungen erfolgreich exportiert.",
+				"error": "Export fehlgeschlagen.",
+				"warning": {
+					"title": "Einstellungen exportieren?",
+					"description": "Die exportierte Datei enthält deinen SteamGridDB-API-Schlüssel im Klartext. Bewahre sie sicher auf und teile sie nicht.",
+					"confirm": "Exportieren"
+				}
+			},
+			"import": {
+				"label": "Einstellungen importieren",
+				"description": "Stellt Einstellungen aus einer zuvor exportierten JSON-Datei wieder her.",
+				"buttonLabel": "Importieren",
+				"success": "Einstellungen erfolgreich importiert.",
+				"error": "Import fehlgeschlagen."
+			},
+			"reset": {
+				"label": "Einstellungen zurücksetzen",
+				"description": "Setzt alle Einstellungen auf ihre Standardwerte zurück.",
+				"buttonLabel": "Zurücksetzen",
+				"success": "Einstellungen erfolgreich zurückgesetzt.",
+				"error": "Zurücksetzen fehlgeschlagen.",
+				"confirm": {
+					"title": "Einstellungen zurücksetzen?",
+					"description": "Dadurch werden alle Einstellungen auf ihre Standardwerte zurückgesetzt. Dies kann nicht rückgängig gemacht werden.",
+					"confirm": "Ja, zurücksetzen"
+				}
+			}
 		},
 		"backups": {
 			"title": "Sicherungen",

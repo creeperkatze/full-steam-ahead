@@ -31,6 +31,10 @@ export const api = {
 		invoke<ApplyResult>('apply_plan', { request: { plan, candidates, options } }),
 	loadSettings: () => invoke<Settings>('load_settings'),
 	saveSettings: (settings: Settings) => invoke<void>('save_settings', { settings }),
+	exportSettings: (path: string, settings: Settings) =>
+		invoke<void>('export_settings', { path, settings }),
+	importSettings: (path: string) => invoke<Settings>('import_settings', { path }),
+	resetSettings: () => invoke<Settings>('reset_settings'),
 	availableSources: () => invoke<ImportSource[]>('available_sources'),
 	steamGridDbSearch: (apiKey: string, query: string) =>
 		invoke<SteamGridDbGame[]>('steamgriddb_search', { apiKey, query }),

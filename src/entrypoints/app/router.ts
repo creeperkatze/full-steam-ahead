@@ -4,6 +4,7 @@ import ImportFlowView from './views/ImportFlowView.vue'
 import ArtworkSettingsView from './views/settings/ArtworkView.vue'
 import BackupsView from './views/settings/BackupsView.vue'
 import CustomizationView from './views/settings/CustomizationView.vue'
+import DataView from './views/settings/DataView.vue'
 import DebugView from './views/settings/DebugView.vue'
 import SettingsShell from './views/settings/SettingsShell.vue'
 import SourcesView from './views/settings/SourcesView.vue'
@@ -23,6 +24,7 @@ export const router = createRouter({
 				{ path: 'steam', name: 'settings-steam', component: SteamView },
 				{ path: 'sources', name: 'settings-sources', component: SourcesView },
 				{ path: 'artwork', name: 'settings-artwork', component: ArtworkSettingsView },
+				{ path: 'data', name: 'settings-data', component: DataView },
 				{ path: 'backups', name: 'settings-backups', component: BackupsView },
 				{ path: 'debug', name: 'settings-debug', component: DebugView },
 			],

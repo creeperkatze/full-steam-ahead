@@ -129,6 +129,7 @@
 			"steam": "Steam",
 			"sources": "Sources",
 			"artwork": "Artwork",
+			"data": "Data",
 			"backups": "Backups",
 			"debug": "Debug"
 		},
@@ -198,6 +199,40 @@
 		},
 		"sources": {
 			"title": "Sources"
+		},
+		"data": {
+			"title": "Data",
+			"export": {
+				"label": "Export settings",
+				"description": "Save your current settings to a JSON file.",
+				"buttonLabel": "Export",
+				"success": "Settings exported successfully.",
+				"error": "Export failed.",
+				"warning": {
+					"title": "Export settings?",
+					"description": "The exported file will contain your SteamGridDB API key in plain text. Keep it secure and avoid sharing it.",
+					"confirm": "Export"
+				}
+			},
+			"import": {
+				"label": "Import settings",
+				"description": "Restore settings from a previously exported JSON file.",
+				"buttonLabel": "Import",
+				"success": "Settings imported successfully.",
+				"error": "Import failed."
+			},
+			"reset": {
+				"label": "Reset settings",
+				"description": "Restore all settings to their default values.",
+				"buttonLabel": "Reset",
+				"success": "Settings reset successfully.",
+				"error": "Reset failed.",
+				"confirm": {
+					"title": "Reset settings?",
+					"description": "This will restore all settings to their defaults. This cannot be undone.",
+					"confirm": "Yes, reset"
+				}
+			}
 		},
 		"backups": {
 			"title": "Backups",

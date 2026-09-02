@@ -9,9 +9,10 @@ pub mod steam;
 
 use commands::{
     apply_plan, available_sources, close_app, create_manual_candidate, create_preview_plan,
-    delete_all_backups, delete_backup, detect_steam, get_debug_info, list_backups, load_settings,
-    open_logs_folder, read_shortcuts_for_user, restore_backup, save_settings, scan_sources,
-    show_main_window, steamgriddb_images, steamgriddb_search, validate_steam_location,
+    delete_all_backups, delete_backup, detect_steam, export_settings, get_debug_info,
+    import_settings, list_backups, load_settings, open_logs_folder, read_shortcuts_for_user,
+    reset_settings, restore_backup, save_settings, scan_sources, show_main_window,
+    steamgriddb_images, steamgriddb_search, validate_steam_location,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -90,6 +91,9 @@ pub fn run() {
             apply_plan,
             load_settings,
             save_settings,
+            export_settings,
+            import_settings,
+            reset_settings,
             available_sources,
             steamgriddb_search,
             steamgriddb_images,

@@ -122,18 +122,22 @@ function invalidatePreview() {
 	previewVersion.value++
 }
 
+function applySettings(newSettings: Settings) {
+	Object.assign(settings, newSettings, {
+		sources: Object.fromEntries(
+			(availableSources.value as string[]).map((key) => [
+				key,
+				newSettings.sources[key] ?? { enabled: true, customPath: null },
+			]),
+		),
+	})
+}
+
 async function loadSettingsFromDisk() {
 	try {
 		const [saved, sources] = await Promise.all([api.loadSettings(), api.availableSources()])
 		availableSources.value = sources
-		Object.assign(settings, saved, {
-			sources: Object.fromEntries(
-				(sources as string[]).map((key) => [
-					key,
-					saved.sources[key] ?? { enabled: true, customPath: null },
-				]),
-			),
-		})
+		applySettings(saved)
 	} catch {
 		// Leave settings empty
 	} finally {
@@ -164,5 +168,6 @@ export function useAppState() {
 		toggleUrlLaunch,
 		invalidatePreview,
 		loadSettingsFromDisk,
+		applySettings,
 	}
 }
