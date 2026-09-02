@@ -175,6 +175,10 @@
 				"label": "Create per-platform collections",
 				"description": "Groups imported games into a collection for each launcher."
 			},
+			"addSelfShortcut": {
+				"label": "Add own shortcut",
+				"description": "Adds Full Steam Ahead itself to Steam, handy for launching it from the Steam Deck's game mode."
+			},
 			"steamLocation": {
 				"label": "Steam installation location",
 				"description": "Override auto-detection if Steam isn't found automatically."

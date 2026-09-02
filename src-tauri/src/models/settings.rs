@@ -32,6 +32,7 @@ pub struct Settings {
     pub stop_steam: bool,
     pub restart_steam: bool,
     pub create_collections: bool,
+    pub add_self_shortcut: bool,
     pub steam_location: Option<String>,
     #[serde(alias = "launchers")]
     pub sources: HashMap<String, SourceSettings>,
@@ -46,6 +47,7 @@ impl Default for Settings {
             stop_steam: true,
             restart_steam: true,
             create_collections: true,
+            add_self_shortcut: false,
             steam_location: None,
             sources: HashMap::new(),
             steam_grid_db: SteamGridDbSettings::default(),

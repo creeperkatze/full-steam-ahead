@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HardDrive, Layers, Power, RotateCw } from '@lucide/vue'
+import { Gamepad2, HardDrive, Layers, Power, RotateCw } from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -73,6 +73,12 @@ onUnmounted(() => clearTimeout(steamLocationCheckTimer))
 				:icon="Layers"
 				:label="t('settings.steam.createCollections.label')"
 				:description="t('settings.steam.createCollections.description')"
+			/>
+			<OptionToggle
+				v-model="state.settings.addSelfShortcut"
+				:icon="Gamepad2"
+				:label="t('settings.steam.addSelfShortcut.label')"
+				:description="t('settings.steam.addSelfShortcut.description')"
 			/>
 			<OptionPath
 				v-model="steamLocation"

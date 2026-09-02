@@ -108,10 +108,14 @@ pub fn apply_plan_with_progress(
         .iter()
         .filter(|candidate| candidate.existing_app_id.is_none())
         .collect::<Vec<_>>();
-    let additions = new_candidates
+    let mut additions = new_candidates
         .iter()
         .map(|candidate| sources::shortcut_from_candidate(candidate, &user.grid_path))
         .collect::<Vec<_>>();
+
+    if request.options.add_self_shortcut {
+        additions.push(super::self_shortcut::build(&user.grid_path)?);
+    }
 
     #[cfg(unix)]
     {

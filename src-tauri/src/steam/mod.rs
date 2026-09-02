@@ -5,6 +5,7 @@ pub mod detect;
 pub mod plan;
 #[cfg(unix)]
 pub mod proton;
+pub mod self_shortcut;
 pub mod shortcuts;
 pub mod sources;
 
@@ -18,7 +19,6 @@ mod tests {
 
     #[test]
     fn empty_input_forces_high_bit() {
-        // CRC32("") = 0, so the | 0x8000_0000 is the only contributor to this value.
         assert_eq!(non_steam_app_id("", ""), 0x8000_0000);
     }
 

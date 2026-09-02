@@ -2,6 +2,7 @@ export interface Settings {
 	stopSteam: boolean
 	restartSteam: boolean
 	createCollections: boolean
+	addSelfShortcut: boolean
 	steamLocation: string | null
 	sources: Record<string, SourceSettings>
 	steamGridDb: SteamGridDbSettings

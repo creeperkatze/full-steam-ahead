@@ -175,6 +175,10 @@
 				"label": "Sammlungen pro Plattform erstellen",
 				"description": "Gruppiert importierte Spiele in eine Sammlung für jeden Launcher."
 			},
+			"addSelfShortcut": {
+				"label": "Eigene Verknüpfung hinzufügen",
+				"description": "Fügt Full Steam Ahead selbst zu Steam hinzu, praktisch zum Starten aus dem Spielmodus des Steam Deck."
+			},
 			"steamLocation": {
 				"label": "Steam-Installationsort",
 				"description": "Überschreibt die automatische Erkennung, falls Steam nicht automatisch gefunden wird."
