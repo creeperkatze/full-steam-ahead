@@ -294,7 +294,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 							<UiButton
 								class="h-9 flex-1"
 								size="icon"
-								variant="danger"
+								variant="ghost"
 								:title="t('artworkView.deleteArtworkTitle')"
 								:disabled="!displayAsset(candidate, slot.kind)?.pathOrUrl"
 								@click="deleteArtwork(candidate.id, slot.kind)"
