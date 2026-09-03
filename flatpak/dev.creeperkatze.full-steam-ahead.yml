@@ -4,12 +4,7 @@ runtime-version: '50'
 sdk: org.gnome.Sdk
 command: full-steam-ahead
 
-sdk-extensions:
-  - org.freedesktop.Sdk.Extension.node22
-  - org.freedesktop.Sdk.Extension.rust-stable
-
 build-options:
-  append-path: /usr/lib/sdk/node22/bin:/usr/lib/sdk/rust-stable/bin:/run/build/full-steam-ahead/flatpak-node/pnpm-cli/bin
   no-debuginfo: true
 
 finish-args:
@@ -41,53 +36,20 @@ finish-args:
 modules:
   - name: full-steam-ahead
     buildsystem: simple
-    build-options:
-      env:
-        HOME: /run/build/full-steam-ahead
-        CARGO_HOME: /run/build/full-steam-ahead/src-tauri/.cargo-home
-        XDG_CACHE_HOME: /run/build/full-steam-ahead/flatpak-node/cache
-        npm_config_offline: 'true'
-        npm_config_cache: /run/build/full-steam-ahead/flatpak-node/npm-cache
     sources:
-      - type: git
-        url: https://github.com/creeperkatze/full-steam-ahead.git
-        tag: v1.3.0
-      - cargo-sources.json
-      - node-sources.json
       - type: file
-        url: https://registry.npmjs.org/pnpm/-/pnpm-11.1.2.tgz
-        sha256: bfe4d2b2c7a3210565bba62929f9efe493eb5f24627201a102ea4514eae8cf80
-        dest-filename: pnpm.tgz
-    build-commands:
-      - mkdir -p src-tauri/.cargo-home
-      - mkdir -p src-tauri/.cargo && echo -e '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "/run/build/full-steam-ahead/cargo/vendor"' > src-tauri/.cargo/config.toml
-      - mkdir -p flatpak-node/pnpm-cli && tar -xzf pnpm.tgz -C flatpak-node/pnpm-cli --strip-components=1
-      - chmod +x flatpak-node/pnpm-cli/bin/pnpm.mjs && ln -s pnpm.mjs flatpak-node/pnpm-cli/bin/pnpm
-      - pnpm install --offline --store-dir=flatpak-node/pnpm-store
-      - pnpm exec tauri build -b deb
-      - ar -x src-tauri/target/release/bundle/deb/*.deb
-      - tar -xf data.tar.*
-      - install -Dm755 "./usr/bin/Full Steam Ahead" /app/bin/full-steam-ahead
-
-  - name: full-steam-ahead-desktop
-    buildsystem: simple
-    sources:
+        url: https://github.com/creeperkatze/full-steam-ahead/releases/download/v1.3.0/full-steam-ahead-1.3.0-linux-amd64.AppImage
+        sha256: df8e98e8ae27e6f3054c2caad7ddfad01178e758b689251ec853334e09796ec6
+        dest-filename: full-steam-ahead.AppImage
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/creeperkatze/full-steam-ahead/releases/latest
+          version-query: .tag_name | ltrimstr("v")
+          url-query: .assets[] | select(.name | test("linux-amd64\\.AppImage$")) | .browser_download_url
       - type: file
         path: dev.creeperkatze.full-steam-ahead.desktop
-    build-commands:
-      - install -Dm644 dev.creeperkatze.full-steam-ahead.desktop -t /app/share/applications/
-
-  - name: full-steam-ahead-metainfo
-    buildsystem: simple
-    sources:
       - type: file
         path: dev.creeperkatze.full-steam-ahead.metainfo.xml
-    build-commands:
-      - install -Dm644 dev.creeperkatze.full-steam-ahead.metainfo.xml -t /app/share/metainfo/
-
-  - name: full-steam-ahead-icons
-    buildsystem: simple
-    sources:
       - type: file
         path: ../src-tauri/icons/128x128.png
         dest-filename: dev.creeperkatze.full-steam-ahead-128.png
@@ -101,6 +63,11 @@ modules:
         path: ../.github/assets/icon.svg
         dest-filename: dev.creeperkatze.full-steam-ahead.svg
     build-commands:
+      - chmod +x full-steam-ahead.AppImage
+      - ./full-steam-ahead.AppImage --appimage-extract
+      - install -Dm755 squashfs-root/usr/bin/full-steam-ahead /app/bin/full-steam-ahead
+      - install -Dm644 dev.creeperkatze.full-steam-ahead.desktop -t /app/share/applications/
+      - install -Dm644 dev.creeperkatze.full-steam-ahead.metainfo.xml -t /app/share/metainfo/
       - install -Dm644 dev.creeperkatze.full-steam-ahead-128.png /app/share/icons/hicolor/128x128/apps/dev.creeperkatze.full-steam-ahead.png
       - install -Dm644 dev.creeperkatze.full-steam-ahead-256.png /app/share/icons/hicolor/256x256/apps/dev.creeperkatze.full-steam-ahead.png
       - install -Dm644 dev.creeperkatze.full-steam-ahead-512.png /app/share/icons/hicolor/512x512/apps/dev.creeperkatze.full-steam-ahead.png
