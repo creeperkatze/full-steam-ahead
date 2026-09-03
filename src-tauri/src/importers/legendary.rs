@@ -1,10 +1,10 @@
 use crate::{
     error::AppResult,
-    importers::launcher_candidate,
+    importers::{host_command, launcher_candidate},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
-use std::{path::Path, process::Command};
+use std::path::Path;
 
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     let executable = custom_path.map(|p| p.to_string_lossy().to_string());
@@ -38,7 +38,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
 }
 
 fn run_legendary(executable: &str) -> Result<Vec<LegendaryGame>, Box<dyn std::error::Error>> {
-    let output = Command::new(executable)
+    let output = host_command(executable)
         .args(["list-installed", "--json"])
         .output()?;
     let json = String::from_utf8_lossy(&output.stdout);

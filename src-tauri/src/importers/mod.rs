@@ -37,6 +37,23 @@ pub fn quote_path(path: &Path) -> String {
     format!("\"{}\"", path.display())
 }
 
+/// Routes through `flatpak-spawn --host` when sandboxed, so host binaries stay reachable.
+#[cfg(unix)]
+pub fn host_command(exe: &str) -> std::process::Command {
+    host_command_impl(exe, Path::new("/.flatpak-info").exists())
+}
+
+#[cfg(unix)]
+fn host_command_impl(exe: &str, in_sandbox: bool) -> std::process::Command {
+    if in_sandbox {
+        let mut cmd = std::process::Command::new("flatpak-spawn");
+        cmd.arg("--host").arg(exe);
+        cmd
+    } else {
+        std::process::Command::new(exe)
+    }
+}
+
 /// Returns the `steamapps/compatdata` directory under the detected Steam install.
 #[cfg(unix)]
 pub fn compat_data_dir() -> Option<PathBuf> {
@@ -139,6 +156,21 @@ pub fn launcher_candidate(
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
+
+    #[test]
+    fn host_command_runs_exe_directly_outside_sandbox() {
+        let cmd = host_command_impl("flatpak", false);
+        assert_eq!(cmd.get_program(), "flatpak");
+        assert_eq!(cmd.get_args().count(), 0);
+    }
+
+    #[test]
+    fn host_command_wraps_with_flatpak_spawn_inside_sandbox() {
+        let cmd = host_command_impl("flatpak", true);
+        assert_eq!(cmd.get_program(), "flatpak-spawn");
+        let args: Vec<_> = cmd.get_args().collect();
+        assert_eq!(args, ["--host", "flatpak"]);
+    }
 
     #[test]
     fn translates_c_drive_path() {

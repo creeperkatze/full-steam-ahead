@@ -1,17 +1,17 @@
 use crate::{
     error::AppResult,
-    importers::launcher_candidate,
+    importers::{host_command, launcher_candidate},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
-use std::{collections::HashMap, path::Path, process::Command};
+use std::{collections::HashMap, path::Path};
 
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     let exe = custom_path
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| "flatpak".to_string());
 
-    let stdout = Command::new(&exe)
+    let stdout = host_command(&exe)
         .args([
             "run",
             "--command=bottles-cli",
