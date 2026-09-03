@@ -120,13 +120,6 @@ mod tests {
 
     fn game_bytes(id: &str, name: &str, installed: bool) -> Vec<u8> {
         let mut v = Vec::new();
-        // Structure matches what parse_game expects:
-        // take_until("_id") skips "SKIP"
-        // take_until("Image") skips "_id_"
-        // take_until("\\") grabs "Image\x00\x00{id}", split by \x00 gives id
-        // take_until("IsInstalled") then tag("IsInstalled"), byte[1] = installed flag
-        // take_until("InstallSizeGroup"), take_until("Name"), take(4) consumes "Name"
-        // take_while(!alphanum) skips nulls, take_while(b != 0) grabs name
         v.extend_from_slice(b"SKIP_id_Image\x00\x00");
         v.extend_from_slice(id.as_bytes());
         v.push(b'\\');
