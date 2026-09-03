@@ -259,18 +259,48 @@ fn official_asset_specs(steam_app_id: u32) -> Vec<(ArtworkKind, String)> {
     let base = format!(
         "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{steam_app_id}"
     );
-    let mut specs = vec![
-        (ArtworkKind::Header, format!("{base}/header.jpg")),
-        (ArtworkKind::Capsule, format!("{base}/library_600x900.jpg")),
-        (ArtworkKind::Hero, format!("{base}/library_hero.jpg")),
-        (ArtworkKind::Logo, format!("{base}/logo.png")),
-    ];
+    let mut specs = Vec::new();
+
+    push_reachable_asset(&mut specs, ArtworkKind::Header, &base, &["header.jpg"]);
+    push_reachable_asset(
+        &mut specs,
+        ArtworkKind::Capsule,
+        &base,
+        &["library_600x900_2x.jpg", "library_600x900.jpg"],
+    );
+    push_reachable_asset(
+        &mut specs,
+        ArtworkKind::Hero,
+        &base,
+        &["library_hero_2x.jpg", "library_hero.jpg"],
+    );
+    push_reachable_asset(
+        &mut specs,
+        ArtworkKind::Logo,
+        &base,
+        &["logo_2x.png", "logo.png"],
+    );
 
     if let Some(icon_url) = fetch::community_icon_url(steam_app_id) {
         specs.push((ArtworkKind::Icon, icon_url));
     }
 
     specs
+}
+
+fn push_reachable_asset(
+    specs: &mut Vec<(ArtworkKind, String)>,
+    kind: ArtworkKind,
+    base: &str,
+    filenames: &[&str],
+) {
+    for filename in filenames {
+        let url = format!("{base}/{filename}");
+        if fetch::reachable_url(&url) {
+            specs.push((kind, url));
+            return;
+        }
+    }
 }
 
 pub(super) fn push_store_asset(
