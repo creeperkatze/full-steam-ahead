@@ -46,6 +46,8 @@ modules:
           url: https://api.github.com/repos/creeperkatze/full-steam-ahead/releases/latest
           version-query: .tag_name | ltrimstr("v")
           url-query: .assets[] | select(.name | test("linux-amd64\\.AppImage$")) | .browser_download_url
+          release-url-template: https://github.com/creeperkatze/full-steam-ahead/releases/tag/v$version
+          is-main-source: true
       - type: file
         path: dev.creeperkatze.full-steam-ahead.desktop
       - type: file
