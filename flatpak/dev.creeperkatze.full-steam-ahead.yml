@@ -53,17 +53,13 @@ modules:
       - type: file
         path: dev.creeperkatze.full-steam-ahead.metainfo.xml
       - type: file
-        path: ../src-tauri/icons/128x128.png
-        dest-filename: dev.creeperkatze.full-steam-ahead-128.png
+        path: dev.creeperkatze.full-steam-ahead-128.png
       - type: file
-        path: ../src-tauri/icons/128x128@2x.png
-        dest-filename: dev.creeperkatze.full-steam-ahead-256.png
+        path: dev.creeperkatze.full-steam-ahead-256.png
       - type: file
-        path: ../src-tauri/icons/icon.png
-        dest-filename: dev.creeperkatze.full-steam-ahead-512.png
+        path: dev.creeperkatze.full-steam-ahead-512.png
       - type: file
-        path: ../.github/assets/icon.svg
-        dest-filename: dev.creeperkatze.full-steam-ahead.svg
+        path: dev.creeperkatze.full-steam-ahead.svg
     build-commands:
       - chmod +x full-steam-ahead.AppImage
       - ./full-steam-ahead.AppImage --appimage-extract
