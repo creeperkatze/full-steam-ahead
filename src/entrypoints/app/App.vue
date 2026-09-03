@@ -149,7 +149,6 @@ async function goNext() {
 							{{ t('app.actions.back') }}
 						</UiButton>
 
-						<!-- Start view: scan button, plus continue when results exist -->
 						<template v-if="state.step.value === 'start'">
 							<UiButton
 								:variant="state.scanPhase.value === 'done' ? 'ghost' : undefined"
@@ -164,8 +163,6 @@ async function goNext() {
 								<template #icon><ArrowRight :size="16" /></template>
 							</UiButton>
 						</template>
-
-						<!-- All other steps -->
 						<UiButton
 							v-else-if="state.step.value !== 'done'"
 							:disabled="nextDisabled"
