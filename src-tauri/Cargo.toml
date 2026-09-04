@@ -1,6 +1,6 @@
 [package]
 name = "full-steam-ahead"
-version = "1.3.1"
+version = "1.3.2"
 description = "A desktop utility for importing non-Steam games."
 authors = ["Creeperkatze"]
 license = "AGPL-3.0-only"
