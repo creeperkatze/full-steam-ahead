@@ -2,6 +2,8 @@
 import { Check, Loader2 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
+import KofiIcon from '../../../assets/icons/kofi.svg?component'
+import Card from '../../../components/Card.vue'
 import type { ApplyProgressEvent, ApplyResult, ApplyStep } from '../../../types'
 
 defineProps<{
@@ -67,16 +69,25 @@ function stepLabel(step: ApplyStep): string {
 				<h1 class="text-2xl font-bold">{{ t('doneView.allDoneTitle') }}</h1>
 				<p class="mt-1 text-secondary">{{ t('doneView.allDoneSubtitle') }}</p>
 			</div>
-			<div class="flex items-center gap-6 rounded-lg border border-border bg-surface-3 px-6 py-3">
-				<div class="text-center">
-					<strong class="block text-2xl">{{ applyResult.appliedChanges.length }}</strong>
-					<span class="text-xs text-secondary">{{ t('doneView.changesApplied') }}</span>
+			<div class="flex flex-col gap-3">
+				<div class="flex items-center gap-6 rounded-lg border border-border bg-surface-3 px-6 py-3">
+					<div class="text-center">
+						<strong class="block text-2xl">{{ applyResult.appliedChanges.length }}</strong>
+						<span class="text-xs text-secondary">{{ t('doneView.changesApplied') }}</span>
+					</div>
+					<div class="h-10 w-px bg-border" />
+					<div class="text-center">
+						<strong class="block text-2xl">{{ applyResult.backupsCreated.length }}</strong>
+						<span class="text-xs text-secondary">{{ t('doneView.backupsCreated') }}</span>
+					</div>
 				</div>
-				<div class="h-10 w-px bg-border" />
-				<div class="text-center">
-					<strong class="block text-2xl">{{ applyResult.backupsCreated.length }}</strong>
-					<span class="text-xs text-secondary">{{ t('doneView.backupsCreated') }}</span>
-				</div>
+				<Card
+					href="https://ko-fi.com/creeperkatze"
+					:icon="KofiIcon"
+					color="#FF5E5B"
+					:title="t('doneView.kofiTitle')"
+					:description="t('doneView.kofiSubtitle')"
+				/>
 			</div>
 		</section>
 
