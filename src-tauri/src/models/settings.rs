@@ -39,6 +39,7 @@ pub struct Settings {
     pub steam_grid_db: SteamGridDbSettings,
     pub locale: Option<String>,
     pub color_scheme: Option<String>,
+    pub update_notifications: bool,
 }
 
 impl Default for Settings {
@@ -53,6 +54,7 @@ impl Default for Settings {
             steam_grid_db: SteamGridDbSettings::default(),
             locale: None,
             color_scheme: None,
+            update_notifications: true,
         }
     }
 }

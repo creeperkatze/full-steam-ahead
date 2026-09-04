@@ -2,10 +2,12 @@
 import { CheckCircle2, Clock, Loader2, Star } from '@lucide/vue'
 import { getVersion } from '@tauri-apps/api/app'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import KofiIcon from '../assets/icons/kofi.svg?component'
+import { useAppState } from '../composables/useAppState'
+import UpdateAvailableModal from './UpdateAvailableModal.vue'
 
 defineSlots<{
 	default?: () => unknown
@@ -13,11 +15,16 @@ defineSlots<{
 }>()
 
 const { t } = useI18n()
+const state = useAppState()
+
+const RELEASES_URL = 'https://github.com/creeperkatze/full-steam-ahead/releases/latest'
+const DISMISSED_VERSION_KEY = 'dismissedUpdateVersion'
 
 const version = ref('')
 const updateChecking = ref(true)
 const isLatest = ref(false)
 const latestVersion = ref<string | null>(null)
+const showUpdateModal = ref(false)
 
 async function checkForUpdates() {
 	try {
@@ -46,6 +53,25 @@ async function checkForUpdates() {
 	}
 }
 
+watch([latestVersion, () => state.settingsReady.value], ([tag, ready]) => {
+	if (!ready || !tag) return
+	if (!state.settings.updateNotifications) return
+	if (tag === window.localStorage.getItem(DISMISSED_VERSION_KEY)) return
+	showUpdateModal.value = true
+})
+
+function dismissUpdateModal() {
+	if (latestVersion.value) {
+		window.localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion.value)
+	}
+	showUpdateModal.value = false
+}
+
+function downloadUpdate() {
+	openUrl(RELEASES_URL)
+	dismissUpdateModal()
+}
+
 onMounted(async () => {
 	version.value = await getVersion().catch(() => '')
 	await checkForUpdates()
@@ -71,7 +97,7 @@ onMounted(async () => {
 					v-else-if="isLatest"
 					type="button"
 					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-green-500 transition-colors hover:text-green-400"
-					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
+					@click="openUrl(RELEASES_URL)"
 				>
 					<CheckCircle2 class="size-3.5 shrink-0" aria-hidden="true" />
 					<span class="truncate">{{ t('appShell.latestVersion') }}</span>
@@ -80,7 +106,7 @@ onMounted(async () => {
 					v-else-if="latestVersion"
 					type="button"
 					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-warning transition-opacity hover:opacity-80"
-					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead/releases/latest')"
+					@click="openUrl(RELEASES_URL)"
 				>
 					<Clock class="size-3.5 shrink-0" aria-hidden="true" />
 					<span class="truncate">{{ t('appShell.updateAvailable') }}</span>
@@ -109,4 +135,13 @@ onMounted(async () => {
 			</div>
 		</div>
 	</main>
+
+	<UpdateAvailableModal
+		v-if="latestVersion"
+		:model-value="showUpdateModal"
+		:current-version="version"
+		:latest-version="latestVersion"
+		@update:model-value="dismissUpdateModal"
+		@download="downloadUpdate"
+	/>
 </template>

@@ -25,6 +25,7 @@
 
     --color-accent: #0d84e0;
     --color-accent-strong: #1a9fff;
+    --color-accent-hover: #0b6cc4;
     --color-accent-bg: #e5f2fc;
     --color-accent-contrast: #07131f;
     --color-accent-icon: #ffffff;
@@ -72,6 +73,7 @@
 
         --color-accent: #2badff;
         --color-accent-strong: #1a9fff;
+        --color-accent-hover: #0f7fd1;
         --color-accent-bg: #0d1e2e;
         --color-accent-contrast: #07131f;
         --color-accent-icon: #07131f;

@@ -8,6 +8,7 @@ export interface Settings {
 	steamGridDb: SteamGridDbSettings
 	locale: string | null
 	colorScheme: string | null
+	updateNotifications: boolean
 }
 
 export interface SourceSettings {

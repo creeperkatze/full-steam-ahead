@@ -117,6 +117,12 @@
 		"donate": "Donate",
 		"onGithub": "On GitHub"
 	},
+	"updateModal": {
+		"title": "New version available",
+		"description": "Version {latest} is available. You're currently on {current}.",
+		"later": "Later",
+		"download": "View release"
+	},
 	"steamGridDbBrowser": {
 		"searchPlaceholder": "Search SteamGridDB…",
 		"searchFailed": "Search failed.",
@@ -159,6 +165,10 @@
 				"auto": "System default",
 				"light": "Light",
 				"dark": "Dark"
+			},
+			"updateNotifications": {
+				"label": "Update notifications",
+				"description": "Show a notification when a new version of the app is available."
 			}
 		},
 		"steam": {

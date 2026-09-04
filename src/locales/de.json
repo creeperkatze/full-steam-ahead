@@ -117,6 +117,12 @@
 		"donate": "Spenden",
 		"onGithub": "Auf GitHub"
 	},
+	"updateModal": {
+		"title": "Neue Version verfügbar",
+		"description": "Version {latest} ist verfügbar. Du nutzt derzeit {current}.",
+		"later": "Später",
+		"download": "Release ansehen"
+	},
 	"steamGridDbBrowser": {
 		"searchPlaceholder": "SteamGridDB durchsuchen…",
 		"searchFailed": "Suche fehlgeschlagen.",
@@ -159,6 +165,10 @@
 				"auto": "Systemstandard",
 				"light": "Hell",
 				"dark": "Dunkel"
+			},
+			"updateNotifications": {
+				"label": "Update-Benachrichtigungen",
+				"description": "Zeigt eine Benachrichtigung an, wenn eine neue Version der App verfügbar ist."
 			}
 		},
 		"steam": {

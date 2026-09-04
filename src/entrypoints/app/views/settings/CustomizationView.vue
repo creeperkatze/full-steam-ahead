@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Languages, Monitor } from '@lucide/vue'
+import { Bell, Languages, Monitor } from '@lucide/vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import type { Component } from 'vue'
 import { computed } from 'vue'
@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import DeFlag from '../../../../assets/icons/flags/de.svg?component'
 import GbFlag from '../../../../assets/icons/flags/gb.svg?component'
 import OptionSelect from '../../../../components/options/OptionSelect.vue'
+import OptionToggle from '../../../../components/options/OptionToggle.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import { useAppState } from '../../../../composables/useAppState'
 import { detectBrowserLocale, LOCALES, type SupportedLocale } from '../../../../i18n'
@@ -73,6 +74,12 @@ function setColorScheme(value: string) {
 				:description="t('settings.customization.colorScheme.description')"
 				:options="colorSchemeOptions"
 				@update:model-value="setColorScheme($event)"
+			/>
+			<OptionToggle
+				v-model="state.settings.updateNotifications"
+				:icon="Bell"
+				:label="t('settings.customization.updateNotifications.label')"
+				:description="t('settings.customization.updateNotifications.description')"
 			/>
 		</div>
 	</section>
