@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 use tracing::{debug, info, warn};
 
@@ -22,17 +22,25 @@ pub fn list() -> AppResult<Vec<BackupInfo>> {
 }
 
 pub fn restore_backup(backup_id: &str) -> AppResult<usize> {
-    let backup_dir = crate::paths::backups_dir().join(backup_id);
+    let backup_dir = backup_dir_for(backup_id)?;
     restore_from_dir(&backup_dir)
 }
 
 pub fn delete_backup(backup_id: &str) -> AppResult<()> {
-    let backup_dir = crate::paths::backups_dir().join(backup_id);
+    let backup_dir = backup_dir_for(backup_id)?;
     delete_dir(&backup_dir)
 }
 
 pub fn delete_all_backups() -> AppResult<()> {
     delete_all_from_dir(&crate::paths::backups_dir())
+}
+
+/// True when `destination` is lexically contained in the backups directory.
+pub fn is_valid_destination(destination: &Path) -> bool {
+    !destination
+        .components()
+        .any(|component| matches!(component, Component::ParentDir))
+        && destination.starts_with(crate::paths::backups_dir())
 }
 
 pub fn write_manifest(backup_dir: &Path, plans: &[BackupPlan]) {
@@ -147,6 +155,22 @@ fn restore_from_dir(backup_dir: &Path) -> AppResult<usize> {
 
     info!(restored, "Backup restored");
     Ok(restored)
+}
+
+/// Resolves a backup id to its directory, rejecting ids that are not a bare folder name.
+fn backup_dir_for(backup_id: &str) -> AppResult<PathBuf> {
+    let is_plain_name = !backup_id.is_empty()
+        && backup_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-');
+
+    if !is_plain_name {
+        return Err(AppError::Message(format!(
+            "Invalid backup id '{backup_id}'."
+        )));
+    }
+
+    Ok(crate::paths::backups_dir().join(backup_id))
 }
 
 fn delete_dir(backup_dir: &Path) -> AppResult<()> {
@@ -439,5 +463,41 @@ mod tests {
         let result = list_from_dir(tmp.path()).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].id, "20250516-120000");
+    }
+
+    // backup_dir_for
+
+    #[test]
+    fn backup_dir_accepts_a_timestamp_id() {
+        let dir = backup_dir_for("20250516-120000").unwrap();
+        assert_eq!(dir, crate::paths::backups_dir().join("20250516-120000"));
+    }
+
+    #[test]
+    fn backup_dir_rejects_traversal_and_absolute_ids() {
+        for id in ["", "..", "../..", "a/b", r"a\b", r"C:\Windows", "/etc"] {
+            assert!(
+                backup_dir_for(id).is_err(),
+                "expected {id:?} to be rejected"
+            );
+        }
+    }
+
+    // is_valid_destination
+
+    #[test]
+    fn destination_inside_backups_dir_is_valid() {
+        let destination = crate::paths::backups_dir()
+            .join("20250516-120000")
+            .join("shortcuts.vdf");
+        assert!(is_valid_destination(&destination));
+    }
+
+    #[test]
+    fn destination_outside_backups_dir_is_rejected() {
+        assert!(!is_valid_destination(Path::new("/etc/passwd")));
+        assert!(!is_valid_destination(
+            &crate::paths::backups_dir().join("..").join("settings.json")
+        ));
     }
 }

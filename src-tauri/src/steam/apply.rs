@@ -2,7 +2,7 @@
 use crate::steam::proton;
 use crate::{
     backups,
-    error::{io_context, AppResult},
+    error::{io_context, AppError, AppResult},
     models::{ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep},
     process,
     steam::{artwork, collections, detect, shortcuts, sources},
@@ -57,6 +57,13 @@ pub fn apply_plan_with_progress(
     for backup in &request.plan.backups {
         if !backup.source.exists() {
             continue;
+        }
+        // The plan round-trips through the frontend, so destinations are re-checked here.
+        if !backups::is_valid_destination(&backup.destination) {
+            return Err(AppError::Message(format!(
+                "Refusing to write a backup outside the backups directory: {}",
+                backup.destination.display()
+            )));
         }
         if let Some(parent) = backup.destination.parent() {
             fs::create_dir_all(parent).map_err(io_context(parent))?;
