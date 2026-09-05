@@ -10,11 +10,10 @@ import UiButton from '../../../components/ui/Button.vue'
 import Checkbox from '../../../components/ui/Checkbox.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
 import { useAppState } from '../../../composables/useAppState'
-import { SCANNABLE_SOURCES } from '../../../composables/useScanSources'
 import { useTaskStatus } from '../../../composables/useTaskStatus'
 import { api } from '../../../helpers/api'
 import { importSourceName } from '../../../helpers/sourceNames'
-import type { ImportCandidate, ImportSource } from '../../../types'
+import type { ImportCandidate, ImportSource, ScannableSource } from '../../../types'
 
 const state = useAppState()
 const task = useTaskStatus()
@@ -27,11 +26,13 @@ interface PlatformCard {
 }
 
 const platformCards = computed<PlatformCard[]>(() =>
-	SCANNABLE_SOURCES.map((source) => ({
-		key: source,
-		title: importSourceName(source),
-		candidates: candidatesFor(source),
-	})).filter((card) => card.candidates.length > 0),
+	(state.availableSources.value as ScannableSource[])
+		.map((source) => ({
+			key: source,
+			title: importSourceName(source),
+			candidates: candidatesFor(source),
+		}))
+		.filter((card) => card.candidates.length > 0),
 )
 
 const manualCandidates = computed(() => candidatesFor('manual'))

@@ -2,7 +2,7 @@ import { listen } from '@tauri-apps/api/event'
 import { ref } from 'vue'
 
 import { api } from '../helpers/api'
-import { IMPORT_SOURCE_NAMES, importSourceName } from '../helpers/sourceNames'
+import { importSourceName } from '../helpers/sourceNames'
 import type { ImportCandidate, ScannableSource, ScanProgressEvent } from '../types'
 import { useAppState } from './useAppState'
 import { useTaskStatus } from './useTaskStatus'
@@ -14,11 +14,8 @@ export interface SourceState {
 	found: number
 }
 
-export const SCANNABLE_SOURCES = Object.keys(IMPORT_SOURCE_NAMES).filter(
-	(key): key is ScannableSource => key !== 'manual',
-)
-
-const sourceStates = ref<SourceState[]>(makeSourceStates(SCANNABLE_SOURCES))
+// Populated once scanning starts, from the backend's platform-appropriate source list.
+const sourceStates = ref<SourceState[]>([])
 let unlistenScan: (() => void) | undefined
 
 function makeSourceStates(sources: ScannableSource[]): SourceState[] {
@@ -45,7 +42,9 @@ export function useScanSources() {
 	async function scan() {
 		if (!state.selectedUserId.value || !state.settingsReady.value) return
 
-		const enabledSources = SCANNABLE_SOURCES.filter((key) => state.settings.sources[key].enabled)
+		const enabledSources = (state.availableSources.value as ScannableSource[]).filter(
+			(key) => state.settings.sources[key].enabled,
+		)
 		sourceStates.value = makeSourceStates(enabledSources)
 		state.scanPhase.value = 'scanning'
 
