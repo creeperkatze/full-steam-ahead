@@ -56,7 +56,7 @@ onUnmounted(() => unlisten?.())
 		class="flex h-17 p-4 shrink-0 select-none items-center overflow-hidden"
 		data-tauri-drag-region
 	>
-		<div :class="['flex items-center pr-2', { 'pl-16': isMac }]">
+		<div :class="['flex items-center pr-2', { 'pl-16': isMac }]" data-tauri-drag-region>
 			<button
 				type="button"
 				class="cursor-pointer rounded opacity-90 transition-opacity hover:opacity-100"
@@ -67,7 +67,12 @@ onUnmounted(() => unlisten?.())
 			</button>
 		</div>
 
-		<nav v-if="!settingsOpen" class="flex gap-2 px-2" :aria-label="t('titleBar.importProgress')">
+		<nav
+			v-if="!settingsOpen"
+			class="flex gap-2 px-2"
+			:aria-label="t('titleBar.importProgress')"
+			data-tauri-drag-region
+		>
 			<button
 				v-for="(step, index) in steps"
 				:key="step"
@@ -92,7 +97,7 @@ onUnmounted(() => unlisten?.())
 				{{ step }}
 			</button>
 		</nav>
-		<div class="ml-auto flex items-center gap-1">
+		<div class="ml-auto flex items-center gap-1" data-tauri-drag-region>
 			<UiButton
 				size="icon"
 				variant="ghost"
