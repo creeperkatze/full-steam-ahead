@@ -23,6 +23,7 @@
                 "resizable": true,
                 "fullscreen": false,
                 "visible": false,
+                "decorations": false,
                 "titleBarStyle": "Overlay",
                 "hiddenTitle": true,
                 "zoomHotkeysEnabled": false,

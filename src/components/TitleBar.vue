@@ -41,9 +41,6 @@ let unlisten: (() => void) | undefined
 
 onMounted(async () => {
 	isMac.value = navigator.userAgent.includes('Macintosh')
-	if (!isMac.value) {
-		await win.setDecorations(false)
-	}
 	await updateMaximized()
 	unlisten = await win.onResized(updateMaximized)
 })
