@@ -113,7 +113,7 @@ function toggleCandidate(id: string) {
 
 <template>
 	<div class="flex flex-1 flex-col gap-4">
-		<section class="grid gap-3">
+		<section v-if="platformCards.length > 0 || otherCards.length > 0" class="grid gap-3">
 			<SourceCard
 				v-for="card in platformCards"
 				:key="card.key"
