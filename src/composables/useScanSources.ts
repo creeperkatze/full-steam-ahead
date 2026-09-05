@@ -2,13 +2,10 @@ import { listen } from '@tauri-apps/api/event'
 import { ref } from 'vue'
 
 import { api } from '../helpers/api'
-import { importSourceName } from '../helpers/sourceNames'
-import type { ImportCandidate, ScanProgressEvent } from '../types'
+import { IMPORT_SOURCE_NAMES, importSourceName } from '../helpers/sourceNames'
+import type { ImportCandidate, ScannableSource, ScanProgressEvent } from '../types'
 import { useAppState } from './useAppState'
 import { useTaskStatus } from './useTaskStatus'
-
-export type ScannableSource =
-	'playnite' | 'epic' | 'amazon' | 'gog' | 'itch' | 'origin' | 'ubisoftConnect' | 'gamePass'
 
 export interface SourceState {
 	key: ScannableSource
@@ -17,16 +14,9 @@ export interface SourceState {
 	found: number
 }
 
-export const SCANNABLE_SOURCES: ScannableSource[] = [
-	'playnite',
-	'epic',
-	'amazon',
-	'gog',
-	'itch',
-	'origin',
-	'ubisoftConnect',
-	'gamePass',
-]
+export const SCANNABLE_SOURCES = Object.keys(IMPORT_SOURCE_NAMES).filter(
+	(key): key is ScannableSource => key !== 'manual',
+)
 
 const sourceStates = ref<SourceState[]>(makeSourceStates(SCANNABLE_SOURCES))
 let unlistenScan: (() => void) | undefined

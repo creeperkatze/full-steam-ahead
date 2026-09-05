@@ -16,6 +16,8 @@ export type ImportSource =
 	| 'ubisoftConnect'
 	| { other: string }
 
+export type ScannableSource = Exclude<Extract<ImportSource, string>, 'manual'>
+
 export interface ImportCandidate {
 	id: string
 	source: ImportSource

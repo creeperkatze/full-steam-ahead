@@ -1,6 +1,6 @@
 import type { ImportSource } from '../types'
 
-const IMPORT_SOURCE_NAMES: Record<Exclude<ImportSource, { other: string }>, string> = {
+export const IMPORT_SOURCE_NAMES: Record<Exclude<ImportSource, { other: string }>, string> = {
 	manual: 'Manual',
 	playnite: 'Playnite',
 	epic: 'Epic Games',
