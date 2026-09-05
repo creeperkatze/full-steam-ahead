@@ -18,11 +18,14 @@ pub fn available_sources() -> Vec<ImportSource> {
 #[instrument(skip_all)]
 pub fn load_settings() -> CommandResult<Settings> {
     let path = paths::settings_path();
-    if !path.exists() {
-        return Ok(Settings::default());
-    }
-    let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
-    Ok(serde_json::from_str(&raw).unwrap_or_default())
+    let mut settings: Settings = if !path.exists() {
+        Settings::default()
+    } else {
+        let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
+        serde_json::from_str(&raw).unwrap_or_default()
+    };
+    settings.ensure_source_defaults(&steam::sources::scannable_sources());
+    Ok(settings)
 }
 
 #[tauri::command]
@@ -45,10 +48,12 @@ pub fn export_settings(path: String, settings: Settings) -> CommandResult<()> {
 pub fn import_settings(path: String) -> CommandResult<Settings> {
     let path = Path::new(&path);
     let raw = fs::read_to_string(path).map_err(io_context(path))?;
-    let settings = serde_json::from_str(&raw).map_err(|source| AppError::Json {
+    let mut settings: Settings = serde_json::from_str(&raw).map_err(|source| AppError::Json {
         path: path.to_path_buf(),
         source,
     })?;
+    settings.ensure_source_defaults(&steam::sources::scannable_sources());
+    write_settings(&paths::settings_path(), &settings)?;
     Ok(settings)
 }
 
@@ -56,10 +61,10 @@ pub fn import_settings(path: String) -> CommandResult<Settings> {
 #[instrument]
 pub fn reset_settings() -> CommandResult<Settings> {
     let path = paths::settings_path();
-    if path.exists() {
-        fs::remove_file(&path).map_err(io_context(&path))?;
-    }
-    Ok(Settings::default())
+    let mut settings = Settings::default();
+    settings.ensure_source_defaults(&steam::sources::scannable_sources());
+    write_settings(&path, &settings)?;
+    Ok(settings)
 }
 
 fn write_settings(path: &Path, settings: &Settings) -> Result<(), AppError> {

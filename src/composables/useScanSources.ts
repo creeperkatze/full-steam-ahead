@@ -43,11 +43,9 @@ export function useScanSources() {
 	const task = useTaskStatus()
 
 	async function scan() {
-		if (!state.selectedUserId.value) return
+		if (!state.selectedUserId.value || !state.settingsReady.value) return
 
-		const enabledSources = SCANNABLE_SOURCES.filter(
-			(key) => state.settings.sources[key]?.enabled ?? true,
-		)
+		const enabledSources = SCANNABLE_SOURCES.filter((key) => state.settings.sources[key].enabled)
 		sourceStates.value = makeSourceStates(enabledSources)
 		state.scanPhase.value = 'scanning'
 

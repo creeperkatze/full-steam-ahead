@@ -123,14 +123,7 @@ function invalidatePreview() {
 }
 
 function applySettings(newSettings: Settings) {
-	Object.assign(settings, newSettings, {
-		sources: Object.fromEntries(
-			(availableSources.value as string[]).map((key) => [
-				key,
-				newSettings.sources[key] ?? { enabled: true, customPath: null },
-			]),
-		),
-	})
+	Object.assign(settings, newSettings)
 }
 
 async function loadSettingsFromDisk() {

@@ -25,9 +25,6 @@ const sourceRows = computed(() =>
 )
 
 function sourceSettingsFor(key: string) {
-	if (!state.settings.sources[key]) {
-		state.settings.sources[key] = { enabled: true, customPath: null }
-	}
 	return state.settings.sources[key]
 }
 

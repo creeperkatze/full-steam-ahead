@@ -60,16 +60,31 @@ impl Default for Settings {
 }
 
 impl Settings {
-    /// Returns the configured settings for an import source, or defaults if unset.
+    // Flatpak defaults to off since it lists every installed flatpak, not just games.
+    fn default_source_settings(source: &ImportSource) -> SourceSettings {
+        SourceSettings {
+            enabled: !matches!(source, ImportSource::Flatpak),
+            custom_path: None,
+        }
+    }
+
     pub fn source_settings(&self, source: &ImportSource) -> SourceSettings {
         source
             .settings_key()
             .and_then(|key| self.sources.get(key))
             .cloned()
-            .unwrap_or_else(|| SourceSettings {
-                enabled: !matches!(source, ImportSource::Flatpak),
-                ..Default::default()
-            })
+            .unwrap_or_else(|| Self::default_source_settings(source))
+    }
+
+    // Backfills missing entries so callers never have to guess a source's default.
+    pub fn ensure_source_defaults(&mut self, sources: &[ImportSource]) {
+        for source in sources {
+            if let Some(key) = source.settings_key() {
+                self.sources
+                    .entry(key.to_string())
+                    .or_insert_with(|| Self::default_source_settings(source));
+            }
+        }
     }
 }
 
@@ -100,5 +115,29 @@ mod tests {
             },
         );
         assert!(settings.source_settings(&ImportSource::Flatpak).enabled);
+    }
+
+    #[test]
+    fn ensure_source_defaults_fills_in_missing_entries() {
+        let mut settings = Settings::default();
+        settings.ensure_source_defaults(&[ImportSource::Gog, ImportSource::Flatpak]);
+
+        assert!(settings.sources["gog"].enabled);
+        assert!(!settings.sources["flatpak"].enabled);
+    }
+
+    #[test]
+    fn ensure_source_defaults_does_not_override_existing_entries() {
+        let mut settings = Settings::default();
+        settings.sources.insert(
+            "flatpak".to_string(),
+            SourceSettings {
+                enabled: true,
+                custom_path: None,
+            },
+        );
+        settings.ensure_source_defaults(&[ImportSource::Flatpak]);
+
+        assert!(settings.sources["flatpak"].enabled);
     }
 }
