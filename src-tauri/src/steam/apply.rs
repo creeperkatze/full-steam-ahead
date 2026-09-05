@@ -156,7 +156,9 @@ pub fn apply_plan_with_progress(
             total,
         });
         tracing::info!("Restarting Steam");
-        let _ = process::restart_steam(&install_path);
+        if let Err(error) = process::restart_steam(&install_path) {
+            tracing::warn!(%error, "Failed to restart Steam");
+        }
     }
 
     let applied_changes = request
