@@ -39,7 +39,7 @@ const allSelected = computed(
 <template>
 	<article class="overflow-hidden rounded-lg border border-border">
 		<label
-			class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5"
+			class="flex cursor-pointer items-center gap-3 border-b border-border bg-surface-4 px-3 py-2.5 transition-colors hover:bg-surface-hover"
 		>
 			<Checkbox :model-value="allSelected" @update:model-value="emit('set-all', $event)" />
 			<SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />

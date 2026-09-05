@@ -194,7 +194,7 @@ function fileName(path: string) {
 			<!-- Backup details -->
 			<details class="group overflow-hidden rounded-lg border border-border">
 				<summary
-					class="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-transparent bg-surface-4 px-3 py-2.5 text-sm group-open:border-border"
+					class="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-transparent bg-surface-4 px-3 py-2.5 text-sm transition-colors group-open:border-border hover:bg-surface-hover"
 				>
 					<span class="inline-flex items-center gap-2">
 						<FolderArchive :size="15" />
