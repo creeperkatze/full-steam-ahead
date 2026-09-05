@@ -11,6 +11,6 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",
     "core:window:allow-is-maximized",
-    "core:window:allow-set-decorations"
+    "core:window:allow-start-dragging"
   ]
 }
