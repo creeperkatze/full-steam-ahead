@@ -105,7 +105,7 @@ onMounted(async () => {
 				<button
 					v-else-if="latestVersion"
 					type="button"
-					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-warning transition-opacity hover:opacity-80"
+					class="flex min-w-0 cursor-pointer items-center gap-1 text-sm text-yellow-500 transition-colors hover:text-yellow-300"
 					@click="openUrl(RELEASES_URL)"
 				>
 					<Clock class="size-3.5 shrink-0" aria-hidden="true" />
@@ -118,7 +118,7 @@ onMounted(async () => {
 			<div class="flex items-center justify-end gap-3">
 				<button
 					type="button"
-					class="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-[#FF5E5B] transition-colors hover:text-[#ff8e8c]"
+					class="flex shrink-0 cursor-pointer items-center gap-1 text-sm text-[#FF5E5B] transition-colors hover:text-[#ff8e8c]"
 					@click="openUrl('https://ko-fi.com/creeperkatze')"
 				>
 					<KofiIcon class="size-4" aria-hidden="true" />
@@ -126,7 +126,7 @@ onMounted(async () => {
 				</button>
 				<button
 					type="button"
-					class="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-yellow-500 transition-colors hover:text-yellow-300"
+					class="flex shrink-0 cursor-pointer items-center gap-1 text-sm text-yellow-500 transition-colors hover:text-yellow-300"
 					@click="openUrl('https://github.com/creeperkatze/full-steam-ahead')"
 				>
 					<Star class="size-4 shrink-0" aria-hidden="true" />
