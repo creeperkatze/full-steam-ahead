@@ -148,7 +148,7 @@ pub struct ArtworkPlan {
     pub proposed: Vec<ArtworkAsset>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ArtworkMode {
     PreserveExisting,

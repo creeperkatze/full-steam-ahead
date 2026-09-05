@@ -27,7 +27,15 @@ pub fn scan_sources_with_progress(
 
         let source_settings = settings.source_settings(source);
         let custom_path = source_settings.custom_path.as_deref().map(Path::new);
-        let found = scan_single_source(source, user, custom_path);
+        let mut found = scan_single_source(source, user, custom_path);
+        for candidate in &mut found {
+            artwork::apply_source_preference(
+                &mut candidate.artwork,
+                &candidate.name,
+                settings.default_artwork_source,
+                &settings.steam_grid_db,
+            );
+        }
         let found_count = found.len();
         candidates.extend(found);
 

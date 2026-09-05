@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends { value: string; label: string }">
+<script setup lang="ts" generic="T extends { value: string; label: string; disabled?: boolean }">
 import { ChevronDown } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -27,6 +27,7 @@ const focusedIndex = ref(-1)
 const selectedOption = computed(() => props.options.find((o) => o.value === props.modelValue))
 
 function select(option: T) {
+	if (option.disabled) return
 	emit('update:modelValue', option.value)
 	close()
 }
@@ -117,14 +118,15 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 					v-for="(option, index) in options"
 					:key="option.value"
 					type="button"
-					class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-primary transition-colors"
+					:disabled="option.disabled"
+					class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
 					:class="
-						option.value === modelValue || focusedIndex === index
+						!option.disabled && (option.value === modelValue || focusedIndex === index)
 							? 'bg-surface-4'
 							: 'hover:bg-surface-4'
 					"
 					@click="select(option)"
-					@mouseenter="focusedIndex = index"
+					@mouseenter="!option.disabled && (focusedIndex = index)"
 				>
 					<slot name="leading" :option="option" />
 					<span class="min-w-0 flex-1 truncate">{{ option.label }}</span>

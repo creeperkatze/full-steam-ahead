@@ -12,7 +12,7 @@
 		"missing": "Missing",
 		"officialSteam": "Official Steam",
 		"localFile": "Local file",
-		"existingCustom": "Existing custom",
+		"existingCustom": "Existing",
 		"steamGridDb": "SteamGridDB",
 		"unknown": "Unknown"
 	},
@@ -198,6 +198,13 @@
 		},
 		"artwork": {
 			"title": "Artwork",
+			"defaultSource": {
+				"label": "Default artwork source",
+				"description": "Choose which source to automatically fetch artwork from when scanning for games.",
+				"none": "None",
+				"steam": "Steam",
+				"steamGridDb": "SteamGridDB"
+			},
 			"enableSteamGridDb": {
 				"label": "Enable SteamGridDB",
 				"description": "Adds a button to pick custom artwork from SteamGridDB when reviewing games."

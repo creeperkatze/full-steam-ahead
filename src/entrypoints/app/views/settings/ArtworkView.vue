@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import { ExternalLink, Eye, Images, KeyRound } from '@lucide/vue'
+import { ExternalLink, Eye, Image, Images, KeyRound } from '@lucide/vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import OptionSelect from '../../../../components/options/OptionSelect.vue'
 import OptionToggle from '../../../../components/options/OptionToggle.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import UiButton from '../../../../components/ui/Button.vue'
 import { useAppState } from '../../../../composables/useAppState'
+import type { DefaultArtworkSource } from '../../../../types'
 
 const state = useAppState()
 const { t } = useI18n()
+
+const defaultArtworkSourceOptions = computed(() => [
+	{ value: 'none', label: t('settings.artwork.defaultSource.none') },
+	{ value: 'steam', label: t('settings.artwork.defaultSource.steam') },
+	{
+		value: 'steamGridDb',
+		label: t('settings.artwork.defaultSource.steamGridDb'),
+		disabled: !state.settings.steamGridDb.enabled || !state.settings.steamGridDb.apiKey,
+	},
+])
 
 const apiKey = computed({
 	get: () => state.settings.steamGridDb.apiKey ?? '',
@@ -24,6 +36,14 @@ const apiKey = computed({
 	<section class="max-w-2xl">
 		<SectionHeader :title="t('settings.artwork.title')" />
 		<div class="flex flex-col gap-2">
+			<OptionSelect
+				:model-value="state.settings.defaultArtworkSource"
+				:icon="Image"
+				:label="t('settings.artwork.defaultSource.label')"
+				:description="t('settings.artwork.defaultSource.description')"
+				:options="defaultArtworkSourceOptions"
+				@update:model-value="state.settings.defaultArtworkSource = $event as DefaultArtworkSource"
+			/>
 			<OptionToggle
 				v-model="state.settings.steamGridDb.enabled"
 				:icon="Images"

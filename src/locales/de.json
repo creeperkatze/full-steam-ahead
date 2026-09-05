@@ -12,7 +12,7 @@
 		"missing": "Fehlt",
 		"officialSteam": "Offizielles Steam",
 		"localFile": "Lokale Datei",
-		"existingCustom": "Vorhandenes Custom",
+		"existingCustom": "Vorhanden",
 		"steamGridDb": "SteamGridDB",
 		"unknown": "Unbekannt"
 	},
@@ -198,6 +198,13 @@
 		},
 		"artwork": {
 			"title": "Artwork",
+			"defaultSource": {
+				"label": "Standard-Artwork-Quelle",
+				"description": "Wähle, von welcher Quelle beim Scannen nach Spielen automatisch Artwork geladen werden soll.",
+				"none": "Keine",
+				"steam": "Steam",
+				"steamGridDb": "SteamGridDB"
+			},
 			"enableSteamGridDb": {
 				"label": "SteamGridDB aktivieren",
 				"description": "Fügt eine Schaltfläche hinzu, um beim Überprüfen von Spielen benutzerdefiniertes Artwork von SteamGridDB auszuwählen."

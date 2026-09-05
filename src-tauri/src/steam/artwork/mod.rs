@@ -3,7 +3,10 @@ pub mod steamgriddb;
 
 use crate::{
     error::{io_context, AppResult},
-    models::{ArtworkAsset, ArtworkKind, ArtworkMode, ArtworkPlan, ArtworkSource, ImportCandidate},
+    models::{
+        ArtworkAsset, ArtworkKind, ArtworkMode, ArtworkPlan, ArtworkSource, DefaultArtworkSource,
+        ImportCandidate, SteamGridDbSettings,
+    },
 };
 use std::{
     fs,
@@ -12,6 +15,78 @@ use std::{
 
 pub struct ArtworkSkip {
     pub change_id: String,
+}
+
+const ARTWORK_KINDS: [ArtworkKind; 5] = [
+    ArtworkKind::Header,
+    ArtworkKind::Capsule,
+    ArtworkKind::Hero,
+    ArtworkKind::Logo,
+    ArtworkKind::Icon,
+];
+
+// Drops the auto-proposed Steam art if it wasn't wanted, and fetches SteamGridDB art if it was.
+pub fn apply_source_preference(
+    plan: &mut ArtworkPlan,
+    game_name: &str,
+    preference: DefaultArtworkSource,
+    steam_grid_db: &SteamGridDbSettings,
+) {
+    match preference {
+        DefaultArtworkSource::Steam => {}
+        DefaultArtworkSource::None => {
+            plan.proposed
+                .retain(|asset| asset.source != ArtworkSource::OfficialSteam);
+        }
+        DefaultArtworkSource::SteamGridDb => {
+            plan.proposed
+                .retain(|asset| asset.source != ArtworkSource::OfficialSteam);
+            if let (true, Some(api_key)) = (steam_grid_db.enabled, steam_grid_db.api_key.as_deref())
+            {
+                plan.proposed.extend(steamgriddb_assets(
+                    api_key,
+                    game_name,
+                    steam_grid_db.allow_nsfw,
+                    &plan.existing,
+                ));
+            }
+        }
+    }
+
+    if plan.proposed.is_empty() {
+        plan.mode = ArtworkMode::PreserveExisting;
+    }
+}
+
+fn steamgriddb_assets(
+    api_key: &str,
+    game_name: &str,
+    allow_nsfw: bool,
+    existing: &[ArtworkAsset],
+) -> Vec<ArtworkAsset> {
+    let Ok(games) = steamgriddb::search_games(api_key, game_name) else {
+        return Vec::new();
+    };
+    let Some(game) = games.into_iter().next() else {
+        return Vec::new();
+    };
+
+    ARTWORK_KINDS
+        .into_iter()
+        .filter_map(|kind| {
+            let image = steamgriddb::fetch_images(api_key, game.id, &kind, allow_nsfw)
+                .ok()?
+                .into_iter()
+                .next()?;
+            let will_replace_existing = existing.iter().any(|asset| asset.kind == kind);
+            Some(ArtworkAsset {
+                kind,
+                path_or_url: image.url,
+                source: ArtworkSource::SteamGridDb,
+                will_replace_existing,
+            })
+        })
+        .collect()
 }
 
 pub fn steam_preferred_plan(
@@ -628,5 +703,90 @@ mod tests {
         ]);
         let selected = selected_artwork_assets(&candidate);
         assert_eq!(selected.len(), 1);
+    }
+
+    // apply_source_preference
+
+    fn make_plan(proposed: Vec<ArtworkAsset>) -> ArtworkPlan {
+        ArtworkPlan {
+            mode: ArtworkMode::OfficialSteamPreferred,
+            existing: vec![],
+            proposed,
+        }
+    }
+
+    fn disabled_steam_grid_db() -> SteamGridDbSettings {
+        SteamGridDbSettings {
+            enabled: false,
+            api_key: None,
+            allow_nsfw: false,
+        }
+    }
+
+    #[test]
+    fn preference_none_drops_official_steam_asset() {
+        let mut plan = make_plan(vec![make_asset(
+            ArtworkKind::Header,
+            ArtworkSource::OfficialSteam,
+        )]);
+        apply_source_preference(
+            &mut plan,
+            "Game",
+            DefaultArtworkSource::None,
+            &disabled_steam_grid_db(),
+        );
+        assert!(plan.proposed.is_empty());
+        assert_eq!(plan.mode, ArtworkMode::PreserveExisting);
+    }
+
+    #[test]
+    fn preference_steam_keeps_official_steam_asset() {
+        let mut plan = make_plan(vec![make_asset(
+            ArtworkKind::Header,
+            ArtworkSource::OfficialSteam,
+        )]);
+        apply_source_preference(
+            &mut plan,
+            "Game",
+            DefaultArtworkSource::Steam,
+            &disabled_steam_grid_db(),
+        );
+        assert_eq!(plan.proposed.len(), 1);
+        assert_eq!(plan.proposed[0].source, ArtworkSource::OfficialSteam);
+    }
+
+    #[test]
+    fn preference_steam_grid_db_drops_official_steam_without_api_key() {
+        let mut plan = make_plan(vec![make_asset(
+            ArtworkKind::Header,
+            ArtworkSource::OfficialSteam,
+        )]);
+        apply_source_preference(
+            &mut plan,
+            "Game",
+            DefaultArtworkSource::SteamGridDb,
+            &disabled_steam_grid_db(),
+        );
+        assert!(plan.proposed.is_empty());
+    }
+
+    #[test]
+    fn preference_steam_grid_db_skips_fetch_when_disabled_even_with_api_key() {
+        let mut plan = make_plan(vec![make_asset(
+            ArtworkKind::Header,
+            ArtworkSource::OfficialSteam,
+        )]);
+        let steam_grid_db = SteamGridDbSettings {
+            enabled: false,
+            api_key: Some("key".to_string()),
+            allow_nsfw: false,
+        };
+        apply_source_preference(
+            &mut plan,
+            "Game",
+            DefaultArtworkSource::SteamGridDb,
+            &steam_grid_db,
+        );
+        assert!(plan.proposed.is_empty());
     }
 }

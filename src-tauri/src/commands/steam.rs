@@ -90,10 +90,16 @@ pub fn create_preview_plan(
 #[instrument(fields(name = ?request.display_name, exe = %request.executable_path.display()))]
 pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<ImportCandidate> {
     let user = steam::detect::find_user(&request.user_steam_id)?;
-    Ok(crate::importers::manual::candidate_with_grid_path(
-        request,
-        &user.grid_path,
-    ))
+    let settings = super::load_settings().unwrap_or_default();
+    let mut candidate =
+        crate::importers::manual::candidate_with_grid_path(request, &user.grid_path);
+    steam::artwork::apply_source_preference(
+        &mut candidate.artwork,
+        &candidate.name,
+        settings.default_artwork_source,
+        &settings.steam_grid_db,
+    );
+    Ok(candidate)
 }
 
 #[tauri::command]
