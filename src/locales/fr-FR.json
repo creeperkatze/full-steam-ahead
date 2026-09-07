@@ -9,7 +9,7 @@
 		"select": ""
 	},
 	"artworkSource": {
-		"missing": "",
+		"missing": "Manquant",
 		"officialSteam": "",
 		"localFile": "",
 		"existingCustom": "",
