@@ -51,7 +51,6 @@ pub(super) fn login_user_for_userdata_id<'a>(
 mod tests {
     use super::*;
 
-
     #[test]
     fn parse_vdf_single_user() {
         let raw = r#"
