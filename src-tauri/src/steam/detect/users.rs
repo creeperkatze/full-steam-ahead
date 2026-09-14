@@ -4,6 +4,7 @@ use std::{collections::HashMap, fs, path::Path};
 pub(super) const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 
 #[derive(Debug, Deserialize)]
+#[serde(transparent)]
 pub(super) struct LoginUsers {
     pub(super) users: HashMap<String, LoginUser>,
 }
@@ -32,51 +33,7 @@ impl LoginUser {
 pub(super) fn read_login_users(install_path: &Path) -> Option<LoginUsers> {
     let path = install_path.join("config").join("loginusers.vdf");
     let raw = fs::read_to_string(path).ok()?;
-    parse_login_users_vdf(&raw)
-}
-
-fn parse_login_users_vdf(raw: &str) -> Option<LoginUsers> {
-    let mut users = HashMap::new();
-    let mut current_id: Option<String> = None;
-    let mut account_name: Option<String> = None;
-    let mut persona_name: Option<String> = None;
-
-    for line in raw.lines() {
-        let tokens = quoted_tokens(line);
-        match tokens.as_slice() {
-            [id] if id.chars().all(|c| c.is_ascii_digit()) => {
-                if let Some(previous) = current_id.take() {
-                    users.insert(
-                        previous,
-                        LoginUser {
-                            account_name: account_name.take(),
-                            persona_name: persona_name.take(),
-                        },
-                    );
-                }
-                current_id = Some(id.clone());
-            }
-            [key, value] if key == "AccountName" => {
-                account_name = Some(value.clone());
-            }
-            [key, value] if key == "PersonaName" => {
-                persona_name = Some(value.clone());
-            }
-            _ => {}
-        }
-    }
-
-    if let Some(previous) = current_id {
-        users.insert(
-            previous,
-            LoginUser {
-                account_name,
-                persona_name,
-            },
-        );
-    }
-
-    Some(LoginUsers { users })
+    keyvalues_serde::from_str(&raw).ok()
 }
 
 pub(super) fn login_user_for_userdata_id<'a>(
@@ -90,53 +47,10 @@ pub(super) fn login_user_for_userdata_id<'a>(
     })
 }
 
-fn quoted_tokens(line: &str) -> Vec<String> {
-    line.split('"')
-        .enumerate()
-        .filter(|&(index, _part)| index % 2 == 1)
-        .map(|(_index, part)| part.to_string())
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // quoted_tokens
-
-    #[test]
-    fn quoted_tokens_empty_line() {
-        assert!(quoted_tokens("").is_empty());
-    }
-
-    #[test]
-    fn quoted_tokens_single_value() {
-        assert_eq!(
-            quoted_tokens("\t\"76561198000000001\""),
-            vec!["76561198000000001"]
-        );
-    }
-
-    #[test]
-    fn quoted_tokens_key_value_pair() {
-        assert_eq!(
-            quoted_tokens("\t\t\"AccountName\"\t\t\"bob\""),
-            vec!["AccountName", "bob"]
-        );
-    }
-
-    #[test]
-    fn quoted_tokens_ignores_unquoted_content() {
-        assert_eq!(quoted_tokens("{}"), Vec::<String>::new());
-    }
-
-    // parse_login_users_vdf
-
-    #[test]
-    fn parse_vdf_empty_input_returns_empty_map() {
-        let result = parse_login_users_vdf("").unwrap();
-        assert!(result.users.is_empty());
-    }
 
     #[test]
     fn parse_vdf_single_user() {
@@ -150,7 +64,7 @@ mod tests {
     }
 }
 "#;
-        let result = parse_login_users_vdf(raw).unwrap();
+        let result: LoginUsers = keyvalues_serde::from_str(raw).unwrap();
         assert_eq!(result.users.len(), 1);
         let user = &result.users["123456"];
         assert_eq!(user.account_name.as_deref(), Some("bob"));
@@ -174,7 +88,7 @@ mod tests {
     }
 }
 "#;
-        let result = parse_login_users_vdf(raw).unwrap();
+        let result: LoginUsers = keyvalues_serde::from_str(raw).unwrap();
         assert_eq!(result.users.len(), 2);
         assert!(result.users.contains_key("111"));
         assert!(result.users.contains_key("222"));
@@ -182,14 +96,20 @@ mod tests {
 
     #[test]
     fn parse_vdf_missing_persona_name() {
-        let raw = "\"99\"\n\"AccountName\"\t\"alice\"\n";
-        let result = parse_login_users_vdf(raw).unwrap();
+        let raw = r#"
+"users"
+{
+    "99"
+    {
+        "AccountName"   "alice"
+    }
+}
+"#;
+        let result: LoginUsers = keyvalues_serde::from_str(raw).unwrap();
         let user = &result.users["99"];
         assert_eq!(user.account_name.as_deref(), Some("alice"));
         assert!(user.persona_name.is_none());
     }
-
-    // LoginUser::display_name
 
     #[test]
     fn display_name_prefers_persona_name() {
@@ -226,8 +146,6 @@ mod tests {
         };
         assert!(user.display_name().is_none());
     }
-
-    // login_user_for_userdata_id
 
     #[test]
     fn lookup_by_direct_userdata_id() {
