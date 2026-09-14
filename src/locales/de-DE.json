@@ -122,8 +122,23 @@
 	"updateModal": {
 		"title": "Neue Version verfügbar",
 		"description": "Version {latest} ist verfügbar. Du nutzt derzeit {current}.",
+		"downloading": "",
+		"readyTitle": "",
+		"readyDescription": "",
+		"error": "",
 		"later": "Später",
-		"download": "Release ansehen"
+		"update": "",
+		"retry": "",
+		"restartNow": ""
+	},
+	"flatpakPermissionModal": {
+		"title": "",
+		"description": "",
+		"granted": "",
+		"error": "",
+		"later": "",
+		"grant": "",
+		"close": ""
 	},
 	"steamGridDbBrowser": {
 		"searchPlaceholder": "SteamGridDB durchsuchen…",
@@ -221,7 +236,14 @@
 			}
 		},
 		"sources": {
-			"title": "Quellen"
+			"title": "Quellen",
+			"launcherMode": {
+				"label": "",
+				"description": "",
+				"always": "",
+				"whenRequired": "",
+				"whenNoExecutable": ""
+			}
 		},
 		"data": {
 			"title": "Daten",

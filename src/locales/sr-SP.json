@@ -122,8 +122,23 @@
 	"updateModal": {
 		"title": "",
 		"description": "",
+		"downloading": "",
+		"readyTitle": "",
+		"readyDescription": "",
+		"error": "",
 		"later": "",
-		"download": ""
+		"update": "",
+		"retry": "",
+		"restartNow": ""
+	},
+	"flatpakPermissionModal": {
+		"title": "",
+		"description": "",
+		"granted": "",
+		"error": "",
+		"later": "",
+		"grant": "",
+		"close": ""
 	},
 	"steamGridDbBrowser": {
 		"searchPlaceholder": "",
@@ -221,7 +236,14 @@
 			}
 		},
 		"sources": {
-			"title": ""
+			"title": "",
+			"launcherMode": {
+				"label": "",
+				"description": "",
+				"always": "",
+				"whenRequired": "",
+				"whenNoExecutable": ""
+			}
 		},
 		"data": {
 			"title": "",
