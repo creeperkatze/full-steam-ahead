@@ -11,6 +11,8 @@ pub mod amazon;
 #[cfg(windows)]
 pub mod gamepass;
 #[cfg(windows)]
+mod icons;
+#[cfg(windows)]
 pub mod playnite;
 
 // Unix-only launchers

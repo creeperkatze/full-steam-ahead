@@ -80,7 +80,13 @@ fn candidate_changes(
     let existing_shortcut = existing_shortcuts
         .iter()
         .find(|s| s.app_name.eq_ignore_ascii_case(&candidate.name));
-    let shortcut_unchanged = existing_shortcut.is_some_and(|s| shortcut_is_unchanged(s, candidate));
+    let shortcut_unchanged = existing_shortcut.is_some_and(|s| {
+        shortcut_is_unchanged(s, candidate)
+            && s.icon
+                == super::sources::planned_shortcut_icon(candidate, grid_path)
+                    .display()
+                    .to_string()
+    });
     if !shortcut_unchanged {
         let shortcut_exists = existing_shortcut.is_some();
         changes.push(PlannedChange {
@@ -233,6 +239,49 @@ mod tests {
         );
         let shortcut = make_shortcut_matching(&candidate);
         assert!(shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn preview_reports_icon_only_shortcut_change() {
+        let mut candidate = make_candidate(
+            "explorer.exe",
+            "C:\\Windows",
+            Some("shell:AppsFolder\\Game!Game"),
+            vec![],
+        );
+        candidate
+            .artwork
+            .proposed
+            .push(crate::models::ArtworkAsset {
+                kind: crate::models::ArtworkKind::Icon,
+                path_or_url: "local.png".to_string(),
+                source: ArtworkSource::LocalFile,
+                will_replace_existing: false,
+            });
+        let mut existing = make_shortcut_matching(&candidate);
+        existing.icon = "explorer.exe".to_string();
+        let grid = Path::new("grid");
+        let preview = |existing: &ShortcutEntry| {
+            candidate_changes(
+                &candidate,
+                Path::new("shortcuts.vdf"),
+                Path::new("collections"),
+                grid,
+                &Settings::default(),
+                std::slice::from_ref(existing),
+                &HashMap::new(),
+            )
+            .0
+        };
+        assert!(preview(&existing)
+            .iter()
+            .any(|change| matches!(change.kind, ChangeKind::UpdateShortcut)));
+        existing.icon = super::super::sources::planned_shortcut_icon(&candidate, grid)
+            .display()
+            .to_string();
+        assert!(!preview(&existing)
+            .iter()
+            .any(|change| matches!(change.kind, ChangeKind::UpdateShortcut)));
     }
 
     #[test]

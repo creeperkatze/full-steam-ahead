@@ -152,27 +152,43 @@ pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) ->
 }
 
 fn shortcut_icon(candidate: &ImportCandidate, grid_path: &Path) -> String {
-    let fallback = candidate.executable_path.display().to_string();
-    let Some(asset) = artwork::selected_artwork_assets(candidate)
+    let icon_path = planned_shortcut_icon(candidate, grid_path);
+    if icon_path.is_file() {
+        icon_path.display().to_string()
+    } else {
+        candidate.executable_path.display().to_string()
+    }
+}
+
+pub(super) fn planned_shortcut_icon(
+    candidate: &ImportCandidate,
+    grid_path: &Path,
+) -> std::path::PathBuf {
+    let fallback = candidate.executable_path.clone();
+    let asset = artwork::selected_artwork_assets(candidate)
         .into_iter()
         .find(|asset| asset.kind == ArtworkKind::Icon)
-    else {
+        .or_else(|| {
+            candidate
+                .artwork
+                .existing
+                .iter()
+                .find(|asset| asset.kind == ArtworkKind::Icon)
+                .cloned()
+        });
+    let Some(asset) = asset else {
         return fallback;
     };
 
-    let icon_path = match asset.source {
-        ArtworkSource::ExistingCustom | ArtworkSource::Missing => {
-            Path::new(&asset.path_or_url).to_path_buf()
-        }
+    match asset.source {
+        ArtworkSource::Missing => fallback,
+        ArtworkSource::ExistingCustom => Path::new(&asset.path_or_url).to_path_buf(),
         ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb | ArtworkSource::LocalFile => {
-            let app_id = non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
+            let app_id = non_steam_app_id(
+                &quote_path(candidate.effective_executable()),
+                &candidate.name,
+            );
             artwork::target_path(grid_path, app_id, &ArtworkKind::Icon, &asset.path_or_url)
         }
-    };
-
-    if icon_path.exists() {
-        icon_path.display().to_string()
-    } else {
-        fallback
     }
 }

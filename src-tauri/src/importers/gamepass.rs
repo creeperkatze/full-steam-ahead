@@ -5,7 +5,10 @@ use crate::{
     process,
 };
 use serde::Deserialize;
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     let output = process::command_output_no_window(Command::new("powershell").args([
@@ -30,7 +33,8 @@ pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<Impo
         .into_iter()
         .filter_map(|app| {
             let uri = app.launch_uri()?;
-            Some(launcher_candidate(
+            let icon = super::icons::package_icon(&app.install_location, &app.icon);
+            let mut candidate = launcher_candidate(
                 user,
                 ImportSource::GamePass,
                 "gamepass",
@@ -38,7 +42,11 @@ pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<Impo
                 explorer.clone(),
                 uri,
                 vec!["Game Pass".to_string()],
-            ))
+            );
+            if let Some(icon) = icon {
+                crate::steam::artwork::prefer_local_icon(&mut candidate.artwork, &icon);
+            }
+            Some(candidate)
         })
         .collect())
 }
@@ -49,6 +57,10 @@ struct AppxInfo {
     is_game: bool,
     display_name: String,
     family_name: String,
+    #[serde(default)]
+    install_location: PathBuf,
+    #[serde(default)]
+    icon: String,
 }
 
 impl AppxInfo {
@@ -96,11 +108,15 @@ ForEach-Object {
             if ([string]::IsNullOrWhiteSpace($displayName) -or $displayName -like 'ms-resource:*') {
                 $displayName = $manifest.Package.Properties.DisplayName
             }
+            $icon = $application.VisualElements.Square44x44Logo
+            if (-not $icon) { $icon = $application.VisualElements.Square150x150Logo }
             [PSCustomObject]@{
                 app_id = [string]$application.Id
                 is_game = $application.Id -ceq 'Game' -or $gameIds -ccontains $application.Id
                 display_name = [string]$displayName
                 family_name = $package.PackageFamilyName
+                install_location = $package.InstallLocation
+                icon = [string]$icon
             }
         }
     } catch {}
@@ -118,7 +134,40 @@ mod tests {
             is_game,
             display_name: display_name.to_string(),
             family_name: "Publisher.Game_abc".to_string(),
+            install_location: PathBuf::new(),
+            icon: String::new(),
         }
+    }
+
+    #[test]
+    fn manifest_scan_exports_game_logo_not_helper_logo() {
+        let script = format!(
+            r#"
+function Get-AppxPackage {{
+    [PSCustomObject]@{{ IsFramework = $false; PackageFamilyName = 'Fixture_abc'; InstallLocation = 'C:\Games\Fixture' }}
+}}
+function Get-AppxPackageManifest {{
+    [xml]'<Package><Properties><DisplayName>Fixture</DisplayName></Properties><Applications><Application Id="Helper"><VisualElements Square44x44Logo="helper.png" /></Application><Application Id="Game"><VisualElements Square44x44Logo="Images\game.png" /></Application></Applications></Package>'
+}}
+{GAME_PASS_SCRIPT}
+"#
+        );
+        let output = process::command_output_no_window(Command::new("powershell").args([
+            "/NoProfile",
+            "/Command",
+            &script,
+        ]))
+        .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let apps: Vec<AppxInfo> = serde_json::from_slice(&output.stdout).unwrap();
+        let app = apps.iter().find(|app| app.launch_uri().is_some()).unwrap();
+        assert_eq!(app.icon, "Images\\game.png");
+        assert_eq!(app.install_location, Path::new("C:\\Games\\Fixture"));
+        assert_eq!(app.app_id, "Game");
     }
 
     #[test]
@@ -181,6 +230,29 @@ mod tests {
         assert_eq!(apps.len(), 1);
         assert_eq!(apps[0].app_id, "codShip");
         assert!(apps[0].launch_uri().is_some());
+    }
+
+    #[test]
+    fn exports_each_custom_application_icon_with_size_fallback() {
+        let apps = scan_fixtures(
+            r#"
+$fixtures = @($fixtures[0])
+$fixtures[0].Applications = '<Application Id="Helper"><VisualElements Square44x44Logo="helper.png" /></Application><Application Id="codShip"><VisualElements Square44x44Logo="Images\cod.png" Square150x150Logo="wrong.png" /></Application><Application Id="SecondGame"><VisualElements Square150x150Logo="Images\second.png" /></Application>'
+$fixtures[0].Config = '<Game><ExecutableList><Executable Id="codShip" /><Executable Id="SecondGame" /></ExecutableList></Game>'
+"#,
+        );
+        let games: Vec<_> = apps
+            .iter()
+            .filter(|app| app.launch_uri().is_some())
+            .collect();
+        assert_eq!(games.len(), 2);
+        assert_eq!(games[0].app_id, "codShip");
+        assert_eq!(games[0].icon, "Images\\cod.png");
+        assert_eq!(games[1].app_id, "SecondGame");
+        assert_eq!(games[1].icon, "Images\\second.png");
+        assert!(games
+            .iter()
+            .all(|app| app.install_location == Path::new("C:\\Fixture\\Gdk")));
     }
 
     #[test]
