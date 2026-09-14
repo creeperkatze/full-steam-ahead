@@ -8,9 +8,8 @@ use nom::{
         complete::{tag, take_until, take_while},
         streaming::take,
     },
-    character::is_alphanumeric,
     multi::many0,
-    IResult,
+    AsChar, IResult, Parser,
 };
 use std::path::{Path, PathBuf};
 
@@ -80,7 +79,7 @@ struct GameEntry {
 }
 
 fn parse_db(content: &[u8]) -> IResult<&[u8], Vec<GameEntry>> {
-    many0(parse_game)(content)
+    many0(parse_game).parse(content)
 }
 
 fn parse_game(i: &[u8]) -> IResult<&[u8], GameEntry> {
@@ -100,7 +99,7 @@ fn parse_game(i: &[u8]) -> IResult<&[u8], GameEntry> {
     let (i, _) = take_until("InstallSizeGroup")(i)?;
     let (i, _) = take_until("Name")(i)?;
     let (i, _) = take(4usize)(i)?;
-    let (i, _) = take_while(|b| !is_alphanumeric(b))(i)?;
+    let (i, _) = take_while(|b: u8| !b.is_alphanum())(i)?;
     let (i, name_bytes) = take_while(|b| b != 0)(i)?;
     let name = String::from_utf8_lossy(name_bytes).to_string();
 
