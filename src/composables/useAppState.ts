@@ -110,7 +110,9 @@ const selectedUser = computed<SteamUser | undefined>(() =>
 )
 
 const selectedCandidates = computed(() =>
-	candidates.value.filter((candidate) => selectedCandidateIds.value.has(candidate.id)),
+	candidates.value.filter(
+		(candidate) => candidate.existingAppId == null && selectedCandidateIds.value.has(candidate.id),
+	),
 )
 
 function usesUrlLaunch(candidate: ImportCandidate): boolean {

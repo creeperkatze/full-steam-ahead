@@ -26,8 +26,6 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
         (Vec::new(), false)
     };
 
-    collections.retain(|(key, _)| !is_managed_key(key));
-
     let mut grouped: BTreeMap<String, Vec<u32>> = BTreeMap::new();
     for candidate in candidates {
         grouped
@@ -39,11 +37,17 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
             ));
     }
 
-    collections.extend(
-        grouped
-            .into_iter()
-            .map(|(source, app_ids)| managed_collection_entry(&source, &app_ids)),
-    );
+    for (source, app_ids) in grouped {
+        let key = format!("user-collections.{}", managed_collection_id(&source));
+        if let Some((_, value)) = collections
+            .iter_mut()
+            .find(|(existing, _)| existing == &key)
+        {
+            extend_collection(value, &app_ids)?;
+        } else {
+            collections.push(managed_collection_entry(&source, &app_ids));
+        }
+    }
 
     let mut serialized = serde_json::to_string(&collections).map_err(|source| AppError::Json {
         path: path.to_path_buf(),
@@ -54,6 +58,39 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
     }
 
     fs::write(path, serialized).map_err(io_context(path))
+}
+
+fn extend_collection(entry: &mut Value, app_ids: &[u32]) -> AppResult<()> {
+    let invalid =
+        || AppError::Message("Unsupported existing Steam collection; not overwriting it.".into());
+    let raw = entry
+        .get("value")
+        .and_then(Value::as_str)
+        .ok_or_else(invalid)?;
+    let mut collection: Value = serde_json::from_str(raw).map_err(|_| invalid())?;
+    let removed = collection
+        .get("removed")
+        .and_then(Value::as_array)
+        .ok_or_else(invalid)?
+        .clone();
+    let added = collection
+        .get_mut("added")
+        .and_then(Value::as_array_mut)
+        .ok_or_else(invalid)?;
+    let mut changed = false;
+    for app_id in app_ids {
+        let id = json!(app_id);
+        if !added.contains(&id) && !removed.contains(&id) {
+            added.push(id);
+            changed = true;
+        }
+    }
+    if changed {
+        // Keep the user's collection name, removals, and any unknown metadata.
+        entry["value"] = Value::String(collection.to_string());
+        entry["timestamp"] = json!(current_timestamp());
+    }
+    Ok(())
 }
 
 fn parse_cloud_collections(raw: &str, path: &Path) -> AppResult<(Vec<(String, Value)>, bool)> {
@@ -183,6 +220,65 @@ struct SteamCollectionValue {
 mod tests {
     use super::*;
     use std::path::Path;
+
+    #[test]
+    fn adding_games_preserves_custom_collection_fields_and_removals() {
+        let mut entry = json!({"timestamp": 1, "other": "keep", "value": json!({
+            "id": "fsa-ubisoft-connect", "name": "Couch games", "added": [123],
+            "removed": [456], "custom": {"keep": true}
+        }).to_string()});
+        extend_collection(&mut entry, &[123, 456, 789]).unwrap();
+        let collection: Value = serde_json::from_str(entry["value"].as_str().unwrap()).unwrap();
+        assert_eq!(collection["name"], "Couch games");
+        assert_eq!(collection["added"], json!([123, 789]));
+        assert_eq!(collection["removed"], json!([456]));
+        assert_eq!(collection["custom"], json!({"keep": true}));
+        assert_eq!(entry["other"], "keep");
+        let before = entry.clone();
+        extend_collection(&mut entry, &[123, 456, 789]).unwrap();
+        assert_eq!(entry, before);
+    }
+
+    #[test]
+    fn malformed_existing_collection_is_not_replaced() {
+        let mut entry = json!({"value": "unexpected", "timestamp": 1});
+        let before = entry.clone();
+        assert!(extend_collection(&mut entry, &[123]).is_err());
+        assert_eq!(entry, before);
+    }
+
+    #[test]
+    fn importing_one_source_keeps_other_collections_and_existing_members() {
+        let path = std::env::temp_dir().join(format!(
+            "fsa-collection-{}-{}.json",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let existing = vec![
+            managed_collection_entry("Ubisoft Connect", &[123]),
+            managed_collection_entry("Epic Games", &[456]),
+        ];
+        fs::write(
+            &path,
+            format!("\u{1}{}", serde_json::to_string(&existing).unwrap()),
+        )
+        .unwrap();
+        let candidate = super::super::matching::tests::avatar_candidate();
+        update_modern_collections(&path, &[candidate]).unwrap();
+        let raw = fs::read_to_string(&path).unwrap();
+        fs::remove_file(&path).unwrap();
+        let (updated, prefix) = parse_cloud_collections(&raw, &path).unwrap();
+        assert!(prefix);
+        assert_eq!(updated.len(), 2);
+        assert_eq!(updated[1], existing[1]);
+        let collection: Value =
+            serde_json::from_str(updated[0].1["value"].as_str().unwrap()).unwrap();
+        assert_eq!(collection["added"][0], 123);
+        assert_eq!(collection["added"].as_array().unwrap().len(), 2);
+    }
 
     // managed_collection_id
 

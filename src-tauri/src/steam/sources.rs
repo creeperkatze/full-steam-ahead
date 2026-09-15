@@ -53,6 +53,8 @@ pub fn scan_sources_with_progress(
         });
     }
 
+    let existing = super::shortcuts::read_shortcuts(&user.shortcuts_path)?;
+    super::matching::mark_existing(&mut candidates, &existing);
     Ok(candidates)
 }
 

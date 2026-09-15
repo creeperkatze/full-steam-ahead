@@ -90,6 +90,7 @@ async function addManual() {
 }
 
 function toggleCandidate(id: string) {
+	if (state.candidates.value.find((candidate) => candidate.id === id)?.existingAppId != null) return
 	const next = new Set(state.selectedCandidateIds.value)
 	if (next.has(id)) {
 		next.delete(id)

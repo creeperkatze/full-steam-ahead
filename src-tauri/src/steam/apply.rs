@@ -3,7 +3,9 @@ use crate::steam::proton;
 use crate::{
     backups,
     error::{io_context, AppError, AppResult},
-    models::{ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep},
+    models::{
+        ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep, ImportCandidate, ShortcutEntry,
+    },
     process,
     steam::{artwork, collections, detect, shortcuts, sources},
 };
@@ -16,7 +18,7 @@ use std::{
 
 pub fn apply_plan_with_progress(
     on_progress: impl Fn(ApplyProgressEvent),
-    request: ApplyRequest,
+    mut request: ApplyRequest,
 ) -> AppResult<ApplyResult> {
     tracing::info!(
         candidates = request.candidates.len(),
@@ -28,7 +30,7 @@ pub fn apply_plan_with_progress(
     let (user, install_path) = detect::find_user_with_install(&request.plan.user_steam_id)?;
 
     let artwork_steps = request.candidates.len().max(1);
-    let total = usize::from(request.options.stop_steam)
+    let mut total = usize::from(request.options.stop_steam)
         + 1 // backups
         + artwork_steps
         + 1 // shortcuts
@@ -46,6 +48,28 @@ pub fn apply_plan_with_progress(
         tracing::info!("Stopping Steam");
         stop_steam();
     }
+
+    // Re-read after Steam stops: the preview may predate a rename or another import.
+    let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
+    let skipped_candidates =
+        retain_new_candidates(&mut request.candidates, &existing, &user.grid_path);
+    total = total - artwork_steps + request.candidates.len().max(1);
+    request.plan.changes.retain(|change| {
+        !skipped_candidates.iter().any(|candidate| {
+            !request
+                .candidates
+                .iter()
+                .any(|kept| kept.id == candidate.id)
+                && (change.id == format!("shortcut:{}", candidate.id)
+                    || change.id.starts_with(&format!("artwork:{}:", candidate.id))
+                    || change.id
+                        == format!(
+                            "collection:{}:{}",
+                            candidate.source.collection_name(),
+                            candidate.id
+                        ))
+        })
+    });
 
     current += 1;
     on_progress(ApplyProgressEvent {
@@ -109,12 +133,7 @@ pub fn apply_plan_with_progress(
         current,
         total,
     });
-    let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
-    let new_candidates = request
-        .candidates
-        .iter()
-        .filter(|candidate| candidate.existing_app_id.is_none())
-        .collect::<Vec<_>>();
+    let new_candidates = request.candidates.iter().collect::<Vec<_>>();
     let mut additions = new_candidates
         .iter()
         .map(|candidate| sources::shortcut_from_candidate(candidate, &user.grid_path))
@@ -135,8 +154,10 @@ pub fn apply_plan_with_progress(
         proton::setup_compat_tool_mapping(&install_path, &proton_app_ids)?;
     }
 
-    shortcuts::append_missing(&mut existing, additions);
-    shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
+    if !additions.is_empty() {
+        shortcuts::append_missing(&mut existing, additions);
+        shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
+    }
 
     current += 1;
     on_progress(ApplyProgressEvent {
@@ -144,7 +165,7 @@ pub fn apply_plan_with_progress(
         current,
         total,
     });
-    if request.options.create_collections {
+    if request.options.create_collections && !request.candidates.is_empty() {
         collections::update_modern_collections(&user.collections_path, &request.candidates)?;
     }
 
@@ -174,6 +195,24 @@ pub fn apply_plan_with_progress(
     })
 }
 
+fn retain_new_candidates(
+    candidates: &mut Vec<ImportCandidate>,
+    existing: &[ShortcutEntry],
+    grid_path: &std::path::Path,
+) -> Vec<ImportCandidate> {
+    let mut known = existing.to_vec();
+    let mut skipped = Vec::new();
+    candidates.retain(|candidate| {
+        if super::matching::existing_shortcut(candidate, &known).is_some() {
+            skipped.push(candidate.clone());
+            return false;
+        }
+        known.push(sources::shortcut_from_candidate(candidate, grid_path));
+        true
+    });
+    skipped
+}
+
 fn stop_steam() {
     if !is_steam_running() {
         return;
@@ -198,4 +237,48 @@ fn stop_steam() {
 
 fn is_steam_running() -> bool {
     process::is_process_running(process::steam_process_name())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::matching::tests::avatar_candidate;
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn apply_rechecks_stale_candidates_before_any_artwork_writes() {
+        let candidate = avatar_candidate();
+        assert!(candidate.existing_app_id.is_none());
+        let existing = vec![ShortcutEntry {
+            app_id: 123,
+            app_name: "Avatar: Frontiers of Pandora".into(),
+            launch_options: "uplay://launch/4740/0 -custom".into(),
+            icon: "custom-avatar.ico".into(),
+            ..Default::default()
+        }];
+        let before = shortcuts::serialize_shortcuts(&existing);
+        let mut candidates = vec![candidate];
+        let skipped = retain_new_candidates(&mut candidates, &existing, Path::new("grid"));
+        assert_eq!(skipped.len(), 1);
+        assert!(candidates.is_empty());
+        assert_eq!(shortcuts::serialize_shortcuts(&existing), before);
+    }
+
+    #[test]
+    fn new_imports_are_kept_and_duplicate_batch_entries_are_skipped() {
+        let candidate = avatar_candidate();
+        let mut candidates = vec![candidate.clone(), candidate];
+        let skipped = retain_new_candidates(&mut candidates, &[], Path::new("grid"));
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(skipped.len(), 1);
+    }
+
+    #[test]
+    fn stale_existing_id_does_not_hide_a_deleted_shortcut() {
+        let mut candidate = avatar_candidate();
+        candidate.existing_app_id = Some(123);
+        let mut candidates = vec![candidate];
+        assert!(retain_new_candidates(&mut candidates, &[], Path::new("grid")).is_empty());
+        assert_eq!(candidates.len(), 1);
+    }
 }

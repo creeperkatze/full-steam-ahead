@@ -33,11 +33,16 @@ defineSlots<{
 }>()
 
 const selectedCount = computed(
-	() => props.candidates.filter((c) => props.selectedIds.has(c.id)).length,
+	() =>
+		props.candidates.filter((c) => c.existingAppId == null && props.selectedIds.has(c.id)).length,
+)
+
+const importableCount = computed(
+	() => props.candidates.filter((c) => c.existingAppId == null).length,
 )
 
 const allSelected = computed(
-	() => props.candidates.length > 0 && selectedCount.value === props.candidates.length,
+	() => importableCount.value > 0 && selectedCount.value === importableCount.value,
 )
 
 const someSelected = computed(() => selectedCount.value > 0 && !allSelected.value)
@@ -51,7 +56,7 @@ const someSelected = computed(() => selectedCount.value > 0 && !allSelected.valu
 			<Checkbox
 				:model-value="allSelected"
 				:neutral="someSelected"
-				:disabled="candidates.length === 0"
+				:disabled="importableCount === 0"
 				@update:model-value="emit('set-all', $event)"
 			/>
 			<SourceIcon v-if="source" :source="source" class="size-5 shrink-0" />
@@ -67,7 +72,8 @@ const someSelected = computed(() => selectedCount.value > 0 && !allSelected.valu
 			<ItemRow v-for="candidate in candidates" :key="candidate.id" as="label" interactive>
 				<template #leading>
 					<Checkbox
-						:model-value="selectedIds.has(candidate.id)"
+						:model-value="candidate.existingAppId == null && selectedIds.has(candidate.id)"
+						:disabled="candidate.existingAppId != null"
 						@update:model-value="emit('toggle', candidate.id)"
 					/>
 					<GameIcon :candidate="candidate" :size="20" />
@@ -80,8 +86,11 @@ const someSelected = computed(() => selectedCount.value > 0 && !allSelected.valu
 				}}</small>
 
 				<template #trailing>
+					<span v-if="candidate.existingAppId != null" class="text-xs text-secondary">
+						{{ t('sourceCard.alreadyImported') }}
+					</span>
 					<div
-						v-if="candidate.urlScheme && !showSource"
+						v-else-if="candidate.urlScheme && !showSource"
 						class="flex shrink-0 items-center gap-1.5"
 						:title="!candidate.launcherPath ? t('sourceCard.urlOnlyTitle') : undefined"
 					>

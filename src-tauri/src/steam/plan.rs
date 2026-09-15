@@ -20,8 +20,7 @@ pub fn build_preview_plan(
     files.insert(user.shortcuts_path.clone());
     files.insert(user.collections_path.clone());
 
-    let existing_shortcuts =
-        super::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_default();
+    let mut existing_shortcuts = super::shortcuts::read_shortcuts(&user.shortcuts_path)?;
     let existing_collection_app_ids =
         super::collections::existing_managed_app_ids(&user.collections_path);
 
@@ -36,6 +35,14 @@ pub fn build_preview_plan(
             &existing_shortcuts,
             &existing_collection_app_ids,
         );
+        if c.iter()
+            .any(|change| matches!(change.kind, ChangeKind::AddShortcut))
+        {
+            existing_shortcuts.push(super::sources::shortcut_from_candidate(
+                candidate,
+                &user.grid_path,
+            ));
+        }
         changes.extend(c);
         files.extend(artwork_files);
     }
@@ -75,29 +82,22 @@ fn candidate_changes(
     let mut changes = Vec::new();
     let mut artwork_files = Vec::new();
 
+    if super::matching::existing_shortcut(candidate, existing_shortcuts).is_some() {
+        return (changes, artwork_files);
+    }
+
     let exe = candidate.effective_executable();
 
-    let existing_shortcut = existing_shortcuts
-        .iter()
-        .find(|s| s.app_name.eq_ignore_ascii_case(&candidate.name));
-    let shortcut_unchanged = existing_shortcut.is_some_and(|s| shortcut_is_unchanged(s, candidate));
-    if !shortcut_unchanged {
-        let shortcut_exists = existing_shortcut.is_some();
-        changes.push(PlannedChange {
-            id: format!("shortcut:{}", candidate.id),
-            game_name: candidate.name.clone(),
-            file: shortcuts_path.to_path_buf(),
-            kind: if shortcut_exists {
-                ChangeKind::UpdateShortcut
-            } else {
-                ChangeKind::AddShortcut
-            },
-            destructive: false,
-            artwork_source: None,
-            artwork_kind: None,
-            collection_name: None,
-        });
-    }
+    changes.push(PlannedChange {
+        id: format!("shortcut:{}", candidate.id),
+        game_name: candidate.name.clone(),
+        file: shortcuts_path.to_path_buf(),
+        kind: ChangeKind::AddShortcut,
+        destructive: false,
+        artwork_source: None,
+        artwork_kind: None,
+        collection_name: None,
+    });
 
     if options.create_collections {
         let collection_name = candidate.source.collection_name();
@@ -157,41 +157,31 @@ fn candidate_changes(
     (changes, artwork_files)
 }
 
-fn shortcut_is_unchanged(existing: &ShortcutEntry, candidate: &ImportCandidate) -> bool {
-    let exe = format!("\"{}\"", candidate.effective_executable().display());
-    let start_dir = format!("\"{}\"", candidate.effective_start_dir().display());
-    let launch_options = candidate.effective_launch_options().unwrap_or("");
-    existing.exe == exe
-        && existing.start_dir == start_dir
-        && existing.launch_options == launch_options
-        && existing.tags == candidate.tags
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ArtworkMode, ArtworkPlan, ImportSource};
+    use crate::models::{ArtworkAsset, ArtworkKind, ArtworkMode, ArtworkPlan, ImportSource};
 
-    fn make_candidate(
-        exe: &str,
-        start_dir: &str,
-        launch_options: Option<&str>,
-        tags: Vec<String>,
-    ) -> ImportCandidate {
+    fn candidate() -> ImportCandidate {
         ImportCandidate {
-            id: "test".to_string(),
-            source: ImportSource::Manual,
-            name: "Test Game".to_string(),
-            executable_path: PathBuf::from(exe),
-            start_dir: PathBuf::from(start_dir),
-            launch_options: launch_options.map(String::from),
+            id: "ubisoft-avatar".into(),
+            source: ImportSource::UbisoftConnect,
+            name: "AFOP".into(),
+            executable_path: PathBuf::from("UbisoftConnect.exe"),
+            start_dir: PathBuf::from("."),
+            launch_options: Some("uplay://launch/4740/0".into()),
             existing_app_id: None,
             matched_steam_app_id: None,
-            tags,
+            tags: vec!["Ubisoft Connect".into()],
             artwork: ArtworkPlan {
                 mode: ArtworkMode::PreserveExisting,
-                existing: Vec::new(),
-                proposed: Vec::new(),
+                existing: vec![],
+                proposed: vec![ArtworkAsset {
+                    kind: ArtworkKind::Icon,
+                    path_or_url: "replacement.png".into(),
+                    source: ArtworkSource::LocalFile,
+                    will_replace_existing: true,
+                }],
             },
             url_scheme: None,
             launcher_path: None,
@@ -200,96 +190,62 @@ mod tests {
         }
     }
 
-    fn make_shortcut_matching(candidate: &ImportCandidate) -> ShortcutEntry {
-        ShortcutEntry {
-            app_id: 0,
-            app_name: candidate.name.clone(),
-            exe: format!("\"{}\"", candidate.effective_executable().display()),
-            start_dir: format!("\"{}\"", candidate.effective_start_dir().display()),
-            icon: String::new(),
-            shortcut_path: String::new(),
-            launch_options: candidate
-                .effective_launch_options()
-                .unwrap_or("")
-                .to_string(),
-            is_hidden: false,
-            allow_desktop_config: true,
-            allow_overlay: true,
-            open_vr: false,
-            devkit: false,
-            devkit_game_id: String::new(),
-            last_play_time: 0,
-            tags: candidate.tags.clone(),
-        }
+    fn preview(
+        candidate: &ImportCandidate,
+        shortcuts: &[ShortcutEntry],
+    ) -> (Vec<PlannedChange>, Vec<PathBuf>) {
+        candidate_changes(
+            candidate,
+            Path::new("shortcuts.vdf"),
+            Path::new("collections"),
+            Path::new("grid"),
+            &Settings::default(),
+            shortcuts,
+            &HashMap::new(),
+        )
     }
 
     #[test]
-    fn shortcut_unchanged_when_all_fields_match() {
-        let candidate = make_candidate(
-            "game.exe",
-            "C:\\Games",
-            Some("--flag"),
-            vec!["Epic".to_string()],
-        );
-        let shortcut = make_shortcut_matching(&candidate);
-        assert!(shortcut_is_unchanged(&shortcut, &candidate));
+    fn renamed_avatar_has_no_shortcut_artwork_or_collection_changes() {
+        let shortcut = ShortcutEntry {
+            app_id: 123,
+            app_name: "Avatar: Frontiers of Pandora".into(),
+            exe: "UbisoftConnect.exe".into(),
+            launch_options: "uplay://launch/4740/0 -custom".into(),
+            icon: "custom.ico".into(),
+            tags: vec!["Couch games".into()],
+            ..Default::default()
+        };
+        let (changes, files) = preview(&candidate(), &[shortcut]);
+        assert!(changes.is_empty());
+        assert!(files.is_empty());
     }
 
     #[test]
-    fn shortcut_changed_when_exe_differs() {
-        let candidate = make_candidate("game.exe", "C:\\Games", None, vec![]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.exe = "\"other.exe\"".to_string();
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+    fn same_title_different_game_is_an_add_not_an_update() {
+        let shortcut = ShortcutEntry {
+            app_name: "AFOP".into(),
+            exe: "other.exe".into(),
+            launch_options: "uplay://launch/99/0".into(),
+            ..Default::default()
+        };
+        let (changes, _) = preview(&candidate(), &[shortcut]);
+        assert!(changes
+            .iter()
+            .any(|c| matches!(c.kind, ChangeKind::AddShortcut)));
+        assert!(!changes
+            .iter()
+            .any(|c| matches!(c.kind, ChangeKind::UpdateShortcut)));
     }
 
     #[test]
-    fn shortcut_changed_when_start_dir_differs() {
-        let candidate = make_candidate("game.exe", "C:\\Games", None, vec![]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.start_dir = "\"C:\\Other\"".to_string();
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
-    }
-
-    #[test]
-    fn shortcut_changed_when_launch_options_differ() {
-        let candidate = make_candidate("game.exe", "C:\\Games", Some("--new"), vec![]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.launch_options = "--old".to_string();
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
-    }
-
-    #[test]
-    fn shortcut_changed_when_tags_differ() {
-        let candidate = make_candidate("game.exe", "C:\\Games", None, vec!["Epic".to_string()]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.tags = vec!["GOG".to_string()];
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
-    }
-
-    #[test]
-    fn shortcut_changed_when_empty_options_vs_some() {
-        let candidate = make_candidate("game.exe", "C:\\Games", Some("--flag"), vec![]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.launch_options = String::new();
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
-    }
-
-    #[test]
-    fn shortcut_uses_launcher_path_when_use_launcher_url() {
-        let mut candidate =
-            make_candidate("explorer.exe", "C:\\WINDOWS", Some("shell:game"), vec![]);
-        candidate.use_launcher_url = true;
-        candidate.url_scheme = Some("shell:game".to_string());
-        candidate.launcher_path = Some(PathBuf::from("launcher/launcher.exe"));
-
-        // A shortcut built from the effective (launcher) path is unchanged.
-        let matching = make_shortcut_matching(&candidate);
-        assert!(shortcut_is_unchanged(&matching, &candidate));
-
-        // A shortcut pointing at the raw executable_path is seen as changed.
-        let mut mismatched = matching.clone();
-        mismatched.exe = format!("\"{}\"", candidate.executable_path.display());
-        assert!(!shortcut_is_unchanged(&mismatched, &candidate));
+    fn new_game_still_gets_shortcut_and_artwork() {
+        let (changes, _) = preview(&candidate(), &[]);
+        assert!(changes
+            .iter()
+            .any(|c| matches!(c.kind, ChangeKind::AddShortcut)));
+        assert!(changes
+            .iter()
+            .any(|c| matches!(c.kind, ChangeKind::WriteArtwork)));
     }
 }

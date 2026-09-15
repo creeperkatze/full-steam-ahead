@@ -34,11 +34,10 @@ pub fn append_missing(existing: &mut Vec<ShortcutEntry>, additions: Vec<Shortcut
             addition.app_id = non_steam_app_id(&addition.exe, &addition.app_name);
         }
 
-        if let Some(item) = existing
-            .iter_mut()
-            .find(|item| same_shortcut_identity(item, &addition))
+        if existing
+            .iter()
+            .any(|item| same_shortcut_identity(item, &addition))
         {
-            *item = addition;
             continue;
         }
 
@@ -120,7 +119,10 @@ pub fn serialize_shortcuts(shortcuts: &[ShortcutEntry]) -> Vec<u8> {
 }
 
 fn same_shortcut_identity(left: &ShortcutEntry, right: &ShortcutEntry) -> bool {
-    left.app_name.eq_ignore_ascii_case(&right.app_name)
+    (left.app_id != 0 && left.app_id == right.app_id)
+        || (left.exe == right.exe
+            && left.start_dir == right.start_dir
+            && left.launch_options == right.launch_options)
 }
 
 fn write_object_start(out: &mut Vec<u8>, name: &str) {
@@ -395,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn append_updates_existing_by_name_case_insensitive() {
+    fn append_keeps_distinct_games_with_the_same_name() {
         let mut existing = vec![{
             let mut s = make_shortcut("My Game", "\"old.exe\"");
             s.app_id = 111;
@@ -407,9 +409,26 @@ mod tests {
             s
         };
         append_missing(&mut existing, vec![updated]);
-        assert_eq!(existing.len(), 1, "must not add a duplicate");
-        assert_eq!(existing[0].exe, "\"new.exe\"", "must update the exe");
-        assert_eq!(existing[0].app_id, 222, "must update the app_id");
+        assert_eq!(existing.len(), 2);
+        assert_eq!(existing[0].exe, "\"old.exe\"");
+        assert_eq!(existing[1].app_id, 222);
+    }
+
+    #[test]
+    fn append_preserves_every_local_field_for_existing_id() {
+        let mut custom = make_shortcut("Avatar: Frontiers of Pandora", "\"wrapper.cmd\"");
+        custom.app_id = 123;
+        custom.icon = "custom.ico".into();
+        custom.launch_options = "--custom".into();
+        custom.tags = vec!["Couch games".into()];
+        custom.last_play_time = 456;
+        custom.allow_overlay = false;
+        let mut existing = vec![custom];
+        let before = serialize_shortcuts(&existing);
+        let mut addition = make_shortcut("AFOP", "\"UbisoftConnect.exe\"");
+        addition.app_id = 123;
+        append_missing(&mut existing, vec![addition]);
+        assert_eq!(serialize_shortcuts(&existing), before);
     }
 
     #[test]

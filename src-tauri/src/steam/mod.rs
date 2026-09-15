@@ -2,6 +2,7 @@ pub mod apply;
 pub mod artwork;
 pub mod collections;
 pub mod detect;
+mod matching;
 pub mod plan;
 #[cfg(unix)]
 pub mod proton;

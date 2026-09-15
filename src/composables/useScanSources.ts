@@ -72,7 +72,9 @@ export function useScanSources() {
 
 		if (found !== undefined) {
 			state.candidates.value = mergeCandidates(state.candidates.value, found)
-			state.selectedCandidateIds.value = new Set(state.candidates.value.map((c) => c.id))
+			state.selectedCandidateIds.value = new Set(
+				state.candidates.value.filter((c) => c.existingAppId == null).map((c) => c.id),
+			)
 			state.invalidatePreview()
 			state.scanPhase.value = 'done'
 		} else {

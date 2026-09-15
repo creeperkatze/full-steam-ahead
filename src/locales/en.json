@@ -65,6 +65,7 @@
 		"noManualGames": "No manual games added yet."
 	},
 	"sourceCard": {
+		"alreadyImported": "Already in Steam",
 		"viaLauncher": "Via Launcher",
 		"urlOnlyTitle": "This game can only be launched via its URL scheme"
 	},
