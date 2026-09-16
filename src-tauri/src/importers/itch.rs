@@ -7,7 +7,7 @@ use flate2::read::GzDecoder;
 use nom::{
     bytes::complete::{tag, take_until},
     multi::many0,
-    IResult,
+    IResult, Parser,
 };
 use serde::Deserialize;
 use std::{
@@ -145,7 +145,7 @@ struct Candidate {
 }
 
 fn parse_butler_db(content: &[u8]) -> IResult<&[u8], Vec<DbPaths>> {
-    many0(parse_db_entry)(content)
+    many0(parse_db_entry).parse(content)
 }
 
 fn parse_db_entry(i: &[u8]) -> IResult<&[u8], DbPaths> {
