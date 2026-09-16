@@ -57,13 +57,17 @@ fn scan_windows(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<I
         let uninstall_path = format!(
             "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Uplay Install {id}"
         );
-        let title = hklm
-            .open_subkey(uninstall_path)
-            .ok()
+        let uninstall = hklm.open_subkey(uninstall_path).ok();
+        let title = uninstall
+            .as_ref()
             .and_then(|k| k.get_value::<String, _>("DisplayName").ok())
             .unwrap_or_else(|| format!("Ubisoft game {id}"));
+        let icon = uninstall
+            .as_ref()
+            .and_then(|k| k.get_value::<String, _>("DisplayIcon").ok())
+            .and_then(|value| super::icons::registry_icon(&value));
 
-        candidates.push(launcher_candidate(
+        let mut candidate = launcher_candidate(
             user,
             ImportSource::UbisoftConnect,
             "ubisoft",
@@ -71,7 +75,11 @@ fn scan_windows(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<I
             launcher_path.clone(),
             format!("uplay://launch/{id}/0"),
             vec!["Ubisoft Connect".to_string()],
-        ));
+        );
+        if let Some(icon) = icon {
+            crate::steam::artwork::prefer_local_icon(&mut candidate.artwork, &icon);
+        }
+        candidates.push(candidate);
     }
 
     Ok(candidates)

@@ -126,6 +126,28 @@ pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
     }
 }
 
+/// Installed game metadata is a better icon source than a fuzzy store-name match.
+pub fn prefer_local_icon(plan: &mut ArtworkPlan, path: &Path) {
+    if !path.is_file() {
+        return;
+    }
+    plan.proposed
+        .retain(|asset| asset.kind != ArtworkKind::Icon);
+    if plan
+        .existing
+        .iter()
+        .any(|asset| asset.kind == ArtworkKind::Icon && Path::new(&asset.path_or_url).is_file())
+    {
+        return;
+    }
+    plan.proposed.push(ArtworkAsset {
+        kind: ArtworkKind::Icon,
+        path_or_url: path.display().to_string(),
+        source: ArtworkSource::LocalFile,
+        will_replace_existing: false,
+    });
+}
+
 pub fn apply_candidate_artwork(
     grid_path: &Path,
     candidate: &ImportCandidate,
@@ -457,6 +479,9 @@ fn extension_for(kind: &ArtworkKind, source_path_or_url: &str) -> &'static str {
         if extension.eq_ignore_ascii_case("png") {
             return "png";
         }
+        if *kind == ArtworkKind::Icon && extension.eq_ignore_ascii_case("ico") {
+            return "ico";
+        }
         if extension.eq_ignore_ascii_case("jpg") || extension.eq_ignore_ascii_case("jpeg") {
             return "jpg";
         }
@@ -666,6 +691,80 @@ mod tests {
             use_launcher_url: false,
             needs_proton: false,
         }
+    }
+
+    #[test]
+    fn local_game_icon_survives_disabled_store_artwork_and_launcher_routing() {
+        let dir = TmpDir::new();
+        let icon = dir.path().join("game.ico");
+        fs::write(&icon, b"icon fixture").unwrap();
+        let mut candidate = make_candidate(vec![make_asset(
+            ArtworkKind::Icon,
+            ArtworkSource::OfficialSteam,
+        )]);
+        candidate.launcher_path = Some(PathBuf::from("launcher.exe"));
+        candidate.use_launcher_url = true;
+        candidate.launch_options = Some("game://launch/123".to_string());
+        prefer_local_icon(&mut candidate.artwork, &icon);
+        apply_source_preference(
+            &mut candidate.artwork,
+            "Game",
+            DefaultArtworkSource::None,
+            &SteamGridDbSettings::default(),
+        );
+        assert_eq!(candidate.artwork.proposed.len(), 1);
+        assert_eq!(
+            candidate.artwork.proposed[0].source,
+            ArtworkSource::LocalFile
+        );
+        assert!(apply_candidate_artwork(dir.path(), &candidate)
+            .unwrap()
+            .is_empty());
+        let shortcut = crate::steam::sources::shortcut_from_candidate(&candidate, dir.path());
+        assert_eq!(shortcut.exe, "\"launcher.exe\"");
+        assert_eq!(shortcut.launch_options, "game://launch/123");
+        let expected = dir.path().join(format!("{}_icon.ico", shortcut.app_id));
+        assert_eq!(Path::new(&shortcut.icon), expected);
+        assert_eq!(fs::read(&expected).unwrap(), b"icon fixture");
+        assert_eq!(existing_assets(dir.path(), shortcut.app_id).len(), 1);
+    }
+
+    #[test]
+    fn local_metadata_preserves_existing_custom_icon() {
+        let dir = TmpDir::new();
+        let custom = dir.path().join("custom.png");
+        let local = dir.path().join("game.png");
+        fs::write(&custom, b"custom").unwrap();
+        fs::write(&local, b"local").unwrap();
+        let mut candidate = make_candidate(vec![make_asset(
+            ArtworkKind::Icon,
+            ArtworkSource::OfficialSteam,
+        )]);
+        candidate.artwork.existing.push(ArtworkAsset {
+            kind: ArtworkKind::Icon,
+            path_or_url: custom.display().to_string(),
+            source: ArtworkSource::ExistingCustom,
+            will_replace_existing: false,
+        });
+        prefer_local_icon(&mut candidate.artwork, &local);
+        assert!(candidate.artwork.proposed.is_empty());
+        let shortcut = crate::steam::sources::shortcut_from_candidate(&candidate, dir.path());
+        assert_eq!(shortcut.icon, custom.display().to_string());
+        assert_eq!(fs::read(custom).unwrap(), b"custom");
+    }
+
+    #[test]
+    fn missing_local_icon_leaves_store_proposal_intact() {
+        let dir = TmpDir::new();
+        let mut candidate = make_candidate(vec![make_asset(
+            ArtworkKind::Icon,
+            ArtworkSource::OfficialSteam,
+        )]);
+        prefer_local_icon(&mut candidate.artwork, &dir.path().join("missing.png"));
+        assert_eq!(
+            candidate.artwork.proposed[0].source,
+            ArtworkSource::OfficialSteam
+        );
     }
 
     #[test]
