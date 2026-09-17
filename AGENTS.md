@@ -1,4 +1,4 @@
-# AGENTS.md
+# Full Steam Ahead
 
 Full Steam Ahead is a Tauri desktop app (Rust backend, Vue frontend) that imports games from other launchers into Steam as non-Steam shortcuts, with artwork and collections.
 
