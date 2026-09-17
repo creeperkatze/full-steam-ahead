@@ -51,25 +51,65 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
 }
 
 fn find_paths(custom_path: Option<&Path>) -> AppResult<(PathBuf, PathBuf)> {
-    let launcher = if let Some(custom) = custom_path {
-        custom.join("Playnite.DesktopApp.exe")
+    let install_dir = if let Some(custom) = custom_path {
+        custom.to_path_buf()
     } else {
         let local = std::env::var("LOCALAPPDATA")
             .map_err(|_| AppError::Message("LOCALAPPDATA not set".to_string()))?;
-        Path::new(&local)
-            .join("Playnite")
-            .join("Playnite.DesktopApp.exe")
+        Path::new(&local).join("Playnite")
     };
+    let launcher = install_dir.join("Playnite.DesktopApp.exe");
     if !launcher.exists() {
         return Err(AppError::Message("Playnite is not installed".to_string()));
     }
     let appdata =
         std::env::var("APPDATA").map_err(|_| AppError::Message("APPDATA not set".to_string()))?;
-    let db = Path::new(&appdata)
-        .join("Playnite")
-        .join("library")
-        .join("games.db");
-    Ok((launcher, db))
+
+    // Playnite treats installs without an uninstaller as portable and keeps data beside the exe
+    let config_root = if install_dir.join("unins000.exe").exists() {
+        Path::new(&appdata).join("Playnite")
+    } else {
+        install_dir.clone()
+    };
+    let db_dir = std::fs::read_to_string(config_root.join("config.json"))
+        .ok()
+        .and_then(|raw| serde_json::from_str::<PlayniteConfig>(&raw).ok())
+        .and_then(|c| c.database_path)
+        .filter(|p| !p.trim().is_empty())
+        .map(|p| expand_db_path(&p, &install_dir, &appdata))
+        .unwrap_or_else(|| config_root.join("library"));
+    Ok((launcher, db_dir.join("games.db")))
+}
+
+#[derive(serde::Deserialize)]
+struct PlayniteConfig {
+    #[serde(rename = "DatabasePath")]
+    database_path: Option<String>,
+}
+
+/// Mirrors Playnite's `GameDatabase.GetFullDbPath`.
+fn expand_db_path(path: &str, install_dir: &Path, appdata: &str) -> PathBuf {
+    const PLAYNITE_DIR: &str = "{playnitedir}";
+    const APPDATA: &str = "%appdata%";
+    let lower = path.to_ascii_lowercase();
+    let expanded = if let Some(i) = lower.find(PLAYNITE_DIR) {
+        format!(
+            "{}{}{}",
+            &path[..i],
+            install_dir.display(),
+            &path[i + PLAYNITE_DIR.len()..]
+        )
+    } else if let Some(i) = lower.find(APPDATA) {
+        format!("{}{}{}", &path[..i], appdata, &path[i + APPDATA.len()..])
+    } else {
+        path.to_string()
+    };
+    let expanded = PathBuf::from(expanded);
+    if expanded.is_absolute() {
+        expanded
+    } else {
+        install_dir.join(expanded)
+    }
 }
 
 struct GameEntry {
@@ -157,6 +197,38 @@ mod tests {
         assert_eq!(games.len(), 2);
         assert_eq!(games[0].name, "Game One");
         assert_eq!(games[1].name, "Game Two");
+    }
+
+    #[test]
+    fn expands_playnite_dir_variable() {
+        let path = expand_db_path(r"{PlayniteDir}\library", Path::new(r"D:\Playnite"), "");
+        assert_eq!(path, PathBuf::from(r"D:\Playnite\library"));
+    }
+
+    #[test]
+    fn expands_appdata_case_insensitively() {
+        let path = expand_db_path(
+            r"%APPDATA%\Playnite\library",
+            Path::new(r"D:\Playnite"),
+            r"C:\Users\me\AppData\Roaming",
+        );
+        assert_eq!(
+            path,
+            PathBuf::from(r"C:\Users\me\AppData\Roaming\Playnite\library")
+        );
+    }
+
+    #[test]
+    fn keeps_absolute_paths_and_resolves_relative_ones() {
+        let install = Path::new(r"D:\Playnite");
+        assert_eq!(
+            expand_db_path(r"E:\PlayniteDb", install, ""),
+            PathBuf::from(r"E:\PlayniteDb")
+        );
+        assert_eq!(
+            expand_db_path("library", install, ""),
+            PathBuf::from(r"D:\Playnite\library")
+        );
     }
 
     #[test]

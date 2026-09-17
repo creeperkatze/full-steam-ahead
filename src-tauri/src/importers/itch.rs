@@ -3,69 +3,79 @@ use crate::{
     importers::candidate_from_parts,
     models::{ImportCandidate, ImportSource, SteamUser},
 };
-use flate2::read::GzDecoder;
-use nom::{
-    bytes::complete::{tag, take_until},
-    multi::many0,
-    IResult, Parser,
-};
 use serde::Deserialize;
-use std::{
-    collections::HashSet,
-    io::Read,
-    path::{Path, PathBuf},
-};
+use sqlite::{OpenFlags, State};
+use std::path::{Path, PathBuf};
+
+/// Every install ("cave") butler knows about, with its game title when the game is known.
+const CAVES_QUERY: &str =
+    "SELECT games.title, caves.verdict FROM caves LEFT JOIN games ON games.id = caves.game_id";
 
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
     let itch_dir = custom_path
         .map(PathBuf::from)
         .unwrap_or_else(default_itch_location);
-    let wal_path = itch_dir.join("db").join("butler.db-wal");
-    if !wal_path.exists() {
+    let db_path = itch_dir.join("db").join("butler.db");
+    if !db_path.exists() {
         return Ok(Vec::new());
     }
 
-    let bytes = std::fs::read(&wal_path).map_err(|source| AppError::Io {
-        path: wal_path,
-        source,
-    })?;
-
-    let (_, db_paths) = parse_butler_db(&bytes).unwrap_or_default();
-
-    let unique: HashSet<DbPaths> = db_paths.into_iter().collect();
+    let db_error = |error: sqlite::Error| {
+        AppError::Message(format!(
+            "Could not read itch.io database at {}: {error}",
+            db_path.display()
+        ))
+    };
+    // SQLite picks up writes still sitting in butler's WAL file on its own
+    let connection =
+        sqlite::Connection::open_with_flags(&db_path, OpenFlags::new().with_read_only())
+            .map_err(db_error)?;
+    let mut statement = connection.prepare(CAVES_QUERY).map_err(db_error)?;
 
     let mut candidates = Vec::new();
-    for db_path in &unique {
-        if let Some(candidate) = db_path_to_candidate(user, db_path) {
-            candidates.push(candidate);
-        }
+    while let Ok(State::Row) = statement.next() {
+        let title = statement.read::<Option<String>, _>(0).ok().flatten();
+        let Ok(Some(verdict)) = statement.read::<Option<String>, _>(1) else {
+            continue;
+        };
+        let Ok(verdict) = serde_json::from_str::<Verdict>(&verdict) else {
+            continue;
+        };
+        candidates.extend(verdict_to_candidate(user, title, verdict));
     }
 
     Ok(candidates)
 }
 
-fn db_path_to_candidate(user: &SteamUser, db_path: &DbPaths) -> Option<ImportCandidate> {
-    let base = Path::new(&db_path.base_path);
+/// A cave's `verdict` column, as serialized by itchio/dash.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Verdict {
+    base_path: String,
+    candidates: Option<Vec<Candidate>>,
+}
 
-    let executable_rel = db_path
-        .paths
-        .iter()
-        .find(|p| is_executable(&base.join(p)))?;
+#[derive(Deserialize)]
+struct Candidate {
+    path: String,
+}
 
-    let executable_path = base.join(executable_rel);
-    let start_dir = PathBuf::from(&db_path.base_path);
+fn verdict_to_candidate(
+    user: &SteamUser,
+    title: Option<String>,
+    verdict: Verdict,
+) -> Option<ImportCandidate> {
+    let base = PathBuf::from(&verdict.base_path);
+    // Butler lists the best launch target first
+    let executable_path = verdict
+        .candidates
+        .unwrap_or_default()
+        .into_iter()
+        .map(|c| base.join(c.path))
+        .find(|p| is_executable(p))?;
 
-    // Title from gzip receipt first, plain receipt second, directory name last
-    let receipt_gz = base.join(".itch").join("receipt.json.gz");
-    let receipt_plain = base.join(".itch").join("receipt.json");
-    let title = read_title_gz(&receipt_gz)
-        .or_else(|| read_title_plain(&receipt_plain))
-        .unwrap_or_else(|| {
-            base.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("itch.io game")
-                .to_string()
-        });
+    // Linked folders may have no game row
+    let title = title.or_else(|| base.file_name()?.to_str().map(str::to_string))?;
 
     Some(candidate_from_parts(
         user,
@@ -73,27 +83,10 @@ fn db_path_to_candidate(user: &SteamUser, db_path: &DbPaths) -> Option<ImportCan
         "itch",
         title,
         executable_path,
-        start_dir,
+        base,
         None,
         vec!["itch.io".to_string()],
     ))
-}
-
-fn read_title_gz(path: &Path) -> Option<String> {
-    let bytes = std::fs::read(path).ok()?;
-    let mut decoder = GzDecoder::new(bytes.as_slice());
-    let mut s = String::new();
-    decoder.read_to_string(&mut s).ok()?;
-    serde_json::from_str::<Receipt>(&s)
-        .ok()
-        .map(|r| r.game.title)
-}
-
-fn read_title_plain(path: &Path) -> Option<String> {
-    let s = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str::<Receipt>(&s)
-        .ok()
-        .map(|r| r.game.title)
 }
 
 #[cfg(unix)]
@@ -133,91 +126,54 @@ fn default_itch_location() -> PathBuf {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct DbPaths {
-    base_path: String,
-    paths: Vec<String>,
-}
-
-#[derive(Deserialize)]
-struct Candidate {
-    path: String,
-}
-
-fn parse_butler_db(content: &[u8]) -> IResult<&[u8], Vec<DbPaths>> {
-    many0(parse_db_entry).parse(content)
-}
-
-fn parse_db_entry(i: &[u8]) -> IResult<&[u8], DbPaths> {
-    let (i, _) = take_until("{\"basePath\":\"")(i)?;
-    let (i, _) = tag("{\"basePath\":\"")(i)?;
-    let (i, base_path_bytes) = take_until("\",\"totalSize\"")(i)?;
-    let base_path = String::from_utf8_lossy(base_path_bytes).to_string();
-
-    let (i, _) = take_until("\"candidates\":[")(i)?;
-    let (i, _) = tag("\"candidates\":[")(i)?;
-    let (i, cand_bytes) = take_until("]}")(i)?;
-    let cand_json = format!("[{}]", String::from_utf8_lossy(cand_bytes));
-
-    let paths = serde_json::from_str::<Vec<Candidate>>(&cand_json)
-        .map(|v| v.into_iter().map(|c| c.path).collect())
-        .unwrap_or_default();
-
-    Ok((i, DbPaths { base_path, paths }))
-}
-
-#[derive(Deserialize)]
-struct Receipt {
-    game: ReceiptGame,
-}
-
-#[derive(Deserialize)]
-struct ReceiptGame {
-    title: String,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn parse_single_entry() {
-        let data = b"junk{\"basePath\":\"/games/mygame\",\"totalSize\":100,\"candidates\":[{\"path\":\"mygame.exe\"}]}trailing";
-        let (_, entries) = parse_butler_db(data).unwrap();
-        assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].base_path, "/games/mygame");
-        assert_eq!(entries[0].paths, vec!["mygame.exe"]);
+    fn parses_verdict_with_extra_fields() {
+        let json = r#"{"basePath":"/games/mygame","totalSize":100,"candidates":[
+            {"path":"bin/game","depth":2,"flavor":"linux","size":5,"spell":["ELF executable"]},
+            {"path":"game.exe","windowsInfo":{"gui":true}}
+        ]}"#;
+        let verdict: Verdict = serde_json::from_str(json).unwrap();
+        assert_eq!(verdict.base_path, "/games/mygame");
+        let paths: Vec<_> = verdict
+            .candidates
+            .unwrap()
+            .into_iter()
+            .map(|c| c.path)
+            .collect();
+        assert_eq!(paths, ["bin/game", "game.exe"]);
     }
 
     #[test]
-    fn parse_multiple_entries() {
-        let data = b"{\"basePath\":\"/game1\",\"totalSize\":1,\"candidates\":[{\"path\":\"a.exe\"}]}{\"basePath\":\"/game2\",\"totalSize\":1,\"candidates\":[{\"path\":\"b.exe\"}]}";
-        let (_, entries) = parse_butler_db(data).unwrap();
-        assert_eq!(entries.len(), 2);
-        let bases: Vec<&str> = entries.iter().map(|e| e.base_path.as_str()).collect();
-        assert!(bases.contains(&"/game1"));
-        assert!(bases.contains(&"/game2"));
+    fn parses_verdict_with_null_candidates() {
+        let verdict: Verdict =
+            serde_json::from_str(r#"{"basePath":"/game","totalSize":0,"candidates":null}"#)
+                .unwrap();
+        assert!(verdict.candidates.is_none());
     }
 
     #[test]
-    fn parse_multiple_candidates_per_entry() {
-        let data = b"{\"basePath\":\"/game\",\"totalSize\":1,\"candidates\":[{\"path\":\"a.exe\"},{\"path\":\"b.sh\"}]}";
-        let (_, entries) = parse_butler_db(data).unwrap();
-        assert_eq!(entries[0].paths, vec!["a.exe", "b.sh"]);
-    }
-
-    #[test]
-    fn parse_no_matching_data_returns_empty() {
-        let (_, entries) = parse_butler_db(b"no butler data here").unwrap();
-        assert!(entries.is_empty());
-    }
-
-    #[test]
-    fn parse_entry_with_empty_candidates() {
-        let data = b"{\"basePath\":\"/game\",\"totalSize\":0,\"candidates\":[]}";
-        let (_, entries) = parse_butler_db(data).unwrap();
-        assert_eq!(entries.len(), 1);
-        assert!(entries[0].paths.is_empty());
+    fn reads_caves_from_butler_schema() {
+        let db = sqlite::open(":memory:").unwrap();
+        db.execute(
+            r#"
+            CREATE TABLE games (id INTEGER PRIMARY KEY, title TEXT);
+            CREATE TABLE caves (id TEXT PRIMARY KEY, game_id INTEGER, verdict TEXT);
+            INSERT INTO games VALUES (1, 'Known Game');
+            INSERT INTO caves VALUES ('a', 1, '{"basePath":"/a","candidates":[]}');
+            INSERT INTO caves VALUES ('b', 0, '{"basePath":"/b","candidates":[]}');
+            "#,
+        )
+        .unwrap();
+        let mut statement = db.prepare(CAVES_QUERY).unwrap();
+        let mut rows = Vec::new();
+        while let Ok(State::Row) = statement.next() {
+            rows.push(statement.read::<Option<String>, _>(0).unwrap());
+        }
+        assert_eq!(rows, [Some("Known Game".to_string()), None]);
     }
 
     #[cfg(not(unix))]

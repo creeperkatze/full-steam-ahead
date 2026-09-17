@@ -35,20 +35,24 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .flat_map(|bottle| {
             let bottle_name = bottle.name.clone();
             let exe = exe.clone();
-            bottle.external_programs.into_values().map(move |program| {
-                launcher_candidate(
-                    user,
-                    ImportSource::Bottles,
-                    "bottles",
-                    program.name.clone(),
-                    exe.clone().into(),
-                    format!(
-                        "run --command=bottles-cli com.usebottles.bottles run --args-replace -b \"{}\" -p \"{}\"",
+            bottle
+                .external_programs
+                .into_values()
+                .filter(|program| !program.removed)
+                .map(move |program| {
+                    launcher_candidate(
+                        user,
+                        ImportSource::Bottles,
+                        "bottles",
+                        program.name.clone(),
+                        exe.clone().into(),
+                        format!(
+                        "run --command=bottles-cli com.usebottles.bottles run -b \"{}\" -p \"{}\"",
                         bottle_name, program.name
                     ),
-                    vec!["Bottles".to_string()],
-                )
-            })
+                        vec!["Bottles".to_string()],
+                    )
+                })
         })
         .collect();
 
@@ -67,6 +71,9 @@ struct Bottle {
 struct Program {
     #[serde(alias = "Name")]
     name: String,
+    /// Set when the user hid the program in Bottles
+    #[serde(default)]
+    removed: bool,
 }
 
 #[cfg(test)]
@@ -115,6 +122,18 @@ mod tests {
         }"#;
         let map: HashMap<String, Bottle> = serde_json::from_str(json).unwrap();
         assert_eq!(map["Bottle"].external_programs.len(), 2);
+    }
+
+    #[test]
+    fn removed_flag_defaults_to_false() {
+        let json = r#"{"B":{"Name":"B","External_Programs":{
+            "a": {"name": "Kept"},
+            "b": {"name": "Hidden", "removed": true}
+        }}}"#;
+        let map: HashMap<String, Bottle> = serde_json::from_str(json).unwrap();
+        let programs = &map["B"].external_programs;
+        assert!(!programs["a"].removed);
+        assert!(programs["b"].removed);
     }
 
     #[test]
