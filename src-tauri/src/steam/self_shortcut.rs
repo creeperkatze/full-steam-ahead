@@ -7,11 +7,11 @@ use std::{fs, path::Path};
 
 const APP_NAME: &str = "Full Steam Ahead";
 
-const HEADER: &[u8] = include_bytes!("../../assets/self/header.png");
-const CAPSULE: &[u8] = include_bytes!("../../assets/self/capsule.png");
-const HERO: &[u8] = include_bytes!("../../assets/self/hero.png");
-const LOGO: &[u8] = include_bytes!("../../assets/self/logo.png");
-const ICON: &[u8] = include_bytes!("../../assets/self/icon.png");
+const HEADER: &[u8] = include_bytes!("../../assets/artwork/header.png");
+const CAPSULE: &[u8] = include_bytes!("../../assets/artwork/capsule.png");
+const HERO: &[u8] = include_bytes!("../../assets/artwork/hero.png");
+const LOGO: &[u8] = include_bytes!("../../assets/artwork/logo.png");
+const ICON: &[u8] = include_bytes!("../../assets/artwork/icon.png");
 
 /// Builds the shortcut entry for Full Steam Ahead itself
 pub fn build(grid_path: &Path) -> AppResult<ShortcutEntry> {
