@@ -6,6 +6,7 @@ pub mod models;
 pub mod paths;
 mod process;
 pub mod steam;
+mod util;
 
 use commands::{
     apply_plan, available_sources, close_app, create_manual_candidate, create_preview_plan,

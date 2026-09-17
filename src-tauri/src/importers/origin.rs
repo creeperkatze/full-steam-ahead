@@ -1,229 +1,239 @@
+//! EA app games. Origin itself was shut down, but the EA app still handles `origin2://` links.
+
 use crate::{
-    error::{io_context, AppResult},
+    error::AppResult,
     importers::launcher_candidate,
     models::{ImportCandidate, ImportSource, SteamUser},
+    util::registry::Registry,
 };
 use std::{
-    fs,
+    collections::BTreeMap,
     path::{Path, PathBuf},
 };
 
-struct OriginPaths {
-    exe_path: PathBuf,
-    local_content_path: PathBuf,
-    #[cfg_attr(not(unix), allow(dead_code))]
-    compat_folder: Option<PathBuf>,
-}
+const UNINSTALL_KEYS: [&str; 2] = [
+    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+];
+/// Whatever handles `origin2://` receives the launch link; `eadm://` is the EA app's own scheme.
+const PROTOCOL_COMMAND_KEYS: [&str; 2] = [
+    r"SOFTWARE\Classes\origin2\shell\open\command",
+    r"SOFTWARE\Classes\eadm\shell\open\command",
+];
 
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
-    let Some(paths) = find_origin_paths(custom_path) else {
-        return Ok(Vec::new());
-    };
-
-    let local_content = paths.local_content_path.join("LocalContent");
-    if !local_content.exists() {
-        return Ok(Vec::new());
-    }
-
-    let mut candidates = Vec::new();
-    for entry in fs::read_dir(&local_content)
-        .map_err(io_context(&local_content))?
-        .flatten()
-    {
-        let game_folder = entry.path();
-        if !game_folder.is_dir() {
-            continue;
-        }
-        let Some(id) = read_offer_id(&game_folder) else {
-            continue;
-        };
-        let title = game_folder
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("EA game")
-            .to_string();
-
-        // On Unix, embed the compat path into the launch URL so Steam uses the right Proton prefix
-        #[cfg(unix)]
-        let launch_url = if let Some(ref compat) = paths.compat_folder {
-            format!(
-                "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -'origin2://game/launch?offerIds={id}&autoDownload=1&authCode=&cmdParams='",
-                compat.display()
-            )
-        } else {
-            format!("origin2://game/launch?offerIds={id}&autoDownload=1&authCode=&cmdParams=")
-        };
-
-        #[cfg(not(unix))]
-        let launch_url =
-            format!("origin2://game/launch?offerIds={id}&autoDownload=1&authCode=&cmdParams=");
-
-        #[cfg_attr(not(unix), allow(unused_mut))]
-        let mut candidate = launcher_candidate(
-            user,
-            ImportSource::Origin,
-            "origin",
-            title,
-            paths.exe_path.clone(),
-            launch_url,
-            vec!["EA app / Origin".to_string()],
-        );
-
-        // Ensures Steam launches this shortcut through Proton, since it was found in a Proton prefix.
-        #[cfg(unix)]
-        {
-            candidate.needs_proton = paths.compat_folder.is_some();
-        }
-
-        candidates.push(candidate);
-    }
-
-    Ok(candidates)
-}
-
-fn find_origin_paths(custom_path: Option<&Path>) -> Option<OriginPaths> {
     #[cfg(windows)]
     {
-        let local_content = custom_path.map(PathBuf::from).unwrap_or_else(|| {
-            let program_data =
-                std::env::var("PROGRAMDATA").unwrap_or_else(|_| "C:\\ProgramData".to_string());
-            PathBuf::from(&program_data).join("Origin")
-        });
-        if !local_content.exists() {
-            return None;
-        }
-        let exe_path = origin_launcher_path()?;
-        Some(OriginPaths {
-            exe_path,
-            local_content_path: local_content,
-            compat_folder: None,
-        })
+        let registry = crate::util::registry::WindowsRegistry;
+        let launcher = custom_path
+            .map(|dir| dir.join("EADesktop.exe"))
+            .filter(|exe| exe.exists())
+            .or_else(|| launcher_path(&registry));
+        Ok(launcher
+            .map(|launcher| scan_registry(user, &registry, &launcher, None))
+            .unwrap_or_default())
     }
 
     #[cfg(unix)]
     {
-        let compat_dir = super::compat_data_dir()?;
+        let mut candidates = Vec::new();
+        for registry in super::wine_registries(custom_path, "EAInstaller") {
+            let Some(launcher) = launcher_path(&registry) else {
+                continue;
+            };
+            let compat = registry.proton_compat_folder();
+            candidates.extend(scan_registry(user, &registry, &launcher, compat));
+        }
+        Ok(candidates)
+    }
 
-        for entry in std::fs::read_dir(compat_dir).ok()?.flatten() {
-            let drive_c = entry.path().join("pfx").join("drive_c");
+    #[cfg(not(any(windows, unix)))]
+    Ok(Vec::new())
+}
 
-            let exe_path = drive_c
-                .join("Program Files (x86)")
-                .join("Origin")
-                .join("Origin.exe");
-            let local_content = custom_path
-                .map(PathBuf::from)
-                .unwrap_or_else(|| drive_c.join("ProgramData").join("Origin"));
+fn launcher_path(registry: &impl Registry) -> Option<PathBuf> {
+    PROTOCOL_COMMAND_KEYS
+        .iter()
+        .filter_map(|key| registry.value(key, ""))
+        .filter_map(|command| parse_quoted_executable(&command))
+        .filter_map(|exe| registry.host_path(&exe))
+        .find(|exe| exe.exists())
+}
 
-            if exe_path.exists() && local_content.exists() {
-                return Some(OriginPaths {
-                    exe_path,
-                    local_content_path: local_content,
-                    compat_folder: Some(entry.path()),
-                });
+/// `compat_folder` is the Proton prefix the registry was read from, if any.
+#[cfg_attr(windows, allow(unused_variables))]
+fn scan_registry(
+    user: &SteamUser,
+    registry: &impl Registry,
+    launcher: &Path,
+    compat_folder: Option<&Path>,
+) -> Vec<ImportCandidate> {
+    // Keyed by content IDs, in case a game shows up in both registry views
+    let mut games = BTreeMap::new();
+    for root in UNINSTALL_KEYS {
+        for subkey in registry.subkeys(root) {
+            let key = format!(r"{root}\{subkey}");
+            let Some(uninstall) = registry.value(&key, "UninstallString") else {
+                continue;
+            };
+            // EA app installs register EAInstaller's Cleanup.exe as their uninstaller
+            let uninstall = uninstall.to_lowercase();
+            if !uninstall.contains("eainstaller") || !uninstall.contains("cleanup.exe") {
+                continue;
             }
+            let Some(install_dir) = registry
+                .value(&key, "InstallLocation")
+                .and_then(|dir| registry.host_path(&dir))
+            else {
+                continue;
+            };
+            let Some(content_ids) = read_content_ids(&install_dir) else {
+                continue;
+            };
+            let Some(title) = registry
+                .value(&key, "DisplayName")
+                .or_else(|| Some(install_dir.file_name()?.to_str()?.to_string()))
+            else {
+                continue;
+            };
+            games.insert(content_ids.join(","), title);
         }
-        None
     }
+
+    games
+        .into_iter()
+        .map(|(offer_ids, title)| {
+            let url = format!("origin2://game/launch?offerIds={offer_ids}&autoDownload=1");
+            #[cfg(unix)]
+            let url = match compat_folder {
+                Some(compat) => super::proton_launch_options(compat, &url),
+                None => url,
+            };
+            #[cfg_attr(not(unix), allow(unused_mut))]
+            let mut candidate = launcher_candidate(
+                user,
+                ImportSource::Origin,
+                "origin",
+                title,
+                launcher.to_path_buf(),
+                url,
+                vec!["EA app / Origin".to_string()],
+            );
+            // The EA app is a Windows program
+            #[cfg(unix)]
+            {
+                candidate.needs_proton = true;
+            }
+            candidate
+        })
+        .collect()
 }
 
-#[cfg(windows)]
-fn origin_launcher_path() -> Option<PathBuf> {
-    use winreg::{enums::HKEY_CLASSES_ROOT, RegKey};
-    let command: String = RegKey::predef(HKEY_CLASSES_ROOT)
-        .open_subkey("eadm\\shell\\open\\command")
-        .ok()?
-        .get_value("")
-        .ok()?;
-    parse_quoted_executable(&command).filter(|p| p.exists())
+/// Content IDs from the game's `__Installer/installerdata.xml` manifest.
+fn read_content_ids(install_dir: &Path) -> Option<Vec<String>> {
+    let bytes = std::fs::read(install_dir.join("__Installer").join("installerdata.xml")).ok()?;
+    parse_content_ids(&decode_text(&bytes))
 }
 
-#[cfg(windows)]
-fn parse_quoted_executable(command: &str) -> Option<PathBuf> {
+fn parse_content_ids(xml: &str) -> Option<Vec<String>> {
+    let doc = roxmltree::Document::parse(xml).ok()?;
+    let ids: Vec<String> = doc
+        .descendants()
+        .filter(|node| node.tag_name().name().eq_ignore_ascii_case("contentID"))
+        .filter_map(|node| node.text())
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+        .map(str::to_string)
+        .collect();
+    (!ids.is_empty()).then_some(ids)
+}
+
+/// Manifests are written as UTF-8 or UTF-16.
+fn decode_text(bytes: &[u8]) -> String {
+    // Without a byte order mark, UTF-16 shows up as `<` followed by a zero byte
+    let guess = match bytes {
+        [_, 0, ..] => encoding_rs::UTF_16LE,
+        _ => encoding_rs::UTF_8,
+    };
+    // A byte order mark overrides the guess
+    guess.decode(bytes).0.into_owned()
+}
+
+fn parse_quoted_executable(command: &str) -> Option<String> {
     if let Some(rest) = command.strip_prefix('"') {
-        let end = rest.find('"')?;
-        return Some(PathBuf::from(&rest[..end]));
+        return Some(rest[..rest.find('"')?].to_string());
     }
-    command.split_whitespace().next().map(PathBuf::from)
-}
-
-fn read_offer_id(game_folder: &Path) -> Option<String> {
-    for entry in fs::read_dir(game_folder).ok()?.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("mfst") {
-            continue;
-        }
-        let raw = fs::read_to_string(path).ok()?;
-        if let Some(id) = parse_offer_id_from_mfst(&raw) {
-            return Some(id);
-        }
-    }
-    None
-}
-
-fn parse_offer_id_from_mfst(content: &str) -> Option<String> {
-    let marker = "&id=";
-    let start = content.find(marker)? + marker.len();
-    let end = content[start..].find('&').map(|i| start + i)?;
-    Some(content[start..end].to_string())
+    command.split_whitespace().next().map(str::to_string)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    const MANIFEST: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<DiPManifest version="4.0">
+  <contentIDs>
+    <contentID>1026023</contentID>
+    <contentID>1035052</contentID>
+  </contentIDs>
+  <gameTitles><gameTitle locale="en_US">Battlefield 1</gameTitle></gameTitles>
+</DiPManifest>"#;
+
     #[test]
-    fn extracts_offer_id_from_mfst() {
-        let content = "?gameId=foo&id=Origin.OFR.123456&autoDownload=1";
+    fn reads_all_content_ids() {
         assert_eq!(
-            parse_offer_id_from_mfst(content).as_deref(),
-            Some("Origin.OFR.123456")
+            parse_content_ids(MANIFEST),
+            Some(vec!["1026023".to_string(), "1035052".to_string()])
         );
     }
 
     #[test]
-    fn extracts_id_with_multiple_trailing_params() {
-        let content = "&id=ABC.DEF.789&authCode=&cmdParams=";
-        assert_eq!(
-            parse_offer_id_from_mfst(content).as_deref(),
-            Some("ABC.DEF.789")
-        );
+    fn older_game_root_is_supported() {
+        let xml = "<game><contentIDs><contentID> 71052 </contentID></contentIDs></game>";
+        assert_eq!(parse_content_ids(xml), Some(vec!["71052".to_string()]));
     }
 
     #[test]
-    fn returns_none_when_marker_absent() {
-        assert!(parse_offer_id_from_mfst("gameId=foo&autoDownload=1").is_none());
+    fn manifest_without_ids_is_rejected() {
+        assert_eq!(parse_content_ids("<game><contentIDs/></game>"), None);
+        assert_eq!(parse_content_ids("not xml"), None);
     }
 
     #[test]
-    fn returns_none_when_no_trailing_ampersand() {
-        // ID would be at the very end of the string with nothing after it
-        assert!(parse_offer_id_from_mfst("&id=ABC").is_none());
+    fn decodes_utf16_manifests() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-16"?><game><contentIDs><contentID>1</contentID></contentIDs></game>"#;
+        let utf16: Vec<u8> = xml.encode_utf16().flat_map(u16::to_le_bytes).collect();
+
+        let with_bom = [&[0xFF, 0xFE][..], &utf16].concat();
+        let text = decode_text(&with_bom);
+        assert_eq!(parse_content_ids(&text), Some(vec!["1".to_string()]));
+        assert_eq!(decode_text(&utf16), xml);
+
+        let big_endian: Vec<u8> = [0xFE, 0xFF]
+            .into_iter()
+            .chain(xml.encode_utf16().flat_map(u16::to_be_bytes))
+            .collect();
+        assert_eq!(decode_text(&big_endian), xml);
     }
 
-    #[cfg(windows)]
+    #[test]
+    fn decodes_utf8_manifests_with_and_without_bom() {
+        let xml = "<game><contentIDs><contentID>1</contentID></contentIDs></game>";
+        assert_eq!(decode_text(xml.as_bytes()), xml);
+        let with_bom = [&[0xEF, 0xBB, 0xBF][..], xml.as_bytes()].concat();
+        assert_eq!(decode_text(&with_bom), xml);
+    }
+
     #[test]
     fn parse_quoted_exe_extracts_path() {
-        let cmd = r#""C:\Program Files\EA\EA.exe" --arg"#;
         assert_eq!(
-            parse_quoted_executable(cmd),
-            Some(PathBuf::from(r"C:\Program Files\EA\EA.exe"))
+            parse_quoted_executable(r#""C:\Program Files\EA\EALauncher.exe" "%1""#).as_deref(),
+            Some(r"C:\Program Files\EA\EALauncher.exe")
         );
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn parse_quoted_exe_unquoted_takes_first_word() {
-        let cmd = r"C:\EA\EA.exe --arg";
         assert_eq!(
-            parse_quoted_executable(cmd),
-            Some(PathBuf::from(r"C:\EA\EA.exe"))
+            parse_quoted_executable(r"C:\EA\EA.exe %1").as_deref(),
+            Some(r"C:\EA\EA.exe")
         );
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn parse_quoted_exe_empty_returns_none() {
-        assert!(parse_quoted_executable("").is_none());
+        assert_eq!(parse_quoted_executable(""), None);
     }
 }

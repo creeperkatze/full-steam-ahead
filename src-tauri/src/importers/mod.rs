@@ -159,6 +159,47 @@ pub fn find_proton_prefixes() -> Vec<PathBuf> {
         .collect()
 }
 
+/// Registries of the Wine prefix containing `custom_path`, or of every Steam Proton prefix.
+/// Only prefixes whose `system.reg` mentions `marker` are parsed.
+#[cfg(unix)]
+pub fn wine_registries(
+    custom_path: Option<&Path>,
+    marker: &str,
+) -> Vec<crate::util::registry::WineRegistry> {
+    let prefixes: Vec<PathBuf> = match custom_path {
+        Some(path) => path
+            .ancestors()
+            .find(|dir| dir.join("system.reg").exists())
+            .map(Path::to_path_buf)
+            .into_iter()
+            .collect(),
+        None => find_proton_prefixes()
+            .into_iter()
+            .map(|compat| compat.join("pfx"))
+            .collect(),
+    };
+    let marker = marker.to_lowercase();
+    prefixes
+        .iter()
+        .filter_map(|prefix| {
+            let bytes = std::fs::read(prefix.join("system.reg")).ok()?;
+            let text = String::from_utf8_lossy(&bytes);
+            text.to_lowercase()
+                .contains(&marker)
+                .then(|| crate::util::registry::WineRegistry::parse(prefix, &text))
+        })
+        .collect()
+}
+
+/// Launch options that open a launcher URL inside an existing Proton prefix.
+#[cfg(unix)]
+pub fn proton_launch_options(compat_folder: &Path, url: &str) -> String {
+    format!(
+        "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -'{url}'",
+        compat_folder.display()
+    )
+}
+
 /// Translate a Windows-style path (e.g. `C:\Foo\Bar`) to a host path.
 #[cfg(unix)]
 pub fn translate_windows_path(compat_folder: &Path, windows_path: &str) -> Option<PathBuf> {

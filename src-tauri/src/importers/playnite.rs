@@ -2,15 +2,9 @@ use crate::{
     error::{AppError, AppResult},
     importers::launcher_candidate,
     models::{ImportCandidate, ImportSource, SteamUser},
+    util::litedb,
 };
-use nom::{
-    bytes::{
-        complete::{tag, take_until, take_while},
-        streaming::take,
-    },
-    multi::many0,
-    AsChar, IResult, Parser,
-};
+use bson::{spec::BinarySubtype, Bson, Document};
 use std::path::{Path, PathBuf};
 
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
@@ -29,10 +23,16 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         }
     })?;
 
-    let (_, games) = parse_db(&bytes).unwrap_or_default();
+    let games = litedb::read_documents(&bytes).map_err(|error| {
+        AppError::Message(format!(
+            "Could not read Playnite database at {}: {error}",
+            db_path.display()
+        ))
+    })?;
 
     let candidates = games
-        .into_iter()
+        .iter()
+        .filter_map(GameEntry::from_document)
         .filter(|g| g.installed)
         .map(|game| {
             launcher_candidate(
@@ -118,85 +118,69 @@ struct GameEntry {
     installed: bool,
 }
 
-fn parse_db(content: &[u8]) -> IResult<&[u8], Vec<GameEntry>> {
-    many0(parse_game).parse(content)
-}
-
-fn parse_game(i: &[u8]) -> IResult<&[u8], GameEntry> {
-    let (i, _) = take_until("_id")(i)?;
-    let (i, _) = take_until("Image")(i)?;
-    let (i, prefix_and_id) = take_until("\\")(i)?;
-    let id_bytes = prefix_and_id
-        .split(|b| *b == 0_u8)
-        .next_back()
-        .unwrap_or_default();
-    let id = String::from_utf8_lossy(id_bytes).to_string();
-
-    let (i, _) = take_until("IsInstalled")(i)?;
-    let (i, _) = tag("IsInstalled")(i)?;
-    let installed = matches!(i.get(1), Some(1u8));
-
-    let (i, _) = take_until("InstallSizeGroup")(i)?;
-    let (i, _) = take_until("Name")(i)?;
-    let (i, _) = take(4usize)(i)?;
-    let (i, _) = take_while(|b: u8| !b.is_alphanum())(i)?;
-    let (i, name_bytes) = take_while(|b| b != 0)(i)?;
-    let name = String::from_utf8_lossy(name_bytes).to_string();
-
-    IResult::Ok((
-        i,
-        GameEntry {
+impl GameEntry {
+    fn from_document(doc: &Document) -> Option<Self> {
+        let id = match doc.get("_id")? {
+            // LiteDB stores .NET's `Guid.ToByteArray`, whose first three groups are little-endian
+            Bson::Binary(binary) if binary.subtype == BinarySubtype::Uuid => {
+                uuid::Uuid::from_slice_le(&binary.bytes).ok()?.to_string()
+            }
+            Bson::String(id) => id.clone(),
+            _ => return None,
+        };
+        Some(Self {
+            name: doc.get_str("Name").ok()?.to_string(),
             id,
-            name,
-            installed,
-        },
-    ))
+            installed: doc.get_bool("IsInstalled").unwrap_or(false),
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn game_bytes(id: &str, name: &str, installed: bool) -> Vec<u8> {
-        let mut v = Vec::new();
-        v.extend_from_slice(b"SKIP_id_Image\x00\x00");
-        v.extend_from_slice(id.as_bytes());
-        v.push(b'\\');
-        v.extend_from_slice(b"_IsInstalled\x00");
-        v.push(if installed { 1u8 } else { 0u8 });
-        v.extend_from_slice(b"_InstallSizeGroup_Name\x00\x00\x00\x00");
-        v.extend_from_slice(name.as_bytes());
-        v.push(0u8);
-        v
+    fn guid_doc(bytes: [u8; 16]) -> Document {
+        bson::doc! {
+            "_id": bson::Binary { subtype: BinarySubtype::Uuid, bytes: bytes.to_vec() },
+            "Name": "The Witcher 3",
+            "IsInstalled": true,
+        }
     }
 
     #[test]
-    fn parses_installed_game() {
-        let data = game_bytes("abc-1234", "The Witcher 3", true);
-        let (_, games) = parse_db(&data).unwrap();
-        assert_eq!(games.len(), 1);
-        assert_eq!(games[0].id, "abc-1234");
-        assert_eq!(games[0].name, "The Witcher 3");
-        assert!(games[0].installed);
+    fn formats_ids_like_dotnet() {
+        let doc = guid_doc([
+            0x33, 0x22, 0x11, 0x00, 0x55, 0x44, 0x77, 0x66, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
+            0xee, 0xff,
+        ]);
+        let game = GameEntry::from_document(&doc).unwrap();
+        assert_eq!(game.id, "00112233-4455-6677-8899-aabbccddeeff");
+        assert_eq!(game.name, "The Witcher 3");
+        assert!(game.installed);
     }
 
     #[test]
-    fn parses_not_installed_game() {
-        let data = game_bytes("xyz-5678", "Hades", false);
-        let (_, games) = parse_db(&data).unwrap();
-        assert_eq!(games.len(), 1);
-        assert_eq!(games[0].name, "Hades");
-        assert!(!games[0].installed);
+    fn accepts_string_ids_and_defaults_to_not_installed() {
+        let doc = bson::doc! { "_id": "abc", "Name": "Hades" };
+        let game = GameEntry::from_document(&doc).unwrap();
+        assert_eq!(game.id, "abc");
+        assert!(!game.installed);
     }
 
     #[test]
-    fn parses_multiple_games() {
-        let mut data = game_bytes("id1", "Game One", true);
-        data.extend(game_bytes("id2", "Game Two", false));
-        let (_, games) = parse_db(&data).unwrap();
-        assert_eq!(games.len(), 2);
-        assert_eq!(games[0].name, "Game One");
-        assert_eq!(games[1].name, "Game Two");
+    fn rejects_documents_that_are_not_games() {
+        assert!(GameEntry::from_document(&bson::doc! { "_id": "abc" }).is_none());
+        assert!(GameEntry::from_document(&bson::doc! { "Name": "No id" }).is_none());
+        let mut short_guid = guid_doc([0; 16]);
+        short_guid.insert(
+            "_id",
+            bson::Binary {
+                subtype: BinarySubtype::Uuid,
+                bytes: vec![1, 2],
+            },
+        );
+        assert!(GameEntry::from_document(&short_guid).is_none());
     }
 
     #[test]
@@ -229,11 +213,5 @@ mod tests {
             expand_db_path("library", install, ""),
             PathBuf::from(r"D:\Playnite\library")
         );
-    }
-
-    #[test]
-    fn empty_data_returns_empty() {
-        let (_, games) = parse_db(b"no game data here").unwrap();
-        assert!(games.is_empty());
     }
 }

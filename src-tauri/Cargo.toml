@@ -22,13 +22,14 @@ tauri-build = { version = "2.0.0", features = [] }
 chrono = { version = "0.4", features = ["serde"] }
 crc32fast = "1.5.0"
 dirs = "7"
+encoding_rs = "0.8.41"
 keyvalues-serde = "0.2"
-nom = "8"
 reqwest = { version = "0.13", default-features = false, features = [
     "blocking",
     "json",
     "rustls",
 ] }
+roxmltree = "0.21.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sqlite = "0.37"
@@ -64,6 +65,8 @@ uninlined_format_args = "warn"
 unnested_or_patterns = "warn"
 
 [target.'cfg(windows)'.dependencies]
+bson = "3.1.0"
+uuid = "1"
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_System_Diagnostics_ToolHelp",
