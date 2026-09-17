@@ -1,4 +1,7 @@
-use std::process::{Child, Command, Output};
+use std::process::{Child, Output};
+
+#[cfg(any(windows, target_os = "macos"))]
+use std::process::Command;
 
 #[cfg(unix)]
 use crate::importers::host_command;

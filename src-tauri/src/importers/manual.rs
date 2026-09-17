@@ -38,6 +38,16 @@ pub fn candidate(request: ManualImportRequest) -> ImportCandidate {
     }
 }
 
+pub fn candidate_with_grid_path(request: ManualImportRequest, grid_path: &Path) -> ImportCandidate {
+    let mut candidate = candidate(request);
+    let app_id = non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
+    let (matched_steam_app_id, artwork) =
+        artwork::steam_preferred_plan(grid_path, app_id, &candidate.name);
+    candidate.matched_steam_app_id = matched_steam_app_id;
+    candidate.artwork = artwork;
+    candidate
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,14 +108,4 @@ mod tests {
         let c = candidate(req);
         assert_eq!(c.tags, vec!["Custom"]);
     }
-}
-
-pub fn candidate_with_grid_path(request: ManualImportRequest, grid_path: &Path) -> ImportCandidate {
-    let mut candidate = candidate(request);
-    let app_id = non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
-    let (matched_steam_app_id, artwork) =
-        artwork::steam_preferred_plan(grid_path, app_id, &candidate.name);
-    candidate.matched_steam_app_id = matched_steam_app_id;
-    candidate.artwork = artwork;
-    candidate
 }

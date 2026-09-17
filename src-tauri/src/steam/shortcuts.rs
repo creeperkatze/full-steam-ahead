@@ -318,7 +318,8 @@ mod tests {
     #[test]
     fn round_trip_single_shortcut() {
         let original = make_shortcut("My Game", "\"C:\\Games\\game.exe\"");
-        let parsed = parse_shortcuts(&serialize_shortcuts(&[original.clone()])).unwrap();
+        let parsed =
+            parse_shortcuts(&serialize_shortcuts(std::slice::from_ref(&original))).unwrap();
         assert_eq!(parsed.len(), 1);
         assert_eq!(parsed[0].app_id, original.app_id);
         assert_eq!(parsed[0].app_name, original.app_name);
@@ -342,11 +343,11 @@ mod tests {
         s.allow_desktop_config = false;
         s.allow_overlay = false;
         s.open_vr = true;
-        let parsed = parse_shortcuts(&serialize_shortcuts(&[s.clone()])).unwrap();
-        assert_eq!(parsed[0].is_hidden, true);
-        assert_eq!(parsed[0].allow_desktop_config, false);
-        assert_eq!(parsed[0].allow_overlay, false);
-        assert_eq!(parsed[0].open_vr, true);
+        let parsed = parse_shortcuts(&serialize_shortcuts(std::slice::from_ref(&s))).unwrap();
+        assert!(parsed[0].is_hidden);
+        assert!(!parsed[0].allow_desktop_config);
+        assert!(!parsed[0].allow_overlay);
+        assert!(parsed[0].open_vr);
     }
 
     #[test]

@@ -292,7 +292,7 @@ mod tests {
         assert!(shortcut_is_unchanged(&matching, &candidate));
 
         // A shortcut pointing at the raw executable_path is seen as changed.
-        let mut mismatched = matching.clone();
+        let mut mismatched = matching;
         mismatched.exe = format!("\"{}\"", candidate.executable_path.display());
         assert!(!shortcut_is_unchanged(&mismatched, &candidate));
     }
