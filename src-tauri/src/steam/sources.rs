@@ -70,7 +70,7 @@ fn importer_registry() -> Vec<(ImportSource, ScanFn)> {
         (ImportSource::Gog, importers::gog::scan),
         (ImportSource::Epic, importers::epic::scan),
         (ImportSource::Itch, importers::itch::scan),
-        (ImportSource::Origin, importers::origin::scan),
+        (ImportSource::EaApp, importers::ea::scan),
         (ImportSource::UbisoftConnect, importers::ubisoft::scan),
     ];
 

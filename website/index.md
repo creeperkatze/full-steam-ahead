@@ -6,7 +6,7 @@ hero:
 
 features:
   - title: Wide platform support
-    details: Automatically detects installed games across Epic Games, GOG, itch.io, EA App, Ubisoft Connect, Amazon Games, Xbox Game Pass, and more on Windows, macOS, and Linux.
+    details: Automatically detects installed games across Epic Games, GOG, itch.io, EA app, Ubisoft Connect, Amazon Games, Xbox Game Pass, and more on Windows, macOS, and Linux.
   - title: Artwork management
     details: Fetches and applies grid images, hero art, and logos for your imported games using matched Steam assets.
   - title: Collections

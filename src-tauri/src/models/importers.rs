@@ -18,7 +18,8 @@ pub enum ImportSource {
     Legendary,
     Lutris,
     MiniGalaxy,
-    Origin,
+    #[serde(alias = "origin")]
+    EaApp,
     UbisoftConnect,
     Other(String),
 }
@@ -39,7 +40,7 @@ impl ImportSource {
             ImportSource::Legendary => "Legendary".to_string(),
             ImportSource::Lutris => "Lutris".to_string(),
             ImportSource::MiniGalaxy => "MiniGalaxy".to_string(),
-            ImportSource::Origin => "EA app / Origin".to_string(),
+            ImportSource::EaApp => "EA app".to_string(),
             ImportSource::UbisoftConnect => "Ubisoft Connect".to_string(),
             ImportSource::Other(value) => value.clone(),
         }
@@ -63,7 +64,7 @@ impl ImportSource {
             ImportSource::Legendary => Some("legendary"),
             ImportSource::Lutris => Some("lutris"),
             ImportSource::MiniGalaxy => Some("miniGalaxy"),
-            ImportSource::Origin => Some("origin"),
+            ImportSource::EaApp => Some("eaApp"),
             ImportSource::UbisoftConnect => Some("ubisoftConnect"),
             ImportSource::Manual | ImportSource::Other(_) => None,
         }

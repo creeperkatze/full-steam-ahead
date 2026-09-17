@@ -1,8 +1,8 @@
+pub mod ea;
 pub mod epic;
 pub mod gog;
 pub mod itch;
 pub mod manual;
-pub mod origin;
 pub mod ubisoft;
 
 // Windows-only launchers

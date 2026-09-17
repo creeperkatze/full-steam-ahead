@@ -101,11 +101,24 @@ impl Settings {
 
     // Backfills missing entries so callers never have to guess a source's default.
     pub fn ensure_source_defaults(&mut self, sources: &[ImportSource]) {
+        self.migrate_renamed_sources();
         for source in sources {
             if let Some(key) = source.settings_key() {
                 self.sources
                     .entry(key.to_string())
                     .or_insert_with(|| Self::default_source_settings(source));
+            }
+        }
+    }
+}
+
+impl Settings {
+    /// Moves settings saved under a source's old key to its current key.
+    fn migrate_renamed_sources(&mut self) {
+        const RENAMED: [(&str, &str); 1] = [("origin", "eaApp")];
+        for (old, new) in RENAMED {
+            if let Some(settings) = self.sources.remove(old) {
+                self.sources.entry(new.to_string()).or_insert(settings);
             }
         }
     }
@@ -119,6 +132,43 @@ mod tests {
     fn unconfigured_source_defaults_to_enabled() {
         let settings = Settings::default();
         assert!(settings.source_settings(&ImportSource::Gog).enabled);
+    }
+
+    #[test]
+    fn origin_settings_move_to_ea_app() {
+        let mut settings: Settings = serde_json::from_str(
+            r#"{"sources": {"origin": {"enabled": false, "customPath": "D:/EA"}}}"#,
+        )
+        .unwrap();
+        settings.ensure_source_defaults(&[ImportSource::EaApp]);
+        assert!(!settings.sources.contains_key("origin"));
+        let ea_app = settings.source_settings(&ImportSource::EaApp);
+        assert!(!ea_app.enabled);
+        assert_eq!(ea_app.custom_path.as_deref(), Some("D:/EA"));
+    }
+
+    #[test]
+    fn current_ea_app_settings_win_over_old_ones() {
+        let mut settings = Settings::default();
+        for (key, enabled) in [("origin", false), ("eaApp", true)] {
+            settings.sources.insert(
+                key.to_string(),
+                SourceSettings {
+                    enabled,
+                    custom_path: None,
+                },
+            );
+        }
+        settings.ensure_source_defaults(&[ImportSource::EaApp]);
+        assert!(settings.source_settings(&ImportSource::EaApp).enabled);
+        assert!(!settings.sources.contains_key("origin"));
+    }
+
+    #[test]
+    fn origin_source_id_is_still_accepted() {
+        let source: ImportSource = serde_json::from_str(r#""origin""#).unwrap();
+        assert_eq!(source, ImportSource::EaApp);
+        assert_eq!(serde_json::to_string(&source).unwrap(), r#""eaApp""#);
     }
 
     #[test]

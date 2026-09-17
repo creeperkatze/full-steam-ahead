@@ -14,7 +14,7 @@ export const IMPORT_SOURCE_NAMES: Record<Exclude<ImportSource, { other: string }
 	legendary: 'Legendary',
 	lutris: 'Lutris',
 	miniGalaxy: 'MiniGalaxy',
-	origin: 'EA app / Origin',
+	eaApp: 'EA app',
 	ubisoftConnect: 'Ubisoft Connect',
 }
 

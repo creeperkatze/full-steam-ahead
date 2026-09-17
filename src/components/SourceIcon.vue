@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import AmazonIcon from '../assets/icons/amazon.svg'
 import BottlesIcon from '../assets/icons/bottles.svg?url'
+import EaIcon from '../assets/icons/ea.svg'
 import EpicIcon from '../assets/icons/epic.svg'
 import FlatpakIcon from '../assets/icons/flatpak.svg?url'
 import GamePassIcon from '../assets/icons/gamepass.svg'
@@ -12,13 +13,13 @@ import ItchIcon from '../assets/icons/itch.svg'
 import LegendaryIcon from '../assets/icons/legendary.png'
 import LutrisIcon from '../assets/icons/lutris.svg?url'
 import MinigalaxyIcon from '../assets/icons/minigalaxy.png'
-import OriginIcon from '../assets/icons/origin.svg'
 import PlayniteIcon from '../assets/icons/playnite.svg'
 import UbisoftIcon from '../assets/icons/ubisoft.svg'
 
 const ICONS: Record<string, unknown> = {
 	amazon: AmazonIcon,
 	bottles: BottlesIcon,
+	eaApp: EaIcon,
 	epic: EpicIcon,
 	flatpak: FlatpakIcon,
 	gamePass: GamePassIcon,
@@ -28,7 +29,6 @@ const ICONS: Record<string, unknown> = {
 	legendary: LegendaryIcon,
 	lutris: LutrisIcon,
 	miniGalaxy: MinigalaxyIcon,
-	origin: OriginIcon,
 	playnite: PlayniteIcon,
 	ubisoftConnect: UbisoftIcon,
 }

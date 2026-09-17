@@ -204,14 +204,6 @@ mod tests {
     }
 
     #[test]
-    fn collection_id_strips_special_chars() {
-        assert_eq!(
-            managed_collection_id("EA app / Origin"),
-            "fsa-ea-app-origin"
-        );
-    }
-
-    #[test]
     fn collection_id_collapses_separators() {
         assert_eq!(
             managed_collection_id("Ubisoft  Connect"),

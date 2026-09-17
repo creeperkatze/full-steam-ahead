@@ -122,12 +122,12 @@ fn scan_registry(
             #[cfg_attr(not(unix), allow(unused_mut))]
             let mut candidate = launcher_candidate(
                 user,
-                ImportSource::Origin,
-                "origin",
+                ImportSource::EaApp,
+                "ea",
                 title,
                 launcher.to_path_buf(),
                 url,
-                vec!["EA app / Origin".to_string()],
+                vec!["EA app".to_string()],
             );
             // The EA app is a Windows program
             #[cfg(unix)]

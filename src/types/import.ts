@@ -12,7 +12,7 @@ export type ImportSource =
 	| 'legendary'
 	| 'lutris'
 	| 'miniGalaxy'
-	| 'origin'
+	| 'eaApp'
 	| 'ubisoftConnect'
 	| { other: string }
 

@@ -78,7 +78,7 @@ Prefer to build from source? See [Building from source](#-building-from-source) 
 | Epic Games | ✅ | ✅ | ✅ |
 | GOG | ✅ | ❌ | ✅ |
 | itch.io | ✅ | ✅ | ✅ |
-| EA App / Origin | ✅ | - | ✅ |
+| EA app | ✅ | - | ✅ |
 | Ubisoft Connect | ✅ | - | ✅ |
 | Amazon Games | ✅ | - | - |
 | Xbox Game Pass | ✅ | - | - |
