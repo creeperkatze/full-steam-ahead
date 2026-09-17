@@ -30,6 +30,9 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     let gog_json = heroic_config_dir.join("gog_store").join("installed.json");
     candidates.extend(scan_gog_games(user, &gog_json, &install_mode));
 
+    let sideload_json = heroic_config_dir.join("sideload_apps").join("library.json");
+    candidates.extend(scan_sideload_games(user, &sideload_json, &install_mode));
+
     Ok(candidates)
 }
 
@@ -66,10 +69,14 @@ fn install_mode_for(config_dir: &Path) -> InstallMode {
 fn heroic_launch_candidate(
     user: &SteamUser,
     name: String,
+    runner: Option<&str>,
     app_name: &str,
     install_mode: &InstallMode,
 ) -> ImportCandidate {
-    let launch_url = format!("heroic://launch/{app_name}");
+    let launch_url = match runner {
+        Some(runner) => format!("heroic://launch/{runner}/{app_name}"),
+        None => format!("heroic://launch/{app_name}"),
+    };
     let (launcher, launch_options) = match install_mode {
         InstallMode::FlatPak => (
             "flatpak",
@@ -121,7 +128,7 @@ fn scan_epic_games(
     };
     map.into_values()
         .filter(|g| !g.is_dlc && g.is_installed())
-        .map(|game| heroic_launch_candidate(user, game.title, &game.app_name, install_mode))
+        .map(|game| heroic_launch_candidate(user, game.title, None, &game.app_name, install_mode))
         .collect()
 }
 
@@ -136,6 +143,71 @@ struct HeroicGogEntry {
     app_name: String,
     install_path: String,
     platform: String,
+}
+
+#[derive(Deserialize)]
+struct HeroicSideloadLibrary {
+    #[serde(default)]
+    games: Vec<HeroicSideloadGame>,
+}
+
+#[derive(Deserialize)]
+struct HeroicSideloadGame {
+    app_name: String,
+    title: String,
+    #[serde(default)]
+    is_installed: bool,
+    #[serde(default)]
+    install: HeroicSideloadInstall,
+}
+
+#[derive(Deserialize, Default)]
+struct HeroicSideloadInstall {
+    executable: Option<String>,
+    #[serde(default)]
+    is_dlc: bool,
+}
+
+impl HeroicSideloadGame {
+    fn is_launchable(&self) -> bool {
+        if !self.is_installed || self.install.is_dlc {
+            return false;
+        }
+        // Browser apps have no executable; Heroic opens their URL itself
+        match self.install.executable.as_deref() {
+            Some(exe) if !exe.is_empty() => Path::new(exe).exists(),
+            _ => true,
+        }
+    }
+}
+
+/// Non-store games the user added to Heroic by pointing it at an executable.
+fn scan_sideload_games(
+    user: &SteamUser,
+    library_json: &Path,
+    install_mode: &InstallMode,
+) -> Vec<ImportCandidate> {
+    let Ok(raw) = std::fs::read_to_string(library_json) else {
+        return Vec::new();
+    };
+    let Ok(library) = serde_json::from_str::<HeroicSideloadLibrary>(&raw) else {
+        return Vec::new();
+    };
+    library
+        .games
+        .into_iter()
+        .filter(HeroicSideloadGame::is_launchable)
+        .map(|game| {
+            // Pin the runner so a store game sharing the app name can't be launched instead
+            heroic_launch_candidate(
+                user,
+                game.title,
+                Some("sideload"),
+                &game.app_name,
+                install_mode,
+            )
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -212,6 +284,55 @@ mod tests {
         assert_eq!(b.app_name, "B");
     }
 
+    // HeroicSideloadLibrary JSON deserialization
+
+    #[test]
+    fn parses_sideload_library() {
+        let json = r#"{"games":[{
+            "runner":"sideload",
+            "app_name":"aBcD1234",
+            "title":"My Game",
+            "install":{"executable":"/games/mygame/game.exe","platform":"windows","is_dlc":false},
+            "folder_name":"/games/mygame",
+            "is_installed":true,
+            "canRunOffline":true
+        }]}"#;
+        let library: HeroicSideloadLibrary = serde_json::from_str(json).unwrap();
+        assert_eq!(library.games.len(), 1);
+        let game = &library.games[0];
+        assert_eq!(game.app_name, "aBcD1234");
+        assert_eq!(game.title, "My Game");
+        assert_eq!(
+            game.install.executable.as_deref(),
+            Some("/games/mygame/game.exe")
+        );
+    }
+
+    #[test]
+    fn sideload_library_without_games_deserializes() {
+        let library: HeroicSideloadLibrary = serde_json::from_str("{}").unwrap();
+        assert!(library.games.is_empty());
+    }
+
+    #[test]
+    fn sideload_skips_uninstalled_and_missing_executables() {
+        let json = r#"{"games":[
+            {"app_name":"a","title":"Not installed","is_installed":false,"install":{}},
+            {"app_name":"b","title":"Missing exe","is_installed":true,
+             "install":{"executable":"/definitely/not/here.exe"}},
+            {"app_name":"c","title":"Browser app","is_installed":true,"install":{},
+             "browserUrl":"https://example.com"}
+        ]}"#;
+        let library: HeroicSideloadLibrary = serde_json::from_str(json).unwrap();
+        let launchable: Vec<_> = library
+            .games
+            .iter()
+            .filter(|g| g.is_launchable())
+            .map(|g| g.app_name.as_str())
+            .collect();
+        assert_eq!(launchable, ["c"]);
+    }
+
     #[test]
     fn empty_gog_config_deserializes() {
         let config: HeroicGogConfig = serde_json::from_str(r#"{"installed":[]}"#).unwrap();
@@ -259,6 +380,7 @@ fn scan_gog_games(
         candidates.push(heroic_launch_candidate(
             user,
             name,
+            None,
             &entry.app_name,
             install_mode,
         ));
