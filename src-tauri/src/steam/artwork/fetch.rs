@@ -57,8 +57,12 @@ pub(super) struct StoreItemAssets {
 }
 
 pub(super) fn find_steam_app_id(game_name: &str) -> Option<u32> {
-    let term = encode_query(game_name);
-    let url = format!("https://store.steampowered.com/api/storesearch/?term={term}&l=en&cc=US");
+    let url = reqwest::Url::parse_with_params(
+        "https://store.steampowered.com/api/storesearch/",
+        [("term", game_name), ("l", "en"), ("cc", "US")],
+    )
+    .ok()?
+    .to_string();
     let response = http_client()
         .get(url.as_str())
         .send()
@@ -92,10 +96,12 @@ pub(super) fn store_item_asset_specs(
         "context": { "country_code": "US" },
         "data_request": { "include_assets": true }
     });
-    let url = format!(
-        "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json={}",
-        encode_query(&request.to_string())
-    );
+    let url = reqwest::Url::parse_with_params(
+        "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/",
+        [("input_json", request.to_string())],
+    )
+    .ok()?
+    .to_string();
     let item = http_client()
         .get(url.as_str())
         .send()
@@ -222,17 +228,6 @@ pub(super) fn download_asset(url: &str, target: &Path) -> AppResult<()> {
         fs::create_dir_all(parent).map_err(io_context(parent))?;
     }
     fs::write(target, bytes).map_err(io_context(target))
-}
-
-pub(super) fn encode_query(value: &str) -> String {
-    value
-        .bytes()
-        .flat_map(|byte| match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' => vec![byte as char],
-            b' ' => vec!['+'],
-            _ => format!("%{byte:02X}").chars().collect(),
-        })
-        .collect()
 }
 
 pub(super) fn name_distance(left: &str, right: &str) -> usize {

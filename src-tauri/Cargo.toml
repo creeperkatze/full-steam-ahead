@@ -72,3 +72,4 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Diagnostics_ToolHelp",
 ] }
 winreg = "0.56"
+zerocopy = { version = "0.8", features = ["derive"] }

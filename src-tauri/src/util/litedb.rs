@@ -4,14 +4,15 @@
 //! follows LiteDB 4.1.4's `BasePage`, `DataPage` and `ExtendPage`; all integers are little-endian.
 
 use bson::Document;
+use zerocopy::{
+    little_endian::{U16, U32},
+    FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned,
+};
 
 const PAGE_SIZE: usize = 4096;
-const PAGE_HEADER_SIZE: usize = 25;
 const HEADER_INFO: &[u8] = b"** This is a LiteDB file **";
 const FILE_VERSION: u8 = 7;
 const NO_PAGE: u32 = u32::MAX;
-/// Data block header: index (u16), extend page (u32), length (u16).
-const BLOCK_HEADER_SIZE: usize = 8;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum PageType {
@@ -28,29 +29,51 @@ pub enum LiteDbError {
     UnsupportedVersion(u8),
 }
 
-/// Page header: id (u32), type (u8), prev (u32), next (u32), item count (u16), free bytes (u16), 8 reserved.
-struct Page<'a> {
+/// `BasePage.WriteHeader`; unread fields are kept so the layout matches the file.
+#[derive(FromBytes, IntoBytes, KnownLayout, Immutable, Unaligned)]
+#[repr(C)]
+#[allow(dead_code)]
+struct PageHeader {
+    id: U32,
     kind: u8,
-    next: u32,
-    item_count: usize,
+    prev: U32,
+    next: U32,
+    /// Blocks on data pages, bytes on extend pages
+    item_count: U16,
+    free_bytes: U16,
+    reserved: [u8; 8],
+}
+
+/// `DataPage.WriteContent`, followed by `len` bytes of BSON
+#[derive(FromBytes, IntoBytes, KnownLayout, Immutable, Unaligned)]
+#[repr(C)]
+#[allow(dead_code)]
+struct BlockHeader {
+    index: U16,
+    extend_page: U32,
+    len: U16,
+}
+
+struct Page<'a> {
+    header: &'a PageHeader,
     content: &'a [u8],
 }
 
 impl Page<'_> {
     fn is(&self, kind: PageType) -> bool {
-        self.kind == kind as u8
+        self.header.kind == kind as u8
+    }
+
+    fn item_count(&self) -> usize {
+        self.header.item_count.get().into()
     }
 }
 
 fn page(file: &[u8], id: u32) -> Option<Page<'_>> {
     let start = usize::try_from(id).ok()?.checked_mul(PAGE_SIZE)?;
     let bytes = file.get(start..start.checked_add(PAGE_SIZE)?)?;
-    Some(Page {
-        kind: bytes[4],
-        next: u32::from_le_bytes(bytes[9..13].try_into().ok()?),
-        item_count: u16::from_le_bytes(bytes[13..15].try_into().ok()?).into(),
-        content: &bytes[PAGE_HEADER_SIZE..],
-    })
+    let (header, content) = PageHeader::ref_from_prefix(bytes).ok()?;
+    Some(Page { header, content })
 }
 
 /// Every document stored in the file, across all collections.
@@ -60,10 +83,11 @@ pub fn read_documents(file: &[u8]) -> Result<Vec<Document>, LiteDbError> {
     let header = page(file, 0)
         .filter(|p| p.is(PageType::Header))
         .ok_or(LiteDbError::NotLiteDb)?;
-    if header.content.get(..HEADER_INFO.len()) != Some(HEADER_INFO) {
-        return Err(LiteDbError::NotLiteDb);
-    }
-    let version = header.content[HEADER_INFO.len()];
+    let version = *header
+        .content
+        .strip_prefix(HEADER_INFO)
+        .and_then(<[u8]>::first)
+        .ok_or(LiteDbError::NotLiteDb)?;
     if version != FILE_VERSION {
         return Err(LiteDbError::UnsupportedVersion(version));
     }
@@ -75,11 +99,12 @@ pub fn read_documents(file: &[u8]) -> Result<Vec<Document>, LiteDbError> {
             continue;
         };
         let mut blocks = data_page.content;
-        for _ in 0..data_page.item_count {
-            let Some((extend_page, data, rest)) = split_block(blocks) else {
+        for _ in 0..data_page.item_count() {
+            let Some((block, data, rest)) = split_block(blocks) else {
                 break;
             };
             blocks = rest;
+            let extend_page = block.extend_page.get();
             let bytes = if extend_page == NO_PAGE {
                 Some(data.to_vec())
             } else {
@@ -95,15 +120,13 @@ pub fn read_documents(file: &[u8]) -> Result<Vec<Document>, LiteDbError> {
 }
 
 /// Splits one data block off the front of a data page's content.
-fn split_block(blocks: &[u8]) -> Option<(u32, &[u8], &[u8])> {
-    let header = blocks.get(..BLOCK_HEADER_SIZE)?;
-    let extend_page = u32::from_le_bytes(header[2..6].try_into().ok()?);
-    let len = usize::from(u16::from_le_bytes(header[6..8].try_into().ok()?));
-    let data = blocks.get(BLOCK_HEADER_SIZE..BLOCK_HEADER_SIZE + len)?;
-    Some((extend_page, data, &blocks[BLOCK_HEADER_SIZE + len..]))
+fn split_block(blocks: &[u8]) -> Option<(&BlockHeader, &[u8], &[u8])> {
+    let (block, rest) = BlockHeader::ref_from_prefix(blocks).ok()?;
+    let (data, rest) = rest.split_at_checked(block.len.get().into())?;
+    Some((block, data, rest))
 }
 
-/// Concatenates a linked list of extend pages, whose item count is their byte length.
+/// Concatenates a linked list of extend pages.
 fn read_extend_chain(file: &[u8], first: u32, page_count: u32) -> Option<Vec<u8>> {
     let mut bytes = Vec::new();
     let mut id = first;
@@ -113,8 +136,8 @@ fn read_extend_chain(file: &[u8], first: u32, page_count: u32) -> Option<Vec<u8>
             return Some(bytes);
         }
         let extend = page(file, id).filter(|p| p.is(PageType::Extend))?;
-        bytes.extend_from_slice(extend.content.get(..extend.item_count)?);
-        id = extend.next;
+        bytes.extend_from_slice(extend.content.get(..extend.item_count())?);
+        id = extend.header.next.get();
     }
     None
 }
@@ -236,11 +259,17 @@ mod tests {
     }
 
     fn page_bytes(kind: u8, next: u32, item_count: usize, content: &[u8]) -> Vec<u8> {
-        let mut page = vec![0u8; PAGE_SIZE];
-        page[4] = kind;
-        page[9..13].copy_from_slice(&next.to_le_bytes());
-        page[13..15].copy_from_slice(&u16::try_from(item_count).unwrap().to_le_bytes());
-        page[PAGE_HEADER_SIZE..PAGE_HEADER_SIZE + content.len()].copy_from_slice(content);
+        let header = PageHeader {
+            id: U32::new(0),
+            kind,
+            prev: U32::new(NO_PAGE),
+            next: U32::new(next),
+            item_count: U16::new(item_count.try_into().unwrap()),
+            free_bytes: U16::new(0),
+            reserved: [0; 8],
+        };
+        let mut page = [header.as_bytes(), content].concat();
+        page.resize(PAGE_SIZE, 0);
         page
     }
 
@@ -249,12 +278,17 @@ mod tests {
         page_bytes(PageType::Header as u8, NO_PAGE, 0, &content)
     }
 
+    fn block_with_len(extend_page: u32, len: u16, data: &[u8]) -> Vec<u8> {
+        let header = BlockHeader {
+            index: U16::new(0),
+            extend_page: U32::new(extend_page),
+            len: U16::new(len),
+        };
+        [header.as_bytes(), data].concat()
+    }
+
     fn block(extend_page: u32, data: &[u8]) -> Vec<u8> {
-        let mut block = vec![0, 0];
-        block.extend(extend_page.to_le_bytes());
-        block.extend(u16::try_from(data.len()).unwrap().to_le_bytes());
-        block.extend(data);
-        block
+        block_with_len(extend_page, data.len().try_into().unwrap(), data)
     }
 
     fn names(file: &[u8]) -> Vec<String> {
@@ -269,8 +303,7 @@ mod tests {
     fn rejects_files_that_are_not_litedb() {
         assert_eq!(read_documents(b""), Err(LiteDbError::NotLiteDb));
         assert_eq!(read_documents(&[0; PAGE_SIZE]), Err(LiteDbError::NotLiteDb));
-        let mut wrong_info = header_page(FILE_VERSION);
-        wrong_info[PAGE_HEADER_SIZE] = b'#';
+        let wrong_info = page_bytes(PageType::Header as u8, NO_PAGE, 0, b"** Something else **");
         assert_eq!(read_documents(&wrong_info), Err(LiteDbError::NotLiteDb));
     }
 
@@ -314,11 +347,12 @@ mod tests {
 
     #[test]
     fn truncated_block_and_trailing_partial_page_are_ignored() {
-        let mut data = block(NO_PAGE, &doc_bytes("Inline"));
-        // Claims a second block, but its length runs past the page
-        data.extend(block(NO_PAGE, &[]));
-        let len_at = data.len() - 2;
-        data[len_at..].copy_from_slice(&u16::MAX.to_le_bytes());
+        let data = [
+            block(NO_PAGE, &doc_bytes("Inline")),
+            // Claims more bytes than the page holds
+            block_with_len(NO_PAGE, u16::MAX, &[]),
+        ]
+        .concat();
         let mut file = [
             header_page(FILE_VERSION),
             page_bytes(PageType::Data as u8, NO_PAGE, 2, &data),

@@ -1,4 +1,4 @@
-use super::fetch::{encode_query, http_client};
+use super::fetch::http_client;
 use crate::{
     error::{AppError, AppResult},
     models::{ArtworkKind, SteamGridDbGame, SteamGridDbImage},
@@ -8,9 +8,10 @@ use serde::Deserialize;
 const BASE_URL: &str = "https://www.steamgriddb.com/api/v2";
 
 pub fn search_games(api_key: &str, query: &str) -> AppResult<Vec<SteamGridDbGame>> {
-    let term = encode_query(query);
-    let url = format!("{BASE_URL}/search/autocomplete/{term}");
-    let response: ApiResponse<RawGame> = request(api_key, &url)?;
+    let response: ApiResponse<RawGame> = request(
+        api_key,
+        &endpoint_url(&["search", "autocomplete", query], &[])?,
+    )?;
     Ok(response
         .data
         .into_iter()
@@ -37,17 +38,12 @@ pub fn fetch_images(
 
     let mut params = Vec::new();
     if let Some(dimensions) = dimensions {
-        params.push(format!("dimensions={dimensions}"));
+        params.push(("dimensions", dimensions));
     }
     if allow_nsfw {
-        params.push("nsfw=any".to_string());
+        params.push(("nsfw", "any"));
     }
-
-    let mut url = format!("{BASE_URL}/{endpoint}/game/{game_id}");
-    if !params.is_empty() {
-        url.push('?');
-        url.push_str(&params.join("&"));
-    }
+    let url = endpoint_url(&[endpoint, "game", &game_id.to_string()], &params)?;
 
     let response: ApiResponse<RawImage> = request(api_key, &url)?;
     Ok(response
@@ -61,6 +57,19 @@ pub fn fetch_images(
             height: image.height,
         })
         .collect())
+}
+
+/// Builds an API URL, percent-encoding each path segment and query parameter.
+fn endpoint_url(segments: &[&str], params: &[(&str, &str)]) -> AppResult<String> {
+    let invalid = || AppError::Message("Invalid SteamGridDB URL".to_string());
+    let mut url = reqwest::Url::parse(BASE_URL).map_err(|_| invalid())?;
+    url.path_segments_mut()
+        .map_err(|()| invalid())?
+        .extend(segments);
+    if !params.is_empty() {
+        url.query_pairs_mut().extend_pairs(params);
+    }
+    Ok(url.into())
 }
 
 fn request<T: for<'de> Deserialize<'de>>(api_key: &str, url: &str) -> AppResult<ApiResponse<T>> {
@@ -114,4 +123,33 @@ struct RawImage {
     thumb: String,
     width: u32,
     height: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn search_terms_are_encoded_as_one_path_segment() {
+        assert_eq!(
+            endpoint_url(&["search", "autocomplete", "Half-Life 2: Ep/One +?#"], &[]).unwrap(),
+            "https://www.steamgriddb.com/api/v2/search/autocomplete/Half-Life%202:%20Ep%2FOne%20+%3F%23"
+        );
+    }
+
+    #[test]
+    fn query_parameters_are_appended() {
+        assert_eq!(
+            endpoint_url(
+                &["grids", "game", "42"],
+                &[("dimensions", "460x215,920x430"), ("nsfw", "any")]
+            )
+            .unwrap(),
+            "https://www.steamgriddb.com/api/v2/grids/game/42?dimensions=460x215%2C920x430&nsfw=any"
+        );
+        assert_eq!(
+            endpoint_url(&["heroes", "game", "42"], &[]).unwrap(),
+            "https://www.steamgriddb.com/api/v2/heroes/game/42"
+        );
+    }
 }

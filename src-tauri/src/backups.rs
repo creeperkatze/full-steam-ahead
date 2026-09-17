@@ -205,20 +205,14 @@ fn load_manifest(backup_dir: &Path) -> Option<BackupManifest> {
     serde_json::from_str(&raw).ok()
 }
 
+/// Backup ids are the UTC creation time, formatted as `%Y%m%d-%H%M%S`.
 fn id_to_iso(id: &str) -> String {
-    if id.len() == 15 && id.as_bytes().get(8) == Some(&b'-') {
-        format!(
-            "{}-{}-{}T{}:{}:{}Z",
-            &id[0..4],
-            &id[4..6],
-            &id[6..8],
-            &id[9..11],
-            &id[11..13],
-            &id[13..15]
-        )
-    } else {
-        id.to_string()
-    }
+    chrono::NaiveDateTime::parse_from_str(id, "%Y%m%d-%H%M%S")
+        .map(|time| {
+            time.and_utc()
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+        })
+        .unwrap_or_else(|_| id.to_string())
 }
 
 #[cfg(test)]
@@ -271,6 +265,9 @@ mod tests {
         assert_eq!(id_to_iso("not-a-timestamp"), "not-a-timestamp");
         assert_eq!(id_to_iso(""), "");
         assert_eq!(id_to_iso("20250516_143022"), "20250516_143022");
+        assert_eq!(id_to_iso("20251340-143022"), "20251340-143022");
+        // 15 bytes with the dash at byte 8, but "ä" straddles a field boundary
+        assert_eq!(id_to_iso("202ä516-143022"), "202ä516-143022");
     }
 
     // write_manifest / load_manifest
