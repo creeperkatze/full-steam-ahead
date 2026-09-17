@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Key paths are relative to `HKEY_LOCAL_MACHINE`; an empty value name reads the default value.
+/// Key paths are relative to `HKEY_LOCAL_MACHINE`. An empty value name reads the default value.
 pub trait Registry {
     fn value(&self, key: &str, name: &str) -> Option<String>;
     fn subkeys(&self, key: &str) -> Vec<String>;
@@ -27,7 +27,7 @@ impl Registry for WindowsRegistry {
         };
         const CLASSES: &str = r"SOFTWARE\Classes\";
         read(HKEY_LOCAL_MACHINE, key).or_else(|| {
-            // Protocol handlers may be registered per user; HKEY_CLASSES_ROOT merges both
+            // Protocol handlers can be registered per user. HKEY_CLASSES_ROOT includes those.
             key.get(..CLASSES.len())
                 .filter(|prefix| prefix.eq_ignore_ascii_case(CLASSES))?;
             read(HKEY_CLASSES_ROOT, &key[CLASSES.len()..])
@@ -87,7 +87,7 @@ impl WineRegistry {
         &self.prefix
     }
 
-    /// Steam's Proton prefixes live in `compatdata/<id>/pfx`; returns `compatdata/<id>`.
+    /// Returns `compatdata/<id>` for a Proton prefix at `compatdata/<id>/pfx`.
     #[cfg_attr(not(unix), allow(dead_code))]
     pub fn proton_compat_folder(&self) -> Option<&Path> {
         (self.prefix.file_name()? == "pfx")
@@ -107,7 +107,7 @@ impl Registry for WineRegistry {
 
     fn subkeys(&self, key: &str) -> Vec<String> {
         let prefix = format!("{}\\", key.to_lowercase());
-        // Parents without values have no section of their own, so derive children from any descendant
+        // Keys without values have no section. Their children show up as descendants.
         self.keys
             .iter()
             .filter(|(lower, _)| lower.starts_with(&prefix))
@@ -125,12 +125,12 @@ impl Registry for WineRegistry {
         }
         let rest = windows_path.get(2..)?.replace('\\', "/");
         let rest = rest.trim_start_matches('/');
-        // Joined as one string: on Windows hosts `join("c:")` would be read as a drive
+        // `join("c:")` would start a new drive path on Windows.
         Some(self.prefix.join(format!("dosdevices/{drive}/{rest}")))
     }
 }
 
-/// Parses `"Name"="value"` and `@="value"` lines; other value types are skipped.
+/// Parses `"Name"="value"` and `@="value"` lines. Other value types are skipped.
 fn parse_string_value(line: &str) -> Option<(String, String)> {
     let (name, rest) = if let Some(rest) = line.strip_prefix('@') {
         (String::new(), rest)
@@ -146,8 +146,7 @@ fn parse_string_value(line: &str) -> Option<(String, String)> {
 
 /// Reads a Wine-escaped string up to its closing quote, returning it and the remainder.
 ///
-/// Mirrors Wine's `dump_strW`: C escapes, octal (up to 3 digits) for other control characters,
-/// and `\x` with up to 4 hex digits per UTF-16 unit, so non-BMP characters arrive as surrogate pairs.
+/// Mirrors Wine's `dump_strW`. It writes C escapes, octal escapes and `\x` escapes per UTF-16 unit.
 fn parse_quoted(s: &str) -> Option<(String, &str)> {
     let mut units: Vec<u16> = Vec::new();
     let mut chars = s.char_indices().peekable();
@@ -202,7 +201,7 @@ fn take_digits(
 }
 
 fn unescape(s: &str) -> String {
-    // Key names use the same escaping as values but have no surrounding quotes
+    // Key names are escaped like values but have no quotes.
     parse_quoted(&format!("{}\"", s.replace('"', "\\\"")))
         .map(|(v, _)| v)
         .unwrap_or_else(|| s.to_string())

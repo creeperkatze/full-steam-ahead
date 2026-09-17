@@ -28,7 +28,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
 
     let mut candidates = Vec::new();
     for folder in game_folders {
-        // Windows installs keep goggame-*.info at the top level; Linux ones nest it under game/
+        // Only Windows installs keep goggame-*.info at the top level.
         let windows = gog::scan_folders(user, vec![folder.clone()]);
         if windows.is_empty() {
             candidates.extend(native_candidate(user, &folder));

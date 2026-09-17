@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn steam_runner_is_excluded() {
-        // scan() filters these out; verify the predicate directly
+        // Checks the fields that scan() filters on.
         let steam = LutrisGame {
             slug: "csgo".to_string(),
             name: "CS:GO".to_string(),

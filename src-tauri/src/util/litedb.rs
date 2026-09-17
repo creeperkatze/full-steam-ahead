@@ -1,7 +1,7 @@
 //! Read-only loader for LiteDB 4 data files (file format version 7).
 //!
-//! LiteDB only exists for .NET, and the one Rust port targets LiteDB 5. The layout below
-//! follows LiteDB 4.1.4's `BasePage`, `DataPage` and `ExtendPage`; all integers are little-endian.
+//! The only Rust port of LiteDB targets LiteDB 5. The layout follows LiteDB 4.1.4's
+//! `BasePage`, `DataPage` and `ExtendPage`. All integers are little-endian.
 
 use bson::Document;
 use zerocopy::{
@@ -29,7 +29,7 @@ pub enum LiteDbError {
     UnsupportedVersion(u8),
 }
 
-/// `BasePage.WriteHeader`; unread fields are kept so the layout matches the file.
+/// `BasePage.WriteHeader`. Unread fields keep the layout intact.
 #[derive(FromBytes, IntoBytes, KnownLayout, Immutable, Unaligned)]
 #[repr(C)]
 #[allow(dead_code)]
@@ -108,7 +108,7 @@ pub fn read_documents(file: &[u8]) -> Result<Vec<Document>, LiteDbError> {
             let bytes = if extend_page == NO_PAGE {
                 Some(data.to_vec())
             } else {
-                // Large documents live entirely in extend pages; the block's own data is empty
+                // Large documents live entirely in extend pages.
                 read_extend_chain(file, extend_page, page_count)
             };
             if let Some(doc) = bytes.and_then(|b| Document::from_reader(b.as_slice()).ok()) {
@@ -130,7 +130,7 @@ fn split_block(blocks: &[u8]) -> Option<(&BlockHeader, &[u8], &[u8])> {
 fn read_extend_chain(file: &[u8], first: u32, page_count: u32) -> Option<Vec<u8>> {
     let mut bytes = Vec::new();
     let mut id = first;
-    // A chain can't be longer than the file, so this also stops corrupt loops
+    // A chain can't be longer than the file. This also stops corrupt loops.
     for _ in 0..page_count {
         if id == NO_PAGE {
             return Some(bytes);
@@ -147,7 +147,7 @@ mod tests {
     use super::*;
     use bson::{spec::BinarySubtype, Binary, Bson, DateTime};
 
-    /// Written by LiteDB 4.1.4 itself; see `fixtures/litedb_v4.cs` for how.
+    /// Written by LiteDB 4.1.4 with `fixtures/litedb_v4.cs`.
     const FIXTURE: &[u8] = include_bytes!("fixtures/litedb_v4.db");
 
     fn fixture_doc(docs: &[Document], name: &str) -> Document {

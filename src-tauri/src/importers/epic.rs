@@ -177,7 +177,7 @@ fn candidate_from_manifest(
             tags,
         )
     } else {
-        // Keeps both routes so the user can switch; this only picks the default.
+        // Both launch routes are kept so the user can switch later.
         let start_dir = exe.parent().map(PathBuf::from).unwrap_or_default();
         let mut candidate = candidate_from_parts(
             user,

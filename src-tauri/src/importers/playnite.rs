@@ -125,7 +125,7 @@ struct GameEntry {
 impl GameEntry {
     fn from_document(doc: &Document) -> Option<Self> {
         let id = match doc.get("_id")? {
-            // LiteDB stores .NET's `Guid.ToByteArray`, whose first three groups are little-endian
+            // LiteDB stores GUIDs in .NET byte order.
             Bson::Binary(binary) if binary.subtype == BinarySubtype::Uuid => {
                 uuid::Uuid::from_slice_le(&binary.bytes).ok()?.to_string()
             }

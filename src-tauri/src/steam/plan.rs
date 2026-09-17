@@ -20,7 +20,7 @@ pub fn build_preview_plan(
     files.insert(user.shortcuts_path.clone());
     files.insert(user.collections_path.clone());
 
-    // Applying reads the file again and stops on errors, so the preview can carry on
+    // Applying reads the file again and stops on errors.
     let existing_shortcuts =
         super::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_else(|error| {
             tracing::warn!(%error, "Existing shortcuts could not be read for the preview");
@@ -141,7 +141,7 @@ fn candidate_changes(
             artwork_files.push(file.clone());
         }
 
-        // Official Steam artwork re-downloads the same content; deleting an empty slot is a no-op.
+        // Official artwork would download the same file again. Deleting an empty slot does nothing.
         if (is_official_steam && asset.will_replace_existing) || is_noop_delete {
             continue;
         }

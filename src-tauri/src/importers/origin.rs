@@ -15,7 +15,7 @@ const UNINSTALL_KEYS: [&str; 2] = [
     r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
     r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
 ];
-/// Whatever handles `origin2://` receives the launch link; `eadm://` is the EA app's own scheme.
+/// The `origin2://` handler takes the launch link. `eadm://` is the fallback.
 const PROTOCOL_COMMAND_KEYS: [&str; 2] = [
     r"SOFTWARE\Classes\origin2\shell\open\command",
     r"SOFTWARE\Classes\eadm\shell\open\command",
@@ -166,7 +166,7 @@ fn parse_content_ids(xml: &str) -> Result<Vec<String>, String> {
 
 /// Manifests are written as UTF-8 or UTF-16.
 fn decode_text(bytes: &[u8]) -> String {
-    // Without a byte order mark, UTF-16 shows up as `<` followed by a zero byte
+    // UTF-16 without a byte order mark starts with `<` and a zero byte.
     let guess = match bytes {
         [_, 0, ..] => encoding_rs::UTF_16LE,
         _ => encoding_rs::UTF_8,

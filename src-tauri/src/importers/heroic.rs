@@ -256,7 +256,7 @@ impl HeroicSideloadGame {
         if !self.is_installed || self.install.is_dlc {
             return false;
         }
-        // Browser apps have no executable; Heroic opens their URL itself
+        // Browser apps have no executable. Heroic opens their URL itself.
         match self.install.executable.as_deref() {
             Some(exe) if !exe.is_empty() => Path::new(exe).exists(),
             _ => true,

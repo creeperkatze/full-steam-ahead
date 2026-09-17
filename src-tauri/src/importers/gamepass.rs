@@ -14,7 +14,7 @@ pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<Impo
     ])) else {
         return Ok(Vec::new());
     };
-    // The script reports packages it couldn't inspect on stderr and carries on
+    // The script reports unreadable packages on stderr.
     for line in String::from_utf8_lossy(&output.stderr).lines() {
         tracing::debug!(message = line.trim(), "Package skipped");
     }

@@ -37,8 +37,7 @@ pub fn quote_path(path: &Path) -> String {
     format!("\"{}\"", path.display())
 }
 
-/// Reads a launcher's file. A missing file just means the launcher isn't set up, so only other
-/// failures are warnings.
+/// Reads a launcher's file. A missing file is expected and only logged at debug.
 pub fn read_launcher_file(path: &Path) -> Option<String> {
     read_launcher_file_bytes(path).map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
 }
@@ -58,7 +57,7 @@ pub fn read_launcher_file_bytes(path: &Path) -> Option<Vec<u8>> {
     }
 }
 
-/// Parses JSON from a launcher, warning with where it came from when it doesn't match.
+/// Parses JSON from a launcher and warns when it doesn't match.
 pub fn parse_launcher_json<T: serde::de::DeserializeOwned>(origin: &str, raw: &str) -> Option<T> {
     serde_json::from_str(raw)
         .inspect_err(|error| {
@@ -67,20 +66,19 @@ pub fn parse_launcher_json<T: serde::de::DeserializeOwned>(origin: &str, raw: &s
         .ok()
 }
 
-/// Reads and parses a launcher's JSON file; see [`read_launcher_file`].
+/// Reads and parses a launcher's JSON file.
 pub fn read_launcher_json<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T> {
     let raw = read_launcher_file(path)?;
     parse_launcher_json(&path.display().to_string(), &raw)
 }
 
-/// Runs a launcher's CLI and returns its stdout; see [`command_output`].
+/// Runs a launcher's CLI and returns its stdout.
 #[cfg_attr(windows, allow(dead_code))]
 pub fn command_stdout(command: &mut std::process::Command) -> Option<String> {
     command_output(command).map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
-/// Runs a launcher's CLI. A missing program just means the launcher isn't installed; failures to
-/// run it or a failing exit status are warnings.
+/// Runs a launcher's CLI. A missing program is expected and only logged at debug.
 pub fn command_output(command: &mut std::process::Command) -> Option<std::process::Output> {
     let description = format!("{command:?}");
     #[cfg(windows)]
