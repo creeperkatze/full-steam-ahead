@@ -1,6 +1,6 @@
 use crate::{
-    error::{io_context, AppResult},
-    importers::candidate_from_parts,
+    error::AppResult,
+    importers::{candidate_from_parts, read_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -17,10 +17,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     let mut all_candidates = Vec::new();
 
     for source in find_galaxy_configs() {
-        let Ok(raw) = fs::read_to_string(&source.config_path) else {
-            continue;
-        };
-        let Ok(config) = serde_json::from_str::<GogConfig>(&raw) else {
+        let Some(config) = read_launcher_json::<GogConfig>(&source.config_path) else {
             continue;
         };
 
@@ -42,9 +39,10 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
             roots
         };
 
+        tracing::debug!(config = %source.config_path.display(), ?roots, "GOG Galaxy found");
         for root in roots {
             let root = PathBuf::from(root);
-            let mut found = scan_root_with_compat(user, &root, source.compat_folder.as_deref())?;
+            let mut found = scan_root_with_compat(user, &root, source.compat_folder.as_deref());
             // Ensures Steam launches this shortcut through Proton, since it was found in a Wine/Proton prefix.
             if source.wine_c_drive.is_some() {
                 for candidate in &mut found {
@@ -60,19 +58,20 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
 
 /// Scans a directory of GOG game folders, as found directly under a Galaxy install root.
 fn scan_root(user: &SteamUser, root: &Path) -> AppResult<Vec<ImportCandidate>> {
-    scan_root_with_compat(user, root, None)
+    Ok(scan_root_with_compat(user, root, None))
 }
 
 fn scan_root_with_compat(
     user: &SteamUser,
     root: &Path,
     compat_folder: Option<&Path>,
-) -> AppResult<Vec<ImportCandidate>> {
+) -> Vec<ImportCandidate> {
     if !root.exists() {
-        return Ok(Vec::new());
+        tracing::debug!(path = %root.display(), "GOG library folder not found");
+        return Vec::new();
     }
     let mut candidates = Vec::new();
-    for entry in fs::read_dir(root).map_err(io_context(root))?.flatten() {
+    for entry in read_dir_logged(root) {
         let folder = entry.path();
         if !folder.is_dir() {
             continue;
@@ -82,16 +81,26 @@ fn scan_root_with_compat(
         } else {
             folder
         };
-        candidates.extend(scan_gog_folder(user, &game_folder, compat_folder)?);
+        candidates.extend(scan_gog_folder(user, &game_folder, compat_folder));
     }
-    Ok(candidates)
+    candidates
+}
+
+fn read_dir_logged(dir: &Path) -> impl Iterator<Item = fs::DirEntry> {
+    fs::read_dir(dir)
+        .inspect_err(|error| {
+            tracing::warn!(path = %dir.display(), %error, "Could not list GOG folder");
+        })
+        .into_iter()
+        .flatten()
+        .flatten()
 }
 
 #[cfg(unix)]
 pub fn scan_folders(user: &SteamUser, folders: Vec<PathBuf>) -> Vec<ImportCandidate> {
     folders
         .into_iter()
-        .flat_map(|f| scan_gog_folder(user, &f, None).unwrap_or_default())
+        .flat_map(|f| scan_gog_folder(user, &f, None))
         .collect()
 }
 
@@ -99,12 +108,9 @@ fn scan_gog_folder(
     user: &SteamUser,
     game_folder: &Path,
     compat_folder: Option<&Path>,
-) -> AppResult<Vec<ImportCandidate>> {
+) -> Vec<ImportCandidate> {
     let mut candidates = Vec::new();
-    for entry in fs::read_dir(game_folder)
-        .map_err(io_context(game_folder))?
-        .flatten()
-    {
+    for entry in read_dir_logged(game_folder) {
         let path = entry.path();
         let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
@@ -114,8 +120,7 @@ fn scan_gog_folder(
         {
             continue;
         }
-        let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
-        let Ok(game) = serde_json::from_str::<GogGame>(&raw) else {
+        let Some(game) = read_launcher_json::<GogGame>(&path) else {
             continue;
         };
         let Some(task) = game.play_tasks.unwrap_or_default().into_iter().find(|t| {
@@ -124,6 +129,7 @@ fn scan_gog_folder(
                 && matches!(t.category.as_deref(), Some("launcher" | "game"))
                 && t.path.is_some()
         }) else {
+            tracing::debug!(game = game.name, info = %path.display(), "Skipping GOG game without a primary launch task");
             continue;
         };
 
@@ -156,7 +162,7 @@ fn scan_gog_folder(
             vec!["GOG".to_string()],
         ));
     }
-    Ok(candidates)
+    candidates
 }
 
 fn steam_compat_data_launch_options(compat_folder: &Path, extra_args: Option<&str>) -> String {

@@ -66,7 +66,9 @@ pub fn scan_sources(
     let settings = super::load_settings().unwrap_or_default();
     let result = steam::sources::scan_sources_with_progress(
         |event| {
-            let _ = app.emit("scan-progress", event);
+            if let Err(error) = app.emit("scan-progress", event) {
+                tracing::warn!(%error, "Could not send scan progress");
+            }
         },
         &user,
         &request,
@@ -120,7 +122,9 @@ pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<Im
 pub fn apply_plan(app: tauri::AppHandle, request: ApplyRequest) -> CommandResult<ApplyResult> {
     let result = steam::apply::apply_plan_with_progress(
         |event| {
-            let _ = app.emit("apply-progress", event);
+            if let Err(error) = app.emit("apply-progress", event) {
+                tracing::warn!(%error, "Could not send apply progress");
+            }
         },
         request,
     )
@@ -146,6 +150,8 @@ pub fn close_app(app: tauri::AppHandle) {
 #[instrument(skip_all)]
 pub fn show_main_window(app: tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
+        if let Err(error) = window.show() {
+            tracing::warn!(%error, "Could not show the main window");
+        }
     }
 }

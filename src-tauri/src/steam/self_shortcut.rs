@@ -94,7 +94,10 @@ fn flatpak_app_id() -> Option<String> {
         return Some(id);
     }
 
-    parse_flatpak_app_id(&fs::read_to_string(info_path).ok()?)
+    let info = fs::read_to_string(info_path)
+        .inspect_err(|error| tracing::warn!(%error, "Could not read /.flatpak-info"))
+        .ok()?;
+    parse_flatpak_app_id(&info)
 }
 
 #[cfg(unix)]

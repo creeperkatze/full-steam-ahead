@@ -1,6 +1,6 @@
 use crate::{
     error::AppResult,
-    importers::{gog, host_binary_path, launcher_candidate},
+    importers::{gog, host_binary_path, launcher_candidate, read_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -14,10 +14,20 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         (install_mode_for(custom), custom.to_path_buf())
     } else {
         let Ok(home) = std::env::var("HOME") else {
+            tracing::warn!("HOME is not set");
             return Ok(Vec::new());
         };
         detect_install_mode(&home)
     };
+    if !heroic_config_dir.exists() {
+        tracing::debug!(path = %heroic_config_dir.display(), "Heroic not found");
+        return Ok(Vec::new());
+    }
+    tracing::debug!(
+        path = %heroic_config_dir.display(),
+        flatpak = matches!(install_mode, InstallMode::FlatPak),
+        "Heroic found"
+    );
 
     let mut candidates = Vec::new();
 
@@ -123,14 +133,17 @@ fn scan_epic_games(
     installed_json: &Path,
     install_mode: &InstallMode,
 ) -> Vec<ImportCandidate> {
-    let Ok(raw) = std::fs::read_to_string(installed_json) else {
-        return Vec::new();
-    };
-    let Ok(map) = serde_json::from_str::<HashMap<String, HeroicEpicGame>>(&raw) else {
+    let Some(map) = read_launcher_json::<HashMap<String, HeroicEpicGame>>(installed_json) else {
         return Vec::new();
     };
     map.into_values()
-        .filter(|g| !g.is_dlc && g.is_installed())
+        .filter(|g| {
+            let keep = !g.is_dlc && g.is_installed();
+            if !keep {
+                tracing::debug!(game = g.title, dlc = g.is_dlc, "Skipping Heroic Epic entry");
+            }
+            keep
+        })
         .map(|game| heroic_launch_candidate(user, game.title, None, &game.app_name, install_mode))
         .collect()
 }
@@ -167,10 +180,7 @@ struct HeroicNileProduct {
 
 /// Maps Amazon product ids to titles, installed.json doesn't carry them.
 fn nile_titles(library_json: &Path) -> HashMap<String, String> {
-    let Ok(raw) = std::fs::read_to_string(library_json) else {
-        return HashMap::new();
-    };
-    let Ok(entries) = serde_json::from_str::<Vec<HeroicNileLibraryEntry>>(&raw) else {
+    let Some(entries) = read_launcher_json::<Vec<HeroicNileLibraryEntry>>(library_json) else {
         return HashMap::new();
     };
     entries
@@ -185,17 +195,26 @@ fn scan_nile_games(
     nile_dir: &Path,
     install_mode: &InstallMode,
 ) -> Vec<ImportCandidate> {
-    let Ok(raw) = std::fs::read_to_string(nile_dir.join("installed.json")) else {
-        return Vec::new();
-    };
-    let Ok(installed) = serde_json::from_str::<Vec<HeroicNileInstalled>>(&raw) else {
+    let Some(installed) =
+        read_launcher_json::<Vec<HeroicNileInstalled>>(&nile_dir.join("installed.json"))
+    else {
         return Vec::new();
     };
     let mut titles = nile_titles(&nile_dir.join("library.json"));
 
     installed
         .into_iter()
-        .filter(|g| Path::new(&g.path).exists())
+        .filter(|g| {
+            let exists = Path::new(&g.path).exists();
+            if !exists {
+                tracing::debug!(
+                    id = g.id,
+                    path = g.path,
+                    "Skipping Heroic Amazon game whose folder is gone"
+                );
+            }
+            exists
+        })
         .map(|game| {
             let name = titles.remove(&game.id).unwrap_or_else(|| {
                 Path::new(&game.path)
@@ -251,16 +270,22 @@ fn scan_sideload_games(
     library_json: &Path,
     install_mode: &InstallMode,
 ) -> Vec<ImportCandidate> {
-    let Ok(raw) = std::fs::read_to_string(library_json) else {
-        return Vec::new();
-    };
-    let Ok(library) = serde_json::from_str::<HeroicSideloadLibrary>(&raw) else {
+    let Some(library) = read_launcher_json::<HeroicSideloadLibrary>(library_json) else {
         return Vec::new();
     };
     library
         .games
         .into_iter()
-        .filter(HeroicSideloadGame::is_launchable)
+        .filter(|g| {
+            let launchable = g.is_launchable();
+            if !launchable {
+                tracing::debug!(
+                    game = g.title,
+                    "Skipping Heroic sideloaded app that can't be launched"
+                );
+            }
+            launchable
+        })
         .map(|game| {
             // Pin the runner so a store game sharing the app name can't be launched instead
             heroic_launch_candidate(
@@ -439,10 +464,7 @@ fn scan_gog_games(
     installed_json: &Path,
     install_mode: &InstallMode,
 ) -> Vec<ImportCandidate> {
-    let Ok(raw) = std::fs::read_to_string(installed_json) else {
-        return Vec::new();
-    };
-    let Ok(config) = serde_json::from_str::<HeroicGogConfig>(&raw) else {
+    let Some(config) = read_launcher_json::<HeroicGogConfig>(installed_json) else {
         return Vec::new();
     };
 
@@ -450,6 +472,7 @@ fn scan_gog_games(
     for entry in config.installed {
         let install_path = PathBuf::from(&entry.install_path);
         if !install_path.exists() {
+            tracing::debug!(id = entry.app_name, path = %install_path.display(), "Skipping Heroic GOG game whose folder is gone");
             continue;
         }
 

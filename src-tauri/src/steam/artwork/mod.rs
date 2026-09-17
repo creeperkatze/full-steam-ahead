@@ -64,10 +64,15 @@ fn steamgriddb_assets(
     allow_nsfw: bool,
     existing: &[ArtworkAsset],
 ) -> Vec<ArtworkAsset> {
-    let Ok(games) = steamgriddb::search_games(api_key, game_name) else {
-        return Vec::new();
+    let games = match steamgriddb::search_games(api_key, game_name) {
+        Ok(games) => games,
+        Err(error) => {
+            tracing::warn!(game = game_name, %error, "SteamGridDB search failed");
+            return Vec::new();
+        }
     };
     let Some(game) = games.into_iter().next() else {
+        tracing::debug!(game = game_name, "No SteamGridDB match");
         return Vec::new();
     };
 
@@ -75,6 +80,9 @@ fn steamgriddb_assets(
         .into_iter()
         .filter_map(|kind| {
             let image = steamgriddb::fetch_images(api_key, game.id, &kind, allow_nsfw)
+                .inspect_err(|error| {
+                    tracing::warn!(game = game_name, ?kind, %error, "SteamGridDB images request failed");
+                })
                 .ok()?
                 .into_iter()
                 .next()?;
@@ -203,8 +211,12 @@ fn artwork_stem(kind: &ArtworkKind, app_id: u32) -> String {
 }
 
 fn remove_stale_variants(grid_path: &Path, stem: &str, keep: &Path) {
-    let Ok(entries) = fs::read_dir(grid_path) else {
-        return;
+    let entries = match fs::read_dir(grid_path) {
+        Ok(entries) => entries,
+        Err(error) => {
+            tracing::warn!(path = %grid_path.display(), %error, "Could not list artwork folder");
+            return;
+        }
     };
     for entry in entries.flatten() {
         let path = entry.path();
@@ -289,7 +301,12 @@ fn existing_assets(grid_path: &Path, app_id: u32) -> Vec<ArtworkAsset> {
     .map(|kind| (kind.clone(), artwork_stem(&kind, app_id)));
 
     let mut existing = Vec::new();
-    if let Ok(entries) = fs::read_dir(grid_path) {
+    let entries = fs::read_dir(grid_path).inspect_err(|error| {
+        if error.kind() != std::io::ErrorKind::NotFound {
+            tracing::warn!(path = %grid_path.display(), %error, "Could not list artwork folder");
+        }
+    });
+    if let Ok(entries) = entries {
         for entry in entries.flatten() {
             let path = entry.path();
             let Some(file_stem) = path.file_stem().and_then(|value| value.to_str()) else {

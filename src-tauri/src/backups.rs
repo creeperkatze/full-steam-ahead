@@ -94,7 +94,10 @@ fn list_from_dir(backups_dir: &Path) -> AppResult<Vec<BackupInfo>> {
         let created_at = id_to_iso(&id);
         let mut file_count = 0usize;
         let mut size_bytes = 0u64;
-        if let Ok(entries) = fs::read_dir(&path) {
+        let entries = fs::read_dir(&path).inspect_err(|error| {
+            warn!(path = %path.display(), %error, "Could not list backup folder");
+        });
+        if let Ok(entries) = entries {
             for file_entry in entries.flatten() {
                 let file_path = file_entry.path();
                 if !file_path.is_file() {
@@ -201,8 +204,17 @@ fn delete_all_from_dir(backups_dir: &Path) -> AppResult<()> {
 }
 
 fn load_manifest(backup_dir: &Path) -> Option<BackupManifest> {
-    let raw = fs::read_to_string(backup_dir.join(MANIFEST_FILENAME)).ok()?;
-    serde_json::from_str(&raw).ok()
+    let path = backup_dir.join(MANIFEST_FILENAME);
+    let raw = fs::read_to_string(&path)
+        .inspect_err(|error| {
+            if error.kind() != std::io::ErrorKind::NotFound {
+                warn!(path = %path.display(), %error, "Could not read backup manifest");
+            }
+        })
+        .ok()?;
+    serde_json::from_str(&raw)
+        .inspect_err(|error| warn!(path = %path.display(), %error, "Backup manifest is invalid"))
+        .ok()
 }
 
 /// Backup ids are the UTC creation time, formatted as `%Y%m%d-%H%M%S`.

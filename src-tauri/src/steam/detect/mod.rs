@@ -66,14 +66,17 @@ pub fn needs_flatpak_permission() -> bool {
 #[cfg(unix)]
 fn steam_flatpak_permission_granted() -> bool {
     let flatpak = crate::importers::host_binary_path("flatpak");
-    let Ok(output) = crate::importers::host_command(&flatpak.display().to_string())
-        .args(["info", "--show-permissions", STEAM_FLATPAK_APP_ID])
-        .output()
-    else {
+    let Some(output) = crate::importers::command_stdout(
+        crate::importers::host_command(&flatpak.display().to_string()).args([
+            "info",
+            "--show-permissions",
+            STEAM_FLATPAK_APP_ID,
+        ]),
+    ) else {
         return false;
     };
 
-    String::from_utf8_lossy(&output.stdout).contains(&format!("{FLATPAK_HOST_TALK_NAME}=talk"))
+    output.contains(&format!("{FLATPAK_HOST_TALK_NAME}=talk"))
 }
 
 /// Grants sandboxed Steam permission to reach the host via `flatpak-spawn` (not on by default).
@@ -108,7 +111,13 @@ fn steam_location_override() -> Option<PathBuf> {
 }
 
 pub fn detect_steam() -> AppResult<SteamInstallation> {
-    let install_path = find_install_path().ok_or(AppError::SteamNotFound)?;
+    let install_path = find_install_path().ok_or_else(|| {
+        tracing::warn!(
+            override_path = ?steam_location_override(),
+            "No Steam installation found"
+        );
+        AppError::SteamNotFound
+    })?;
     tracing::debug!(path = %install_path.display(), "Steam installation found");
 
     let userdata = install_path.join("userdata");

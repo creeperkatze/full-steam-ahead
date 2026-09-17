@@ -142,11 +142,19 @@ pub fn existing_managed_app_ids(path: &Path) -> HashMap<String, HashSet<u32>> {
     if !path.exists() {
         return HashMap::new();
     }
-    let Ok(raw) = fs::read_to_string(path) else {
-        return HashMap::new();
+    let raw = match fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(error) => {
+            tracing::warn!(path = %path.display(), %error, "Could not read Steam collections");
+            return HashMap::new();
+        }
     };
-    let Ok((entries, _)) = parse_cloud_collections(&raw, path) else {
-        return HashMap::new();
+    let entries = match parse_cloud_collections(&raw, path) {
+        Ok((entries, _)) => entries,
+        Err(error) => {
+            tracing::warn!(%error, "Could not parse Steam collections");
+            return HashMap::new();
+        }
     };
     let mut result = HashMap::new();
     for (key, value) in entries {
@@ -156,8 +164,12 @@ pub fn existing_managed_app_ids(path: &Path) -> HashMap<String, HashSet<u32>> {
         let Some(value_str) = value.get("value").and_then(|v| v.as_str()) else {
             continue;
         };
-        let Ok(coll) = serde_json::from_str::<SteamCollectionValue>(value_str) else {
-            continue;
+        let coll = match serde_json::from_str::<SteamCollectionValue>(value_str) {
+            Ok(coll) => coll,
+            Err(error) => {
+                tracing::warn!(key, %error, "Skipping unreadable Steam collection");
+                continue;
+            }
         };
         result.insert(coll.name, coll.added.into_iter().collect());
     }

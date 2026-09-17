@@ -22,7 +22,10 @@ pub fn load_settings() -> CommandResult<Settings> {
         Settings::default()
     } else {
         let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
-        serde_json::from_str(&raw).unwrap_or_default()
+        serde_json::from_str(&raw).unwrap_or_else(|error| {
+            tracing::warn!(path = %path.display(), %error, "Settings file is invalid, using defaults");
+            Settings::default()
+        })
     };
     settings.ensure_source_defaults(&steam::sources::scannable_sources());
     Ok(settings)

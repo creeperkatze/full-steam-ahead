@@ -68,8 +68,8 @@ pub fn is_process_running(process_name: &str) -> bool {
     host_command("pgrep")
         .args(["-x", process_name])
         .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+        .inspect_err(|error| tracing::warn!(%error, "Could not check whether Steam is running"))
+        .is_ok_and(|output| output.status.success())
 }
 
 pub fn stop_steam() -> std::io::Result<Output> {

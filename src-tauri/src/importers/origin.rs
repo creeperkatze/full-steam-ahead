@@ -29,9 +29,12 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
             .map(|dir| dir.join("EADesktop.exe"))
             .filter(|exe| exe.exists())
             .or_else(|| launcher_path(&registry));
-        Ok(launcher
-            .map(|launcher| scan_registry(user, &registry, &launcher, None))
-            .unwrap_or_default())
+        let Some(launcher) = launcher else {
+            tracing::debug!("EA app not found");
+            return Ok(Vec::new());
+        };
+        tracing::debug!(launcher = %launcher.display(), "EA app found");
+        Ok(scan_registry(user, &registry, &launcher, None))
     }
 
     #[cfg(unix)]
@@ -39,8 +42,13 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         let mut candidates = Vec::new();
         for registry in super::wine_registries(custom_path, "EAInstaller") {
             let Some(launcher) = launcher_path(&registry) else {
+                tracing::debug!(
+                    prefix = %registry.prefix().display(),
+                    "Prefix has EA installs but no EA app"
+                );
                 continue;
             };
+            tracing::debug!(launcher = %launcher.display(), "EA app found");
             let compat = registry.proton_compat_folder();
             candidates.extend(scan_registry(user, &registry, &launcher, compat));
         }
@@ -85,6 +93,7 @@ fn scan_registry(
                 .value(&key, "InstallLocation")
                 .and_then(|dir| registry.host_path(&dir))
             else {
+                tracing::debug!(key, "Skipping EA install without an install location");
                 continue;
             };
             let Some(content_ids) = read_content_ids(&install_dir) else {
@@ -94,6 +103,7 @@ fn scan_registry(
                 .value(&key, "DisplayName")
                 .or_else(|| Some(install_dir.file_name()?.to_str()?.to_string()))
             else {
+                tracing::debug!(key, "Skipping EA install without a name");
                 continue;
             };
             games.insert(content_ids.join(","), title);
@@ -131,12 +141,15 @@ fn scan_registry(
 
 /// Content IDs from the game's `__Installer/installerdata.xml` manifest.
 fn read_content_ids(install_dir: &Path) -> Option<Vec<String>> {
-    let bytes = std::fs::read(install_dir.join("__Installer").join("installerdata.xml")).ok()?;
+    let path = install_dir.join("__Installer").join("installerdata.xml");
+    let bytes = super::read_launcher_file_bytes(&path)?;
     parse_content_ids(&decode_text(&bytes))
+        .inspect_err(|error| tracing::warn!(path = %path.display(), error, "Unusable EA manifest"))
+        .ok()
 }
 
-fn parse_content_ids(xml: &str) -> Option<Vec<String>> {
-    let doc = roxmltree::Document::parse(xml).ok()?;
+fn parse_content_ids(xml: &str) -> Result<Vec<String>, String> {
+    let doc = roxmltree::Document::parse(xml).map_err(|error| error.to_string())?;
     let ids: Vec<String> = doc
         .descendants()
         .filter(|node| node.tag_name().name().eq_ignore_ascii_case("contentID"))
@@ -145,7 +158,10 @@ fn parse_content_ids(xml: &str) -> Option<Vec<String>> {
         .filter(|id| !id.is_empty())
         .map(str::to_string)
         .collect();
-    (!ids.is_empty()).then_some(ids)
+    if ids.is_empty() {
+        return Err("no content IDs".to_string());
+    }
+    Ok(ids)
 }
 
 /// Manifests are written as UTF-8 or UTF-16.
@@ -183,20 +199,23 @@ mod tests {
     fn reads_all_content_ids() {
         assert_eq!(
             parse_content_ids(MANIFEST),
-            Some(vec!["1026023".to_string(), "1035052".to_string()])
+            Ok(vec!["1026023".to_string(), "1035052".to_string()])
         );
     }
 
     #[test]
     fn older_game_root_is_supported() {
         let xml = "<game><contentIDs><contentID> 71052 </contentID></contentIDs></game>";
-        assert_eq!(parse_content_ids(xml), Some(vec!["71052".to_string()]));
+        assert_eq!(parse_content_ids(xml), Ok(vec!["71052".to_string()]));
     }
 
     #[test]
     fn manifest_without_ids_is_rejected() {
-        assert_eq!(parse_content_ids("<game><contentIDs/></game>"), None);
-        assert_eq!(parse_content_ids("not xml"), None);
+        assert_eq!(
+            parse_content_ids("<game><contentIDs/></game>"),
+            Err("no content IDs".to_string())
+        );
+        assert!(parse_content_ids("not xml").is_err());
     }
 
     #[test]
@@ -206,7 +225,7 @@ mod tests {
 
         let with_bom = [&[0xFF, 0xFE][..], &utf16].concat();
         let text = decode_text(&with_bom);
-        assert_eq!(parse_content_ids(&text), Some(vec!["1".to_string()]));
+        assert_eq!(parse_content_ids(&text), Ok(vec!["1".to_string()]));
         assert_eq!(decode_text(&utf16), xml);
 
         let big_endian: Vec<u8> = [0xFE, 0xFF]

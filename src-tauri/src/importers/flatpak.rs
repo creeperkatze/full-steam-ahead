@@ -1,6 +1,6 @@
 use crate::{
     error::AppResult,
-    importers::{host_binary_path, host_command, launcher_candidate},
+    importers::{command_stdout, host_binary_path, host_command, launcher_candidate},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use std::path::Path;
@@ -11,17 +11,18 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| host_binary_path("flatpak").display().to_string());
 
-    let stdout = host_command(&exe)
-        .args(["list", "--app", "--columns=name,application"])
-        .output()
-        .map(|o| o.stdout)
-        .unwrap_or_default();
-
-    let text = String::from_utf8_lossy(&stdout);
+    let Some(text) =
+        command_stdout(host_command(&exe).args(["list", "--app", "--columns=name,application"]))
+    else {
+        return Ok(Vec::new());
+    };
     let candidates = text
         .lines()
         .filter_map(|line| {
-            let (name, app_id) = parse_flatpak_line(line)?;
+            let Some((name, app_id)) = parse_flatpak_line(line) else {
+                tracing::debug!(line, "Skipping unexpected flatpak list line");
+                return None;
+            };
             Some(launcher_candidate(
                 user,
                 ImportSource::Flatpak,

@@ -1,6 +1,6 @@
 use crate::{
     error::{AppError, AppResult},
-    importers::candidate_from_parts,
+    importers::{candidate_from_parts, parse_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -17,8 +17,10 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .unwrap_or_else(default_itch_location);
     let db_path = itch_dir.join("db").join("butler.db");
     if !db_path.exists() {
+        tracing::debug!(path = %db_path.display(), "itch database not found");
         return Ok(Vec::new());
     }
+    tracing::debug!(path = %db_path.display(), "itch database found");
 
     let db_error = |error: sqlite::Error| {
         AppError::Message(format!(
@@ -33,12 +35,21 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     let mut statement = connection.prepare(CAVES_QUERY).map_err(db_error)?;
 
     let mut candidates = Vec::new();
-    while let Ok(State::Row) = statement.next() {
+    loop {
+        match statement.next() {
+            Ok(State::Row) => {}
+            Ok(State::Done) => break,
+            Err(error) => {
+                tracing::warn!(%error, "Reading the itch database stopped early");
+                break;
+            }
+        }
         let title = statement.read::<Option<String>, _>(0).ok().flatten();
         let Ok(Some(verdict)) = statement.read::<Option<String>, _>(1) else {
+            tracing::debug!(?title, "Skipping itch install without a verdict");
             continue;
         };
-        let Ok(verdict) = serde_json::from_str::<Verdict>(&verdict) else {
+        let Some(verdict) = parse_launcher_json::<Verdict>("itch cave verdict", &verdict) else {
             continue;
         };
         candidates.extend(verdict_to_candidate(user, title, verdict));
@@ -72,7 +83,11 @@ fn verdict_to_candidate(
         .unwrap_or_default()
         .into_iter()
         .map(|c| base.join(c.path))
-        .find(|p| is_executable(p))?;
+        .find(|p| is_executable(p));
+    let Some(executable_path) = executable_path else {
+        tracing::debug!(?title, path = %base.display(), "Skipping itch install without an executable");
+        return None;
+    };
 
     // Linked folders may have no game row
     let title = title.or_else(|| base.file_name()?.to_str().map(str::to_string))?;

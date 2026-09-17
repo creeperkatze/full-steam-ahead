@@ -1,6 +1,8 @@
 use crate::{
     error::AppResult,
-    importers::{host_binary_path, host_command, launcher_candidate},
+    importers::{
+        command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
+    },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -16,8 +18,8 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         )
     } else {
         match run_lutris_native() {
-            Ok(games) => (games, false, None),
-            Err(_) => (run_lutris_flatpak().unwrap_or_default(), true, None),
+            Some(games) => (games, false, None),
+            None => (run_lutris_flatpak().unwrap_or_default(), true, None),
         }
     };
 
@@ -25,7 +27,12 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .into_iter()
         .filter(|g| {
             // Exclude Steam games to avoid double-importing
-            g.runner.as_deref() != Some("steam") && g.service.as_deref() != Some("steam")
+            let steam =
+                g.runner.as_deref() == Some("steam") || g.service.as_deref() == Some("steam");
+            if steam {
+                tracing::debug!(game = g.name, "Skipping Lutris game run through Steam");
+            }
+            !steam
         })
         .map(|game| {
             let (default_exe, opts) = lutris_launch_args(&game, is_flatpak);
@@ -60,27 +67,21 @@ fn lutris_launch_args(game: &LutrisGame, is_flatpak: bool) -> (String, String) {
     }
 }
 
-fn run_lutris_native() -> Result<Vec<LutrisGame>, Box<dyn std::error::Error>> {
-    let output = host_command("lutris").args(["--json", "-lo"]).output()?;
-    Ok(serde_json::from_str(&String::from_utf8_lossy(
-        &output.stdout,
-    ))?)
+fn run_lutris_native() -> Option<Vec<LutrisGame>> {
+    run_lutris(host_command("lutris").args(["--json", "-lo"]))
 }
 
-fn run_lutris_flatpak() -> Result<Vec<LutrisGame>, Box<dyn std::error::Error>> {
-    let output = host_command("flatpak")
-        .args(["run", "net.lutris.Lutris", "--json", "-lo"])
-        .output()?;
-    Ok(serde_json::from_str(&String::from_utf8_lossy(
-        &output.stdout,
-    ))?)
+fn run_lutris_flatpak() -> Option<Vec<LutrisGame>> {
+    run_lutris(host_command("flatpak").args(["run", "net.lutris.Lutris", "--json", "-lo"]))
 }
 
-fn run_lutris_custom(executable: &str) -> Result<Vec<LutrisGame>, Box<dyn std::error::Error>> {
-    let output = host_command(executable).args(["--json", "-lo"]).output()?;
-    Ok(serde_json::from_str(&String::from_utf8_lossy(
-        &output.stdout,
-    ))?)
+fn run_lutris_custom(executable: &str) -> Option<Vec<LutrisGame>> {
+    run_lutris(host_command(executable).args(["--json", "-lo"]))
+}
+
+fn run_lutris(command: &mut std::process::Command) -> Option<Vec<LutrisGame>> {
+    let stdout = command_stdout(command)?;
+    parse_launcher_json("lutris --json -lo", &stdout)
 }
 
 #[derive(Deserialize, Clone)]

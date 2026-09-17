@@ -37,6 +37,88 @@ pub fn quote_path(path: &Path) -> String {
     format!("\"{}\"", path.display())
 }
 
+/// Reads a launcher's file. A missing file just means the launcher isn't set up, so only other
+/// failures are warnings.
+pub fn read_launcher_file(path: &Path) -> Option<String> {
+    read_launcher_file_bytes(path).map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+}
+
+/// Like [`read_launcher_file`], for files that aren't necessarily UTF-8.
+pub fn read_launcher_file_bytes(path: &Path) -> Option<Vec<u8>> {
+    match std::fs::read(path) {
+        Ok(bytes) => Some(bytes),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            tracing::debug!(path = %path.display(), "File not found");
+            None
+        }
+        Err(error) => {
+            tracing::warn!(path = %path.display(), %error, "Could not read file");
+            None
+        }
+    }
+}
+
+/// Parses JSON from a launcher, warning with where it came from when it doesn't match.
+pub fn parse_launcher_json<T: serde::de::DeserializeOwned>(origin: &str, raw: &str) -> Option<T> {
+    serde_json::from_str(raw)
+        .inspect_err(|error| {
+            tracing::warn!(origin, %error, snippet = snippet(raw), "Unexpected JSON");
+        })
+        .ok()
+}
+
+/// Reads and parses a launcher's JSON file; see [`read_launcher_file`].
+pub fn read_launcher_json<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T> {
+    let raw = read_launcher_file(path)?;
+    parse_launcher_json(&path.display().to_string(), &raw)
+}
+
+/// Runs a launcher's CLI and returns its stdout; see [`command_output`].
+#[cfg_attr(windows, allow(dead_code))]
+pub fn command_stdout(command: &mut std::process::Command) -> Option<String> {
+    command_output(command).map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+/// Runs a launcher's CLI. A missing program just means the launcher isn't installed; failures to
+/// run it or a failing exit status are warnings.
+pub fn command_output(command: &mut std::process::Command) -> Option<std::process::Output> {
+    let description = format!("{command:?}");
+    #[cfg(windows)]
+    let result = crate::process::command_output_no_window(command);
+    #[cfg(not(windows))]
+    let result = command.output();
+    match result {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            tracing::debug!(command = description, "Command not found");
+            None
+        }
+        Err(error) => {
+            tracing::warn!(command = description, %error, "Command could not be run");
+            None
+        }
+        Ok(output) if !output.status.success() => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            tracing::warn!(
+                command = description,
+                status = %output.status,
+                stderr = snippet(&stderr),
+                "Command failed"
+            );
+            None
+        }
+        Ok(output) => Some(output),
+    }
+}
+
+/// Keeps logged launcher output readable.
+fn snippet(text: &str) -> &str {
+    let text = text.trim();
+    match text.char_indices().nth(500) {
+        Some((end, _)) => &text[..end],
+        None => text,
+    }
+}
+
 /// Routes through `flatpak-spawn --host` when sandboxed, so host binaries stay reachable.
 #[cfg(unix)]
 pub fn host_command(exe: &str) -> std::process::Command {
@@ -85,6 +167,7 @@ fn resolve_host_binary(name: &str) -> Option<PathBuf> {
         .arg("-c")
         .arg(format!("command -v {name}"))
         .output()
+        .inspect_err(|error| tracing::warn!(name, %error, "Could not look up command"))
         .ok()?;
     parse_command_v(&String::from_utf8_lossy(&output.stdout))
 }
@@ -149,6 +232,9 @@ pub fn find_proton_prefixes() -> Vec<PathBuf> {
         return Vec::new();
     };
     std::fs::read_dir(&compat_dir)
+        .inspect_err(|error| {
+            tracing::warn!(path = %compat_dir.display(), %error, "Could not list Proton prefixes");
+        })
         .into_iter()
         .flatten()
         .flatten()
@@ -182,8 +268,7 @@ pub fn wine_registries(
     prefixes
         .iter()
         .filter_map(|prefix| {
-            let bytes = std::fs::read(prefix.join("system.reg")).ok()?;
-            let text = String::from_utf8_lossy(&bytes);
+            let text = read_launcher_file(&prefix.join("system.reg"))?;
             text.to_lowercase()
                 .contains(&marker)
                 .then(|| crate::util::registry::WineRegistry::parse(prefix, &text))

@@ -83,6 +83,10 @@ impl WineRegistry {
         }
     }
 
+    pub fn prefix(&self) -> &Path {
+        &self.prefix
+    }
+
     /// Steam's Proton prefixes live in `compatdata/<id>/pfx`; returns `compatdata/<id>`.
     #[cfg_attr(not(unix), allow(dead_code))]
     pub fn proton_compat_folder(&self) -> Option<&Path> {

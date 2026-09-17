@@ -18,9 +18,12 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         let launcher = custom_path
             .and_then(launcher_from_dir)
             .or_else(|| launcher_path(&registry));
-        Ok(launcher
-            .map(|launcher| scan_registry(user, &registry, &launcher, None))
-            .unwrap_or_default())
+        let Some(launcher) = launcher else {
+            tracing::debug!("Ubisoft Connect not found");
+            return Ok(Vec::new());
+        };
+        tracing::debug!(launcher = %launcher.display(), "Ubisoft Connect found");
+        Ok(scan_registry(user, &registry, &launcher, None))
     }
 
     #[cfg(unix)]
@@ -28,8 +31,13 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         let mut candidates = Vec::new();
         for registry in super::wine_registries(custom_path, "Ubisoft") {
             let Some(launcher) = launcher_path(&registry) else {
+                tracing::debug!(
+                    prefix = %registry.prefix().display(),
+                    "Prefix mentions Ubisoft but has no launcher"
+                );
                 continue;
             };
+            tracing::debug!(launcher = %launcher.display(), "Ubisoft Connect found");
             let compat = registry.proton_compat_folder();
             candidates.extend(scan_registry(user, &registry, &launcher, compat));
         }
@@ -64,9 +72,15 @@ fn scan_registry(
         .subkeys(INSTALLS_KEY)
         .into_iter()
         .filter_map(|id| {
-            let install_dir = registry.value(&format!(r"{INSTALLS_KEY}\{id}"), "InstallDir")?;
-            let install_dir = registry.host_path(&install_dir)?;
+            let Some(install_dir) = registry
+                .value(&format!(r"{INSTALLS_KEY}\{id}"), "InstallDir")
+                .and_then(|dir| registry.host_path(&dir))
+            else {
+                tracing::debug!(id, "Skipping Ubisoft install without an install folder");
+                return None;
+            };
             if !install_dir.exists() {
+                tracing::debug!(id, path = %install_dir.display(), "Skipping Ubisoft install whose folder is gone");
                 return None;
             }
             let title = registry

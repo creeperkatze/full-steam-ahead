@@ -27,7 +27,12 @@ pub fn scan_sources_with_progress(
 
         let source_settings = settings.source_settings(source);
         let custom_path = source_settings.custom_path.as_deref().map(Path::new);
-        let mut found = scan_single_source(source, user, custom_path);
+        let span = tracing::info_span!(
+            "scan",
+            source = %source.display_name(),
+            custom_path = custom_path.map(|p| p.display().to_string())
+        );
+        let mut found = span.in_scope(|| scan_single_source(source, user, custom_path));
         for candidate in &mut found {
             artwork::apply_source_preference(
                 &mut candidate.artwork,
@@ -99,11 +104,17 @@ fn scan_single_source(
     user: &SteamUser,
     custom_path: Option<&Path>,
 ) -> Vec<ImportCandidate> {
-    importer_registry()
+    let Some((_, scan)) = importer_registry()
         .into_iter()
         .find(|(candidate, _)| candidate == source)
-        .map(|(_, scan)| scan(user, custom_path).unwrap_or_default())
-        .unwrap_or_default()
+    else {
+        tracing::warn!("Source is not available on this platform");
+        return Vec::new();
+    };
+    scan(user, custom_path).unwrap_or_else(|error| {
+        tracing::warn!(%error, "Scan failed");
+        Vec::new()
+    })
 }
 
 /// All launcher sources this build knows how to scan for, in OS-appropriate order.

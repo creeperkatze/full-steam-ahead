@@ -1,6 +1,6 @@
 use crate::{
     error::{AppError, AppResult},
-    importers::launcher_candidate,
+    importers::{launcher_candidate, read_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
     util::litedb,
 };
@@ -8,10 +8,14 @@ use bson::{spec::BinarySubtype, Bson, Document};
 use std::path::{Path, PathBuf};
 
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
-    let (launcher_path, db_path) = find_paths(custom_path)?;
+    let Some((launcher_path, db_path)) = find_paths(custom_path)? else {
+        return Ok(Vec::new());
+    };
     if !db_path.exists() {
+        tracing::debug!(path = %db_path.display(), "Playnite database not found");
         return Ok(Vec::new());
     }
+    tracing::debug!(launcher = %launcher_path.display(), database = %db_path.display(), "Playnite found");
 
     let bytes = std::fs::read(&db_path).map_err(|e| {
         if e.raw_os_error() == Some(32) {
@@ -50,7 +54,8 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     Ok(candidates)
 }
 
-fn find_paths(custom_path: Option<&Path>) -> AppResult<(PathBuf, PathBuf)> {
+/// The launcher and where its game database should be, if Playnite is installed.
+fn find_paths(custom_path: Option<&Path>) -> AppResult<Option<(PathBuf, PathBuf)>> {
     let install_dir = if let Some(custom) = custom_path {
         custom.to_path_buf()
     } else {
@@ -60,7 +65,8 @@ fn find_paths(custom_path: Option<&Path>) -> AppResult<(PathBuf, PathBuf)> {
     };
     let launcher = install_dir.join("Playnite.DesktopApp.exe");
     if !launcher.exists() {
-        return Err(AppError::Message("Playnite is not installed".to_string()));
+        tracing::debug!(path = %launcher.display(), "Playnite not found");
+        return Ok(None);
     }
     let appdata =
         std::env::var("APPDATA").map_err(|_| AppError::Message("APPDATA not set".to_string()))?;
@@ -71,14 +77,12 @@ fn find_paths(custom_path: Option<&Path>) -> AppResult<(PathBuf, PathBuf)> {
     } else {
         install_dir.clone()
     };
-    let db_dir = std::fs::read_to_string(config_root.join("config.json"))
-        .ok()
-        .and_then(|raw| serde_json::from_str::<PlayniteConfig>(&raw).ok())
+    let db_dir = read_launcher_json::<PlayniteConfig>(&config_root.join("config.json"))
         .and_then(|c| c.database_path)
         .filter(|p| !p.trim().is_empty())
         .map(|p| expand_db_path(&p, &install_dir, &appdata))
         .unwrap_or_else(|| config_root.join("library"));
-    Ok((launcher, db_dir.join("games.db")))
+    Ok(Some((launcher, db_dir.join("games.db"))))
 }
 
 #[derive(serde::Deserialize)]

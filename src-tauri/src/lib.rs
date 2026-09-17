@@ -29,8 +29,13 @@ fn init_logging() -> WorkerGuard {
     let file_appender = tracing_appender::rolling::never(log_dir, session_filename);
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
+    let default_level = if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "info"
+    };
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("full_steam_ahead_lib=info"));
+        .unwrap_or_else(|_| EnvFilter::new(format!("full_steam_ahead_lib={default_level}")));
 
     let stderr_layer = if cfg!(debug_assertions) {
         Some(fmt::layer().with_writer(std::io::stderr))
@@ -45,7 +50,18 @@ fn init_logging() -> WorkerGuard {
         .with(tracing_error::ErrorLayer::default())
         .init();
 
+    log_panics();
     guard
+}
+
+/// Records panics in the session log before the default hook prints them.
+fn log_panics() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let backtrace = std::backtrace::Backtrace::force_capture();
+        tracing::error!(%info, %backtrace, "Panic");
+        default_hook(info);
+    }));
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,6 +69,8 @@ pub fn run() {
     let _log_guard = init_logging();
     tracing::info!(
         version = env!("CARGO_PKG_VERSION"),
+        os = std::env::consts::OS,
+        arch = std::env::consts::ARCH,
         "Full Steam Ahead starting"
     );
 
@@ -60,8 +78,9 @@ pub fn run() {
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.set_focus();
+                if let Err(error) = window.unminimize().and_then(|()| window.set_focus()) {
+                    tracing::warn!(%error, "Could not focus the existing window");
+                }
             }
         }))
         .plugin(tauri_plugin_opener::init())

@@ -11,6 +11,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .map(PathBuf::from)
         .or_else(|| local_app_data().map(|path| path.join("Amazon Games")))
     else {
+        tracing::warn!("LOCALAPPDATA is not set");
         return Ok(Vec::new());
     };
 
@@ -19,12 +20,12 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .join("Games")
         .join("Sql")
         .join("GameInstallInfo.sqlite");
-    if !sqlite_path.exists() {
-        return Ok(Vec::new());
-    }
     let launcher_path = amazon_root.join("App").join("Amazon Games.exe");
-    if !launcher_path.exists() {
-        return Ok(Vec::new());
+    for path in [&sqlite_path, &launcher_path] {
+        if !path.exists() {
+            tracing::debug!(path = %path.display(), "Amazon Games path not found");
+            return Ok(Vec::new());
+        }
     }
 
     let connection = sqlite::open(&sqlite_path).map_err(|error| {
@@ -38,12 +39,24 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .map_err(|error| AppError::Message(format!("Could not query Amazon Games: {error}")))?;
 
     let mut candidates = Vec::new();
-    while let Ok(State::Row) = statement.next() {
-        let Ok(id) = statement.read::<String, usize>(0) else {
-            continue;
-        };
-        let Ok(title) = statement.read::<String, usize>(1) else {
-            continue;
+    loop {
+        match statement.next() {
+            Ok(State::Row) => {}
+            Ok(State::Done) => break,
+            Err(error) => {
+                tracing::warn!(%error, "Reading the Amazon Games database stopped early");
+                break;
+            }
+        }
+        let (id, title) = match (
+            statement.read::<String, usize>(0),
+            statement.read::<String, usize>(1),
+        ) {
+            (Ok(id), Ok(title)) => (id, title),
+            (id, title) => {
+                tracing::debug!(?id, ?title, "Skipping Amazon game with missing details");
+                continue;
+            }
         };
         candidates.push(launcher_candidate(
             user,

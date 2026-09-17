@@ -1,6 +1,6 @@
 use crate::{
     error::AppResult,
-    importers::{candidate_from_parts, gog},
+    importers::{candidate_from_parts, gog, read_launcher_file, read_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -12,6 +12,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         None => default_games_dir()?,
     };
     if !games_dir.exists() {
+        tracing::debug!(path = %games_dir.display(), "Minigalaxy games folder not found");
         return Ok(Vec::new());
     }
 
@@ -54,10 +55,10 @@ fn tags() -> Vec<String> {
 fn native_candidate(user: &SteamUser, folder: &Path) -> Option<ImportCandidate> {
     let start_script = folder.join("start.sh");
     if !start_script.is_file() {
+        tracing::debug!(path = %folder.display(), "Skipping Minigalaxy folder without a game");
         return None;
     }
-    let name = std::fs::read_to_string(folder.join("gameinfo"))
-        .ok()
+    let name = read_launcher_file(&folder.join("gameinfo"))
         .and_then(|info| game_name_from_gameinfo(&info))
         .or_else(|| folder.file_name()?.to_str().map(str::to_string))?;
     Some(candidate_from_parts(
@@ -108,13 +109,11 @@ fn default_games_dir() -> AppResult<PathBuf> {
 }
 
 fn install_dir_from_config(config_file: &Path) -> Option<PathBuf> {
-    let raw = std::fs::read_to_string(config_file).ok()?;
-    parse_install_dir(&raw)
+    install_dir(read_launcher_json(config_file)?)
 }
 
-fn parse_install_dir(raw: &str) -> Option<PathBuf> {
-    serde_json::from_str::<MinigalaxyConfig>(raw)
-        .ok()?
+fn install_dir(config: MinigalaxyConfig) -> Option<PathBuf> {
+    config
         .install_dir
         .filter(|dir| !dir.trim().is_empty())
         .map(PathBuf::from)
@@ -128,16 +127,16 @@ mod tests {
     fn reads_install_dir_from_config() {
         let raw = r#"{"locale":"","install_dir":"/mnt/games/GOG","keep_installers":false}"#;
         assert_eq!(
-            parse_install_dir(raw),
+            install_dir(serde_json::from_str(raw).unwrap()),
             Some(PathBuf::from("/mnt/games/GOG"))
         );
     }
 
     #[test]
     fn ignores_missing_or_empty_install_dir() {
-        assert_eq!(parse_install_dir(r#"{"locale":""}"#), None);
-        assert_eq!(parse_install_dir(r#"{"install_dir":""}"#), None);
-        assert_eq!(parse_install_dir("not json"), None);
+        let parse = |raw| install_dir(serde_json::from_str(raw).unwrap());
+        assert_eq!(parse(r#"{"locale":""}"#), None);
+        assert_eq!(parse(r#"{"install_dir":""}"#), None);
     }
 
     #[test]

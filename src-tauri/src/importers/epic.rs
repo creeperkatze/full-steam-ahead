@@ -1,6 +1,6 @@
 use crate::{
     error::{io_context, AppResult},
-    importers::{candidate_from_parts, launcher_candidate, launcher_url_pair},
+    importers::{candidate_from_parts, launcher_candidate, launcher_url_pair, read_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -77,6 +77,11 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     let Some(paths) = find_epic_paths(custom_path) else {
         return Ok(Vec::new());
     };
+    tracing::debug!(
+        launcher = %paths.launcher_path.display(),
+        manifests = %paths.manifest_folder_path.display(),
+        "Epic Games Launcher found"
+    );
 
     let mut manifests = BTreeMap::<String, EpicManifest>::new();
     for entry in fs::read_dir(&paths.manifest_folder_path)
@@ -87,8 +92,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         if path.extension().and_then(|e| e.to_str()) != Some("item") {
             continue;
         }
-        let raw = fs::read_to_string(&path).map_err(io_context(&path))?;
-        let Ok(manifest) = serde_json::from_str::<EpicManifest>(&raw) else {
+        let Some(manifest) = read_launcher_json::<EpicManifest>(&path) else {
             continue;
         };
 
@@ -109,7 +113,19 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
             }
         }
 
-        if !is_installed(&manifest) || !is_launchable(&manifest) {
+        if !is_installed(&manifest) {
+            tracing::debug!(
+                game = manifest.display_name,
+                location = manifest.manifest_location,
+                "Skipping Epic game that is no longer installed"
+            );
+            continue;
+        }
+        if !is_launchable(&manifest) {
+            tracing::debug!(
+                game = manifest.display_name,
+                "Skipping Epic item without an executable"
+            );
             continue;
         }
 
@@ -206,11 +222,7 @@ fn find_epic_paths(custom_path: Option<&Path>) -> Option<EpicPaths> {
         });
         let launcher_path =
             launcher_location_from_registry().unwrap_or_else(default_launcher_location);
-        (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
-            launcher_path,
-            manifest_folder_path,
-            compat_folder: None,
-        })
+        existing_paths(launcher_path, manifest_folder_path)
     }
 
     #[cfg(target_os = "macos")]
@@ -219,19 +231,20 @@ fn find_epic_paths(custom_path: Option<&Path>) -> Option<EpicPaths> {
         let manifest_folder_path = custom_path
             .map(PathBuf::from)
             .unwrap_or_else(|| macos_manifest_location(&home));
-        let launcher_path = macos_launcher_location();
-        (manifest_folder_path.exists() && launcher_path.exists()).then_some(EpicPaths {
-            launcher_path,
-            manifest_folder_path,
-            compat_folder: None,
-        })
+        existing_paths(macos_launcher_location(), manifest_folder_path)
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
     {
         let compat_dir = super::compat_data_dir()?;
 
-        for entry in std::fs::read_dir(compat_dir).ok()?.flatten() {
+        for entry in std::fs::read_dir(&compat_dir)
+            .inspect_err(|error| {
+                tracing::warn!(path = %compat_dir.display(), %error, "Could not list Proton prefixes");
+            })
+            .ok()?
+            .flatten()
+        {
             let binaries = entry
                 .path()
                 .join("pfx")
@@ -242,10 +255,13 @@ fn find_epic_paths(custom_path: Option<&Path>) -> Option<EpicPaths> {
                 .join("Portal")
                 .join("Binaries");
 
-            let launcher_path = ["Win64", "Win32"]
+            let Some(launcher_path) = ["Win64", "Win32"]
                 .iter()
                 .map(|arch| binaries.join(arch).join("EpicGamesLauncher.exe"))
-                .find(|p| p.exists())?;
+                .find(|p| p.exists())
+            else {
+                continue;
+            };
 
             let manifest_folder_path = custom_path.map(PathBuf::from).unwrap_or_else(|| {
                 entry
@@ -259,16 +275,36 @@ fn find_epic_paths(custom_path: Option<&Path>) -> Option<EpicPaths> {
                     .join("Manifests")
             });
 
-            if manifest_folder_path.exists() {
-                return Some(EpicPaths {
-                    launcher_path,
-                    manifest_folder_path,
-                    compat_folder: Some(entry.path()),
-                });
+            if !manifest_folder_path.exists() {
+                tracing::debug!(
+                    path = %manifest_folder_path.display(),
+                    "Epic Games Launcher found in a Proton prefix, but without manifests"
+                );
+                continue;
             }
+            return Some(EpicPaths {
+                launcher_path,
+                manifest_folder_path,
+                compat_folder: Some(entry.path()),
+            });
         }
         None
     }
+}
+
+#[cfg(not(all(unix, not(target_os = "macos"))))]
+fn existing_paths(launcher_path: PathBuf, manifest_folder_path: PathBuf) -> Option<EpicPaths> {
+    for path in [&launcher_path, &manifest_folder_path] {
+        if !path.exists() {
+            tracing::debug!(path = %path.display(), "Epic Games Launcher path not found");
+            return None;
+        }
+    }
+    Some(EpicPaths {
+        launcher_path,
+        manifest_folder_path,
+        compat_folder: None,
+    })
 }
 
 #[cfg(windows)]

@@ -27,8 +27,10 @@ fn platform_steam_install_path() -> Option<PathBuf> {
     use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    let key = hkcu.open_subkey("Software\\Valve\\Steam").ok()?;
-    let path: String = key.get_value("SteamPath").ok()?;
+    let path: String = hkcu
+        .open_subkey("Software\\Valve\\Steam")
+        .and_then(|key| key.get_value("SteamPath"))
+        .ok()?;
     Some(PathBuf::from(path.replace('/', "\\")))
 }
 

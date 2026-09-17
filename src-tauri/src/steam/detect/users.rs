@@ -32,8 +32,16 @@ impl LoginUser {
 
 pub(super) fn read_login_users(install_path: &Path) -> Option<LoginUsers> {
     let path = install_path.join("config").join("loginusers.vdf");
-    let raw = fs::read_to_string(path).ok()?;
-    keyvalues_serde::from_str(&raw).ok()
+    let raw = fs::read_to_string(&path)
+        .inspect_err(|error| {
+            tracing::warn!(path = %path.display(), %error, "Could not read Steam account names");
+        })
+        .ok()?;
+    keyvalues_serde::from_str(&raw)
+        .inspect_err(|error| {
+            tracing::warn!(path = %path.display(), %error, "Could not parse Steam account names");
+        })
+        .ok()
 }
 
 pub(super) fn login_user_for_userdata_id<'a>(

@@ -20,8 +20,12 @@ pub fn build_preview_plan(
     files.insert(user.shortcuts_path.clone());
     files.insert(user.collections_path.clone());
 
+    // Applying reads the file again and stops on errors, so the preview can carry on
     let existing_shortcuts =
-        super::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_default();
+        super::shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_else(|error| {
+            tracing::warn!(%error, "Existing shortcuts could not be read for the preview");
+            Vec::new()
+        });
     let existing_collection_app_ids =
         super::collections::existing_managed_app_ids(&user.collections_path);
 

@@ -1,6 +1,8 @@
 use crate::{
     error::AppResult,
-    importers::{host_binary_path, host_command, launcher_candidate},
+    importers::{
+        command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
+    },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -12,21 +14,19 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| host_binary_path("flatpak").display().to_string());
 
-    let stdout = host_command(&exe)
-        .args([
-            "run",
-            "--command=bottles-cli",
-            "com.usebottles.bottles",
-            "-j",
-            "list",
-            "bottles",
-        ])
-        .output()
-        .map(|o| o.stdout)
-        .unwrap_or_default();
-
-    let text = String::from_utf8_lossy(&stdout);
-    let Ok(bottles_map) = serde_json::from_str::<HashMap<String, Bottle>>(&text) else {
+    let Some(stdout) = command_stdout(host_command(&exe).args([
+        "run",
+        "--command=bottles-cli",
+        "com.usebottles.bottles",
+        "-j",
+        "list",
+        "bottles",
+    ])) else {
+        return Ok(Vec::new());
+    };
+    let Some(bottles_map) =
+        parse_launcher_json::<HashMap<String, Bottle>>("bottles-cli list bottles", &stdout)
+    else {
         return Ok(Vec::new());
     };
 
@@ -38,7 +38,15 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
             bottle
                 .external_programs
                 .into_values()
-                .filter(|program| !program.removed)
+                .filter(|program| {
+                    if program.removed {
+                        tracing::debug!(
+                            program = program.name,
+                            "Skipping program removed in Bottles"
+                        );
+                    }
+                    !program.removed
+                })
                 .map(move |program| {
                     launcher_candidate(
                         user,

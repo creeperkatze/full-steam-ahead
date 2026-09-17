@@ -1,35 +1,39 @@
 use crate::{
-    error::{AppError, AppResult},
-    importers::launcher_candidate,
+    error::AppResult,
+    importers::{command_output, launcher_candidate, parse_launcher_json},
     models::{ImportCandidate, ImportSource, SteamUser},
-    process,
 };
 use serde::Deserialize;
 use std::{path::Path, process::Command};
 
 pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
-    let output = process::command_output_no_window(Command::new("powershell").args([
+    let Some(output) = command_output(Command::new("powershell").args([
         "/NoProfile",
         "/Command",
         GAME_PASS_SCRIPT,
-    ]))
-    .map_err(|source| AppError::Io {
-        path: "powershell".into(),
-        source,
-    })?;
-    if !output.status.success() {
+    ])) else {
         return Ok(Vec::new());
+    };
+    // The script reports packages it couldn't inspect on stderr and carries on
+    for line in String::from_utf8_lossy(&output.stderr).lines() {
+        tracing::debug!(message = line.trim(), "Package skipped");
     }
 
     let raw = String::from_utf8_lossy(&output.stdout);
-    let apps = serde_json::from_str::<Vec<AppxInfo>>(&raw).unwrap_or_default();
+    let Some(apps) = parse_launcher_json::<Vec<AppxInfo>>("Get-AppxPackage script", &raw) else {
+        return Ok(Vec::new());
+    };
     let windows_dir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".to_string());
     let explorer = Path::new(&windows_dir).join("explorer.exe");
 
     Ok(apps
         .into_iter()
         .filter_map(|app| {
-            let uri = app.launch_uri()?;
+            let uri = app.launch_uri();
+            if app.is_game && uri.is_none() {
+                tracing::debug!(?app, "Skipping game with incomplete package details");
+            }
+            let uri = uri?;
             Some(launcher_candidate(
                 user,
                 ImportSource::GamePass,
@@ -87,7 +91,9 @@ ForEach-Object {
                     Where-Object { $_.IsDevOnly -ne 'true' -and $_.Id } |
                     ForEach-Object { $_.Id })
             }
-        } catch {}
+        } catch {
+            [Console]::Error.WriteLine("$($package.Name) MicrosoftGame.config: $_")
+        }
         foreach ($application in $manifest.Package.Applications.Application) {
             if (-not $application.Id -or $application.VisualElements.AppListEntry -eq 'none') {
                 continue
@@ -103,7 +109,9 @@ ForEach-Object {
                 family_name = $package.PackageFamilyName
             }
         }
-    } catch {}
+    } catch {
+        [Console]::Error.WriteLine("$($package.Name): $_")
+    }
 })
 ConvertTo-Json -InputObject $apps -Depth 5
 "#;
@@ -152,11 +160,15 @@ mod tests {
     }
 
     fn scan_fixtures(setup: &str) -> Vec<AppxInfo> {
+        serde_json::from_slice(&run_fixtures(setup).stdout).expect("UTF-8 app array")
+    }
+
+    fn run_fixtures(setup: &str) -> std::process::Output {
         let script = format!(
             "{}\n{setup}\n{GAME_PASS_SCRIPT}",
             include_str!("fixtures/gamepass.ps1")
         );
-        let output = process::command_output_no_window(Command::new("powershell").args([
+        let output = crate::process::command_output_no_window(Command::new("powershell").args([
             "/NoProfile",
             "/Command",
             &script,
@@ -167,7 +179,21 @@ mod tests {
             "{}",
             String::from_utf8_lossy(&output.stderr)
         );
-        serde_json::from_slice(&output.stdout).expect("UTF-8 app array")
+        output
+    }
+
+    #[test]
+    fn reports_skipped_packages_on_stderr() {
+        let output = run_fixtures("");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("BrokenManifest: Unreadable manifest"),
+            "{stderr}"
+        );
+        assert!(
+            stderr.contains("BrokenConfig MicrosoftGame.config:"),
+            "{stderr}"
+        );
     }
 
     #[test]

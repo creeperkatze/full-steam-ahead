@@ -1,6 +1,9 @@
 use crate::{
     error::AppResult,
-    importers::{host_binary_path, host_command, launcher_candidate},
+    importers::{
+        command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
+        read_launcher_json,
+    },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -15,14 +18,16 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         let exe = custom.to_string_lossy().to_string();
         let games = run_legendary(&exe).unwrap_or_default();
         (exe, games)
-    } else if let Ok(games) = run_legendary("legendary") {
+    } else if let Some(games) = run_legendary("legendary") {
         ("legendary".to_string(), games)
     } else if super::resolve_host_binary("rare").is_some() {
         // Rare is a GUI without `list-installed`, but it shares Legendary's config
         // and can launch games itself
+        tracing::debug!("Legendary not available, reading its config for Rare");
         let games = read_installed_json(&config_dir()).unwrap_or_default();
         ("rare".to_string(), games)
     } else {
+        tracing::debug!("Neither Legendary nor Rare found");
         return Ok(Vec::new());
     };
 
@@ -45,12 +50,9 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     Ok(candidates)
 }
 
-fn run_legendary(executable: &str) -> Result<Vec<LegendaryGame>, Box<dyn std::error::Error>> {
-    let output = host_command(executable)
-        .args(["list-installed", "--json"])
-        .output()?;
-    let json = String::from_utf8_lossy(&output.stdout);
-    Ok(serde_json::from_str(&json)?)
+fn run_legendary(executable: &str) -> Option<Vec<LegendaryGame>> {
+    let stdout = command_stdout(host_command(executable).args(["list-installed", "--json"]))?;
+    parse_launcher_json(&format!("{executable} list-installed"), &stdout)
 }
 
 /// Matches how Legendary resolves its config directory.
@@ -67,21 +69,18 @@ fn config_dir() -> PathBuf {
 }
 
 fn read_installed_json(config_dir: &Path) -> Option<Vec<LegendaryGame>> {
-    let raw = std::fs::read_to_string(config_dir.join("installed.json")).ok()?;
-    parse_installed_json(&raw)
+    let map = read_launcher_json(&config_dir.join("installed.json"))?;
+    Some(installed_games(map))
 }
 
-fn parse_installed_json(raw: &str) -> Option<Vec<LegendaryGame>> {
-    let map = serde_json::from_str::<HashMap<String, LegendaryGame>>(raw).ok()?;
-    Some(
-        map.into_values()
-            .filter(|g| {
-                g.install_path
-                    .as_deref()
-                    .is_none_or(|p| Path::new(p).exists())
-            })
-            .collect(),
-    )
+fn installed_games(map: HashMap<String, LegendaryGame>) -> Vec<LegendaryGame> {
+    map.into_values()
+        .filter(|g| {
+            g.install_path
+                .as_deref()
+                .is_none_or(|p| Path::new(p).exists())
+        })
+        .collect()
 }
 
 #[derive(Deserialize)]
@@ -112,7 +111,7 @@ mod tests {
             "Kept": {"app_name":"Kept","title":"Kept","version":"1","install_path":"/"},
             "Gone": {"app_name":"Gone","title":"Gone","version":"1","install_path":"/definitely/not/here"}
         }"#;
-        let games = parse_installed_json(json).unwrap();
+        let games = installed_games(serde_json::from_str(json).unwrap());
         assert_eq!(games.len(), 1);
         assert_eq!(games[0].app_name, "Kept");
     }
