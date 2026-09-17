@@ -27,12 +27,13 @@ pub fn scan_sources_with_progress(
 
         let source_settings = settings.source_settings(source);
         let custom_path = source_settings.custom_path.as_deref().map(Path::new);
-        let span = tracing::info_span!(
+        let _span = tracing::info_span!(
             "scan",
             source = %source.display_name(),
             custom_path = custom_path.map(|p| p.display().to_string())
-        );
-        let mut found = span.in_scope(|| scan_single_source(source, user, custom_path));
+        )
+        .entered();
+        let mut found = scan_single_source(source, user, custom_path);
         for candidate in &mut found {
             artwork::apply_source_preference(
                 &mut candidate.artwork,
@@ -46,9 +47,9 @@ pub fn scan_sources_with_progress(
         candidates.extend(found);
 
         if found_count == 0 {
-            tracing::debug!(source = %source.display_name(), "No games found");
+            tracing::debug!("No games found");
         } else {
-            tracing::info!(source = %source.display_name(), found = found_count, "Games found");
+            tracing::info!(found = found_count, "Games found");
         }
 
         on_progress(ScanProgressEvent {

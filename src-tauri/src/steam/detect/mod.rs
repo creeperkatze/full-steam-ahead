@@ -118,7 +118,6 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
         );
         AppError::SteamNotFound
     })?;
-    tracing::debug!(path = %install_path.display(), "Steam installation found");
 
     let userdata = install_path.join("userdata");
     let login_users = users::read_login_users(&install_path);
@@ -171,7 +170,6 @@ pub fn detect_steam() -> AppResult<SteamInstallation> {
     }
 
     steam_users.sort_by(|a, b| a.steam_id.cmp(&b.steam_id));
-    tracing::debug!(users = steam_users.len(), "Steam users discovered");
 
     Ok(SteamInstallation {
         install_path,

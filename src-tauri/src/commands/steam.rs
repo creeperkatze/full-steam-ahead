@@ -18,6 +18,7 @@ pub fn detect_steam() -> CommandResult<SteamInstallation> {
     let result = steam::detect::detect_steam().map_err(Into::into);
     if let Ok(ref install) = result {
         info!(
+            path = %install.install_path.display(),
             users = install.users.len(),
             running = install.running,
             "Steam detected"
@@ -57,7 +58,7 @@ pub fn read_shortcuts_for_user(user_steam_id: String) -> CommandResult<Vec<Short
 }
 
 #[tauri::command]
-#[instrument(skip(app), fields(user = %request.user_steam_id, sources = request.include_sources.len()))]
+#[instrument(skip_all, fields(user = %request.user_steam_id))]
 pub fn scan_sources(
     app: tauri::AppHandle,
     request: ScanRequest,
@@ -82,7 +83,7 @@ pub fn scan_sources(
 }
 
 #[tauri::command]
-#[instrument(skip(candidates, options), fields(user = %user_steam_id, candidates = candidates.len()))]
+#[instrument(skip_all, fields(user = %user_steam_id, candidates = candidates.len()))]
 pub fn create_preview_plan(
     user_steam_id: String,
     candidates: Vec<ImportCandidate>,
@@ -102,7 +103,7 @@ pub fn create_preview_plan(
 }
 
 #[tauri::command]
-#[instrument(fields(name = ?request.display_name, exe = %request.executable_path.display()))]
+#[instrument(skip_all, fields(name = ?request.display_name, exe = %request.executable_path.display()))]
 pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<ImportCandidate> {
     let user = steam::detect::find_user(&request.user_steam_id)?;
     let settings = super::load_settings().unwrap_or_default();
