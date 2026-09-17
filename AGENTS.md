@@ -19,5 +19,5 @@ This project uses pnpm. `website/` is the separate VitePress project site with i
 - Launchers change: check the upstream source of open-source launchers instead of trusting existing code or memory.
 - Only write a comment when the code can't explain something itself. Keep it short and simple: no em dashes, no semicolons, no nested clauses.
 
-For how importers should find and read launcher data, see [.agents/docs/IMPORTERS.md](.agents/docs/IMPORTERS.md).
-For logging, see [.agents/docs/LOGGING.md](.agents/docs/LOGGING.md).
+For how importers should find and read launcher data, see [docs/IMPORTERS.md](docs/IMPORTERS.md).
+For logging, see [docs/LOGGING.md](docs/LOGGING.md).
