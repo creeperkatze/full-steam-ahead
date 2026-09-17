@@ -1,6 +1,6 @@
 [package]
 name = "full-steam-ahead"
-version = "1.3.10"
+version = "1.4.0"
 description = "A desktop app to import games from other launchers into Steam."
 authors = ["Creeperkatze"]
 license = "AGPL-3.0-only"
