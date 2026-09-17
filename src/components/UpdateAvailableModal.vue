@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { AlertCircle, CheckCircle2, Clock, Loader2 } from '@lucide/vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { marked } from 'marked'
+import MarkdownIt from 'markdown-it'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -33,9 +33,10 @@ function close() {
 	emit('update:modelValue', false)
 }
 
-const renderedNotes = computed(() =>
-	marked.parse(props.releaseNotes.trim(), { async: false, breaks: true, gfm: true }),
-)
+// Raw HTML in the notes is escaped and unsafe links are rejected
+const markdown = new MarkdownIt({ breaks: true, linkify: true })
+
+const renderedNotes = computed(() => markdown.render(props.releaseNotes.trim()))
 
 function onNotesClick(e: MouseEvent) {
 	const link = (e.target as HTMLElement).closest('a')
@@ -78,7 +79,7 @@ function onNotesClick(e: MouseEvent) {
 						{{ t('updateModal.description', { current: currentVersion, latest: latestVersion }) }}
 					</template>
 				</p>
-				<!-- eslint-disable vue/no-v-html -- release notes come from this project's own GitHub releases -->
+				<!-- eslint-disable vue/no-v-html -- markdown-it escapes raw HTML -->
 				<div
 					v-if="status === 'available' && releaseNotes"
 					class="release-notes mt-3 max-h-40 overflow-y-auto rounded-lg border border-border bg-surface-3 p-2.5 text-sm text-secondary"
