@@ -30,6 +30,9 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     let gog_json = heroic_config_dir.join("gog_store").join("installed.json");
     candidates.extend(scan_gog_games(user, &gog_json, &install_mode));
 
+    let nile_dir = heroic_config_dir.join("nile_config").join("nile");
+    candidates.extend(scan_nile_games(user, &nile_dir, &install_mode));
+
     let sideload_json = heroic_config_dir.join("sideload_apps").join("library.json");
     candidates.extend(scan_sideload_games(user, &sideload_json, &install_mode));
 
@@ -143,6 +146,67 @@ struct HeroicGogEntry {
     app_name: String,
     install_path: String,
     platform: String,
+}
+
+#[derive(Deserialize)]
+struct HeroicNileInstalled {
+    id: String,
+    path: String,
+}
+
+#[derive(Deserialize)]
+struct HeroicNileLibraryEntry {
+    product: HeroicNileProduct,
+}
+
+#[derive(Deserialize)]
+struct HeroicNileProduct {
+    id: String,
+    title: Option<String>,
+}
+
+/// Maps Amazon product ids to titles, installed.json doesn't carry them.
+fn nile_titles(library_json: &Path) -> HashMap<String, String> {
+    let Ok(raw) = std::fs::read_to_string(library_json) else {
+        return HashMap::new();
+    };
+    let Ok(entries) = serde_json::from_str::<Vec<HeroicNileLibraryEntry>>(&raw) else {
+        return HashMap::new();
+    };
+    entries
+        .into_iter()
+        .filter_map(|e| Some((e.product.id, e.product.title?)))
+        .collect()
+}
+
+/// Amazon Games installed through Heroic's Nile integration.
+fn scan_nile_games(
+    user: &SteamUser,
+    nile_dir: &Path,
+    install_mode: &InstallMode,
+) -> Vec<ImportCandidate> {
+    let Ok(raw) = std::fs::read_to_string(nile_dir.join("installed.json")) else {
+        return Vec::new();
+    };
+    let Ok(installed) = serde_json::from_str::<Vec<HeroicNileInstalled>>(&raw) else {
+        return Vec::new();
+    };
+    let mut titles = nile_titles(&nile_dir.join("library.json"));
+
+    installed
+        .into_iter()
+        .filter(|g| Path::new(&g.path).exists())
+        .map(|game| {
+            let name = titles.remove(&game.id).unwrap_or_else(|| {
+                Path::new(&game.path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(&game.id)
+                    .to_string()
+            });
+            heroic_launch_candidate(user, name, Some("nile"), &game.id, install_mode)
+        })
+        .collect()
 }
 
 #[derive(Deserialize)]
@@ -282,6 +346,36 @@ mod tests {
         let b: HeroicGogEntry = serde_json::from_str(with_snake).unwrap();
         assert_eq!(a.app_name, "A");
         assert_eq!(b.app_name, "B");
+    }
+
+    // Nile (Amazon) JSON deserialization
+
+    #[test]
+    fn parses_nile_installed() {
+        let json =
+            r#"[{"id":"amzn1.adg.product.abc","version":"v1","path":"/games/Foo","size":123}]"#;
+        let installed: Vec<HeroicNileInstalled> = serde_json::from_str(json).unwrap();
+        assert_eq!(installed[0].id, "amzn1.adg.product.abc");
+        assert_eq!(installed[0].path, "/games/Foo");
+    }
+
+    #[test]
+    fn nile_titles_skip_untitled_products() {
+        let dir = std::env::temp_dir().join(format!("fsa-nile-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let library = dir.join("library.json");
+        std::fs::write(
+            &library,
+            r#"[
+                {"id":"x","product":{"id":"a","title":"Game A","productDetail":{}}},
+                {"id":"y","product":{"id":"b","productDetail":{}}}
+            ]"#,
+        )
+        .unwrap();
+        let titles = nile_titles(&library);
+        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(titles.get("a").map(String::as_str), Some("Game A"));
+        assert!(!titles.contains_key("b"));
     }
 
     // HeroicSideloadLibrary JSON deserialization
