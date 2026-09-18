@@ -36,7 +36,12 @@ export default defineConfig({
 				? [
 						{
 							text: `v${version}`,
-							link: 'https://github.com/creeperkatze/full-steam-ahead/releases',
+							items: [
+								{
+									text: 'Changelog',
+									link: 'https://github.com/creeperkatze/full-steam-ahead/releases',
+								},
+							],
 						},
 					]
 				: []),
