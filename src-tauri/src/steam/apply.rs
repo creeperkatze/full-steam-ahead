@@ -55,10 +55,20 @@ pub fn apply_plan_with_progress(
     });
     let mut backups_created = Vec::new();
     for backup in &request.plan.backups {
+        // The plan round-trips through the frontend. Both ends are re-checked here.
+        // A source must be one of FSA's own known backup files for this user.
+        let is_known_backup_source = backup.source == user.shortcuts_path
+            || backup.source == user.collections_path
+            || backup.source.starts_with(&user.grid_path);
+        if !is_known_backup_source {
+            return Err(AppError::Message(format!(
+                "Refusing to back up a file outside the managed Steam files: {}",
+                backup.source.display()
+            )));
+        }
         if !backup.source.exists() {
             continue;
         }
-        // The plan round-trips through the frontend, so destinations are re-checked here.
         if !backups::is_valid_destination(&backup.destination) {
             return Err(AppError::Message(format!(
                 "Refusing to write a backup outside the backups directory: {}",
@@ -72,7 +82,8 @@ pub fn apply_plan_with_progress(
         tracing::debug!(src = %backup.source.display(), dst = %backup.destination.display(), "Backup created");
         backups_created.push(backup.destination.clone());
     }
-    if let Some(backup_dir) = backups_created.first().and_then(|p| p.parent()) {
+    let backup_dir = backups_created.first().and_then(|p| p.parent());
+    if let Some(backup_dir) = backup_dir {
         backups::write_manifest(backup_dir, &request.plan.backups);
     }
 
@@ -132,7 +143,7 @@ pub fn apply_plan_with_progress(
             .filter(|(candidate, _)| candidate.needs_proton)
             .map(|(_, shortcut)| shortcut.app_id)
             .collect::<Vec<_>>();
-        proton::setup_compat_tool_mapping(&install_path, &proton_app_ids)?;
+        proton::setup_compat_tool_mapping(&install_path, &proton_app_ids, backup_dir)?;
     }
 
     shortcuts::append_missing(&mut existing, additions);
