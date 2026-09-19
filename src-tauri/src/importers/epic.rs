@@ -156,11 +156,7 @@ fn candidate_from_manifest(
     // On Linux with Proton, embed the compat path into the launch options
     #[cfg(all(unix, not(target_os = "macos")))]
     let launch_url = if let Some(ref compat) = paths.compat_folder {
-        format!(
-            "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -'{}'",
-            compat.display(),
-            launch_url
-        )
+        super::proton_launch_options(compat, &launch_url)
     } else {
         launch_url
     };

@@ -2,7 +2,7 @@ use crate::{
     error::AppResult,
     importers::{
         command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
-        read_launcher_json,
+        read_launcher_json, shell_quote,
     },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
@@ -41,7 +41,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
                 "legendary",
                 game.title,
                 host_binary_path(&executable),
-                format!("launch {}", game.app_name),
+                format!("launch {}", shell_quote(&game.app_name)),
                 vec!["Legendary".to_string()],
             )
         })

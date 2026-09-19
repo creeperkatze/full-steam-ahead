@@ -1,6 +1,6 @@
 use crate::{
     error::AppResult,
-    importers::{gog, host_binary_path, launcher_candidate, read_launcher_json},
+    importers::{gog, host_binary_path, launcher_candidate, read_launcher_json, shell_quote},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -93,9 +93,12 @@ fn heroic_launch_candidate(
     let (launcher, launch_options) = match install_mode {
         InstallMode::FlatPak => (
             "flatpak",
-            format!("run com.heroicgameslauncher.hgl {launch_url} --no-gui --no-sandbox"),
+            format!(
+                "run com.heroicgameslauncher.hgl {} --no-gui --no-sandbox",
+                shell_quote(&launch_url)
+            ),
         ),
-        InstallMode::UserBin => ("heroic", launch_url),
+        InstallMode::UserBin => ("heroic", shell_quote(&launch_url)),
     };
     // Steam needs an absolute path in the shortcut
     let launcher_path = host_binary_path(launcher);

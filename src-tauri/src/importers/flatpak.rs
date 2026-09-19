@@ -1,6 +1,6 @@
 use crate::{
     error::AppResult,
-    importers::{command_stdout, host_binary_path, host_command, launcher_candidate},
+    importers::{command_stdout, host_binary_path, host_command, launcher_candidate, shell_quote},
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use std::path::Path;
@@ -29,7 +29,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
                 "flatpak",
                 name,
                 exe.clone().into(),
-                format!("run {app_id}"),
+                format!("run {}", shell_quote(&app_id)),
                 vec!["Flatpak".to_string()],
             ))
         })

@@ -274,12 +274,21 @@ pub fn wine_registries(
         .collect()
 }
 
+/// Shell-quotes a value for safe use in a Steam shortcut's LaunchOptions.
+/// Steam shell-expands LaunchOptions around `%command%` on Linux.
+pub fn shell_quote(value: &str) -> String {
+    shlex::try_quote(value)
+        .map(|quoted| quoted.into_owned())
+        .unwrap_or_else(|_| "''".to_string())
+}
+
 /// Launch options that open a launcher URL inside an existing Proton prefix.
 #[cfg(unix)]
 pub fn proton_launch_options(compat_folder: &Path, url: &str) -> String {
     format!(
-        "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -'{url}'",
-        compat_folder.display()
+        "STEAM_COMPAT_DATA_PATH=\"{}\" %command% -{}",
+        compat_folder.display(),
+        shell_quote(url)
     )
 }
 

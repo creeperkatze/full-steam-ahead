@@ -2,6 +2,7 @@ use crate::{
     error::AppResult,
     importers::{
         command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
+        shell_quote,
     },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
@@ -57,12 +58,16 @@ fn lutris_launch_args(game: &LutrisGame, is_flatpak: bool) -> (String, String) {
         let flatpak_image = "net.lutris.Lutris";
         (
             "flatpak".to_string(),
-            format!("run {} lutris:rungame/{}", flatpak_image, game.slug),
+            format!(
+                "run {} {}",
+                flatpak_image,
+                shell_quote(&format!("lutris:rungame/{}", game.slug))
+            ),
         )
     } else {
         (
             "lutris".to_string(),
-            format!("lutris:rungame/{}", game.slug),
+            shell_quote(&format!("lutris:rungame/{}", game.slug)),
         )
     }
 }

@@ -2,6 +2,7 @@ use crate::{
     error::AppResult,
     importers::{
         command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
+        shell_quote,
     },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
@@ -55,9 +56,10 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
                         program.name.clone(),
                         exe.clone().into(),
                         format!(
-                        "run --command=bottles-cli com.usebottles.bottles run -b \"{}\" -p \"{}\"",
-                        bottle_name, program.name
-                    ),
+                            "run --command=bottles-cli com.usebottles.bottles run -b {} -p {}",
+                            shell_quote(&bottle_name),
+                            shell_quote(&program.name)
+                        ),
                         vec!["Bottles".to_string()],
                     )
                 })

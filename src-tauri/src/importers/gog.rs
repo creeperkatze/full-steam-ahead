@@ -149,7 +149,7 @@ fn scan_gog_folder(
         // Ensures Steam reuses the exact Proton prefix GOG Galaxy installed this game into.
         let args = match compat_folder {
             Some(compat) => Some(steam_compat_data_launch_options(compat, args.as_deref())),
-            None => args,
+            None => args.as_deref().map(quote_launch_args),
         };
         candidates.push(candidate_from_parts(
             user,
@@ -172,9 +172,23 @@ fn steam_compat_data_launch_options(compat_folder: &Path, extra_args: Option<&st
     );
     if let Some(extra_args) = extra_args.filter(|a| !a.trim().is_empty()) {
         options.push(' ');
-        options.push_str(extra_args);
+        options.push_str(&quote_launch_args(extra_args));
     }
     options
+}
+
+/// Splits an untrusted arguments string into tokens and re-quotes each one.
+/// Keeps multiple flags as separate arguments. Tokenizing can fail.
+/// Then it quotes the whole string as one argument instead.
+fn quote_launch_args(extra_args: &str) -> String {
+    match shlex::split(extra_args) {
+        Some(tokens) => tokens
+            .iter()
+            .map(|token| super::shell_quote(token))
+            .collect::<Vec<_>>()
+            .join(" "),
+        None => super::shell_quote(extra_args),
+    }
 }
 
 struct GalaxyConfigSource {
@@ -282,6 +296,28 @@ mod tests {
             steam_compat_data_launch_options(compat, Some("   ")),
             "STEAM_COMPAT_DATA_PATH=\"/prefix/123\" %command%"
         );
+    }
+
+    #[test]
+    fn compat_data_launch_options_escapes_shell_metacharacters() {
+        let compat = Path::new("/prefix/123");
+        let raw_args = "-windowed; touch /tmp/pwned #";
+        let options = steam_compat_data_launch_options(compat, Some(raw_args));
+        let appended = options
+            .strip_prefix("STEAM_COMPAT_DATA_PATH=\"/prefix/123\" %command% ")
+            .expect("prefix must be present");
+        // shlex tokenizes the raw payload the same way. A shell must
+        // re-parse the quoted output into those same tokens. Neither
+        // `;` nor `#` stays unquoted.
+        assert_eq!(shlex::split(appended), shlex::split(raw_args));
+    }
+
+    #[test]
+    fn quote_launch_args_escapes_a_single_quote() {
+        // Quoting wraps the value. The substring still appears.
+        // A shell must re-parse the result back into one exact token.
+        let quoted = quote_launch_args("it's");
+        assert_eq!(shlex::split(&quoted), Some(vec!["it's".to_string()]));
     }
 
     #[cfg(unix)]

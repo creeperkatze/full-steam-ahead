@@ -34,12 +34,35 @@
             }
         ],
         "security": {
-            "csp": null,
+            "csp": {
+                "default-src": "'self'",
+                "script-src": "'self'",
+                "style-src": "'self' 'unsafe-inline'",
+                "img-src": "'self' asset: http://asset.localhost https:",
+                "font-src": "'self'",
+                "connect-src": "'self' ipc: http://ipc.localhost https://api.github.com",
+                "object-src": "'none'",
+                "base-uri": "'self'",
+                "form-action": "'none'",
+                "frame-src": "'none'"
+            },
             "assetProtocol": {
                 "enable": true,
                 "scope": [
                     "**"
                 ]
+            },
+            "devCsp": {
+                "default-src": "'self'",
+                "script-src": "'self'",
+                "style-src": "'self' 'unsafe-inline'",
+                "img-src": "'self' asset: http://asset.localhost https:",
+                "font-src": "'self'",
+                "connect-src": "'self' ipc: http://ipc.localhost https://api.github.com ws://localhost:1420",
+                "object-src": "'none'",
+                "base-uri": "'self'",
+                "form-action": "'none'",
+                "frame-src": "'none'"
             }
         }
     },

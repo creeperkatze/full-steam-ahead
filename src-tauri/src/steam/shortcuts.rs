@@ -133,7 +133,9 @@ fn write_string(out: &mut Vec<u8>, key: &str, value: &str) {
     out.push(TYPE_STRING);
     out.extend_from_slice(key.as_bytes());
     out.push(0);
-    out.extend_from_slice(value.as_bytes());
+    // NUL ends a field in this format. An interior NUL would desync every
+    // field written after it. Strip it before writing.
+    out.extend(value.bytes().filter(|&byte| byte != 0));
     out.push(0);
 }
 
@@ -326,6 +328,15 @@ mod tests {
         assert_eq!(parsed[0].exe, original.exe);
         assert_eq!(parsed[0].start_dir, original.start_dir);
         assert_eq!(parsed[0].launch_options, original.launch_options);
+    }
+
+    #[test]
+    fn strips_embedded_nul_so_the_entry_still_round_trips() {
+        let malicious = make_shortcut("Evil\u{0}Game", "\"game.exe\"");
+        let parsed = parse_shortcuts(&serialize_shortcuts(std::slice::from_ref(&malicious)))
+            .expect("an interior NUL must not desync the following fields");
+        assert_eq!(parsed.len(), 1);
+        assert!(!parsed[0].app_name.contains('\u{0}'));
     }
 
     #[test]
