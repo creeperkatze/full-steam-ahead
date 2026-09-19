@@ -5,7 +5,15 @@ use std::{fs, path::Path};
 const DEFAULT_COMPAT_TOOL: &str = "proton_experimental";
 
 /// Ensures each of `app_ids` has a `CompatToolMapping` entry in `config/config.vdf`, forcing Steam to run that shortcut through Proton.
-pub fn setup_compat_tool_mapping(install_path: &Path, app_ids: &[u32]) -> AppResult<()> {
+///
+/// `backup_dir` is optional. When set, it receives a copy of `config.vdf`
+/// before the write. `shortcuts.vdf` and the collections file are backed
+/// up the same way before apply.
+pub fn setup_compat_tool_mapping(
+    install_path: &Path,
+    app_ids: &[u32],
+    backup_dir: Option<&Path>,
+) -> AppResult<()> {
     if app_ids.is_empty() {
         return Ok(());
     }
@@ -19,7 +27,7 @@ pub fn setup_compat_tool_mapping(install_path: &Path, app_ids: &[u32]) -> AppRes
     let ids: Vec<String> = app_ids.iter().map(u32::to_string).collect();
     let Some(updated) = add_missing_compat_tool_entries(&content, &ids) else {
         tracing::warn!(
-            "Could not find a CompatToolMapping section in config.vdf; skipping Proton setup. \
+            "Could not find a unique CompatToolMapping section in config.vdf; skipping Proton setup. \
              Force a Steam Play compatibility tool on at least one game manually, then retry."
         );
         return Ok(());
@@ -27,6 +35,13 @@ pub fn setup_compat_tool_mapping(install_path: &Path, app_ids: &[u32]) -> AppRes
 
     if updated == content {
         return Ok(());
+    }
+
+    if let Some(backup_dir) = backup_dir {
+        let backup_path = backup_dir.join("config.vdf");
+        if let Err(error) = fs::copy(&config_path, &backup_path) {
+            tracing::warn!(%error, path = %config_path.display(), "Could not back up config.vdf before Proton setup");
+        }
     }
 
     fs::write(&config_path, updated).map_err(io_context(&config_path))
@@ -45,6 +60,12 @@ fn find_compat_tool_mapping_section(vdf: &str) -> Option<CompatToolMappingSectio
     const KEY: &str = "\"CompatToolMapping\"\n";
 
     let key_start = vdf.find(KEY)?;
+    // A real config.vdf has exactly one CompatToolMapping key.
+    // A second occurrence means the file is unusual. Don't guess.
+    // Steam might read a different one than we edit.
+    if vdf[key_start + KEY.len()..].contains(KEY) {
+        return None;
+    }
     let after_key = &vdf[key_start + KEY.len()..];
 
     // The tab count before the opening brace is the section's indentation.
@@ -202,7 +223,17 @@ mod tests {
 
     #[test]
     fn empty_app_ids_is_a_noop() {
-        setup_compat_tool_mapping(Path::new("/nonexistent"), &[]).unwrap();
+        setup_compat_tool_mapping(Path::new("/nonexistent"), &[], None).unwrap();
+    }
+
+    #[test]
+    fn rejects_a_duplicate_compat_tool_mapping_key() {
+        let vdf = format!(
+            "\"CompatToolMapping\"\n{{\n}}\n{}",
+            sample_config(&entry("1", "proton_experimental"))
+        );
+        assert!(find_compat_tool_mapping_section(&vdf).is_none());
+        assert!(add_missing_compat_tool_entries(&vdf, &["2".to_string()]).is_none());
     }
 
     #[test]
