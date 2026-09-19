@@ -206,9 +206,34 @@ pub(super) fn reachable_url(url: &str) -> bool {
         .is_ok()
 }
 
+/// Artwork only ever comes from these hosts.
+/// `download_asset`'s `url` argument can come from a webview-round-tripped
+/// plan or a SteamGridDB API response. Both must be checked against this list.
+const ALLOWED_ARTWORK_HOSTS: &[&str] = &[
+    "cdn.cloudflare.steamstatic.com",
+    "shared.cloudflare.steamstatic.com",
+    "shared.steamstatic.com",
+    "cdn2.steamgriddb.com",
+];
+
+fn is_allowed_artwork_url(url: &str) -> bool {
+    reqwest::Url::parse(url).is_ok_and(|parsed| {
+        parsed.scheme() == "https"
+            && parsed
+                .host_str()
+                .is_some_and(|host| ALLOWED_ARTWORK_HOSTS.contains(&host))
+    })
+}
+
 pub(super) fn download_asset(url: &str, target: &Path) -> AppResult<()> {
     use crate::error::io_context;
     use std::fs;
+
+    if !is_allowed_artwork_url(url) {
+        return Err(AppError::Message(format!(
+            "refusing to download artwork from an untrusted host: {url}"
+        )));
+    }
 
     let response = http_client()
         .get(url)
@@ -216,6 +241,7 @@ pub(super) fn download_asset(url: &str, target: &Path) -> AppResult<()> {
         .map_err(|error| AppError::Message(format!("request failed for {url}: {error}")))?
         .error_for_status()
         .map_err(|error| AppError::Message(format!("request failed for {url}: {error}")))?;
+
     let bytes = response.bytes().map_err(|error| {
         AppError::Message(format!(
             "could not read artwork response for {url}: {error}"
@@ -226,6 +252,50 @@ pub(super) fn download_asset(url: &str, target: &Path) -> AppResult<()> {
         fs::create_dir_all(parent).map_err(io_context(parent))?;
     }
     fs::write(target, bytes).map_err(io_context(target))
+}
+
+#[cfg(test)]
+mod download_asset_tests {
+    use super::is_allowed_artwork_url;
+
+    #[test]
+    fn allows_known_steam_cdn_host() {
+        assert!(is_allowed_artwork_url(
+            "https://shared.cloudflare.steamstatic.com/store_item_assets/foo.jpg"
+        ));
+    }
+
+    #[test]
+    fn allows_known_steamgriddb_cdn_host() {
+        assert!(is_allowed_artwork_url(
+            "https://cdn2.steamgriddb.com/grid/abc.png"
+        ));
+    }
+
+    #[test]
+    fn rejects_unknown_host() {
+        assert!(!is_allowed_artwork_url("https://attacker.example/x"));
+    }
+
+    #[test]
+    fn rejects_non_https_scheme() {
+        assert!(!is_allowed_artwork_url(
+            "http://shared.cloudflare.steamstatic.com/store_item_assets/foo.jpg"
+        ));
+    }
+
+    #[test]
+    fn rejects_malformed_url() {
+        assert!(!is_allowed_artwork_url("not a url"));
+    }
+
+    #[test]
+    fn rejects_loopback_and_link_local_targets() {
+        assert!(!is_allowed_artwork_url("http://127.0.0.1:9999/internal"));
+        assert!(!is_allowed_artwork_url(
+            "http://169.254.169.254/latest/meta-data/"
+        ));
+    }
 }
 
 pub(super) fn name_distance(left: &str, right: &str) -> usize {
