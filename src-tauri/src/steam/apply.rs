@@ -10,6 +10,7 @@ use crate::{
 use std::{
     collections::HashSet,
     fs,
+    path::Path,
     thread::sleep,
     time::{Duration, Instant},
 };
@@ -82,7 +83,10 @@ pub fn apply_plan_with_progress(
         tracing::debug!(src = %backup.source.display(), dst = %backup.destination.display(), "Backup created");
         backups_created.push(backup.destination.clone());
     }
-    let backup_dir = backups_created.first().and_then(|p| p.parent());
+    let backup_dir = backups_created
+        .first()
+        .and_then(|p| p.parent())
+        .map(Path::to_path_buf);
     // The Proton step appends its own backup.
     #[cfg_attr(not(unix), allow(unused_mut))]
     let mut backup_plans = request.plan.backups.clone();
@@ -144,15 +148,17 @@ pub fn apply_plan_with_progress(
             .map(|(_, shortcut)| shortcut.app_id)
             .collect::<Vec<_>>();
         // Rewrites config.vdf. The manifest is written below, so the backup is recorded.
-        if let Some(config_backup) =
-            proton::setup_compat_tool_mapping(&install_path, &proton_app_ids, backup_dir)?
-        {
+        if let Some(config_backup) = proton::setup_compat_tool_mapping(
+            &install_path,
+            &proton_app_ids,
+            backup_dir.as_deref(),
+        )? {
             backups_created.push(config_backup.destination.clone());
             backup_plans.push(config_backup);
         }
     }
 
-    if let Some(backup_dir) = backup_dir {
+    if let Some(backup_dir) = backup_dir.as_deref() {
         backups::write_manifest(backup_dir, &backup_plans);
     }
 

@@ -12,6 +12,8 @@ withDefaults(
 		disabled?: boolean
 	}>(),
 	{
+		icon: undefined,
+		description: undefined,
 		buttonLabel: 'Open',
 	},
 )

@@ -2,10 +2,7 @@ use crate::{
     error::{io_context, AppResult},
     models::BackupPlan,
 };
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 const DEFAULT_COMPAT_TOOL: &str = "proton_experimental";
 
