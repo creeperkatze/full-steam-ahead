@@ -6,6 +6,7 @@ import { h } from 'vue'
 import DonateButton from './DonateButton.vue'
 import HeroActions from './HeroActions.vue'
 import HeroLogo from './HeroLogo.vue'
+import Showcase from './Showcase.vue'
 import SiteFooter from './SiteFooter.vue'
 
 export default {
@@ -15,6 +16,7 @@ export default {
 			'nav-bar-content-after': () => h(DonateButton),
 			'home-hero-info-before': () => h(HeroLogo),
 			'home-hero-actions-after': () => h(HeroActions),
+			'home-features-after': () => h(Showcase),
 			'layout-bottom': () => h(SiteFooter),
 		})
 	},

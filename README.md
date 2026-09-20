@@ -30,7 +30,7 @@ Prefer to build from source? See [Building from source](#-building-from-source) 
 </tr>
 <tr>
 <td width="33%"><img src=".github/assets/screenshots/steamgriddb.png"><p align="center"><sub>Browse custom artwork on SteamGridDB</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/review.png"><p align="center"><sub>Review every change before it's applied</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/review.png"><p align="center"><sub>Review before you apply anything</sub></p></td>
 <td width="33%"><img src=".github/assets/screenshots/done.png"><p align="center"><sub>All done, with an automatic backup</sub></p></td>
 </tr>
 </table>
@@ -41,13 +41,13 @@ Prefer to build from source? See [Building from source](#-building-from-source) 
 
 <table>
 <tr>
-<td width="33%"><img src=".github/assets/screenshots/settings_sources.png"><p align="center"><sub>Toggle and configure sources</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_artwork.png"><p align="center"><sub>Artwork options</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_steam.png"><p align="center"><sub>Steam behavior</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_sources.png"><p align="center"><sub>Configure sources</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_artwork.png"><p align="center"><sub>Choose where your artwork comes from</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_steam.png"><p align="center"><sub>Decide how Steam gets handled</sub></p></td>
 </tr>
 <tr>
-<td width="33%"><img src=".github/assets/screenshots/settings_backups.png"><p align="center"><sub>Manage and restore backups</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_customization.png"><p align="center"><sub>Language and color scheme</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_backups.png"><p align="center"><sub>Every backup, one restore away</sub></p></td>
+<td width="33%"><img src=".github/assets/screenshots/settings_customization.png"><p align="center"><sub>Make it feel like yours</sub></p></td>
 <td width="33%"><img src=".github/assets/screenshots/settings_debug.png"><p align="center"><sub>Debug info and logs</sub></p></td>
 </tr>
 </table>
