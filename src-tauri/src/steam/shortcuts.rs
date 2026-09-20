@@ -133,8 +133,7 @@ fn write_string(out: &mut Vec<u8>, key: &str, value: &str) {
     out.push(TYPE_STRING);
     out.extend_from_slice(key.as_bytes());
     out.push(0);
-    // NUL ends a field in this format. An interior NUL would desync every
-    // field written after it. Strip it before writing.
+    // Values are stored raw. A stray NUL would desync the fields after it.
     out.extend(value.bytes().filter(|&byte| byte != 0));
     out.push(0);
 }
@@ -337,6 +336,22 @@ mod tests {
             .expect("an interior NUL must not desync the following fields");
         assert_eq!(parsed.len(), 1);
         assert!(!parsed[0].app_name.contains('\u{0}'));
+    }
+
+    #[test]
+    fn stores_values_raw_apart_from_the_nul_delimiter() {
+        let tricky = make_shortcut(
+            "Evil\"\n\"Injected\"\t\\Game\u{0}tail",
+            "\"C:\\Games\\game.exe\"",
+        );
+        let parsed = parse_shortcuts(&serialize_shortcuts(std::slice::from_ref(&tricky)))
+            .expect("a quote or newline must not desync the following fields");
+
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].app_name, "Evil\"\n\"Injected\"\t\\Gametail");
+        assert_eq!(parsed[0].app_id, tricky.app_id);
+        // The quoted exe path depends on backslashes surviving verbatim.
+        assert_eq!(parsed[0].exe, tricky.exe);
     }
 
     #[test]
