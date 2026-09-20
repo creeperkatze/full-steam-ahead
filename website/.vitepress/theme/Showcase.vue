@@ -164,6 +164,7 @@ const items: ShowcaseItem[] = [
 
 @media (min-width: 640px) {
 	.showcase {
+		padding-top: 48px;
 		padding-left: 48px;
 		padding-right: 48px;
 	}
