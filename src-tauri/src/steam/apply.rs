@@ -83,9 +83,9 @@ pub fn apply_plan_with_progress(
         backups_created.push(backup.destination.clone());
     }
     let backup_dir = backups_created.first().and_then(|p| p.parent());
-    if let Some(backup_dir) = backup_dir {
-        backups::write_manifest(backup_dir, &request.plan.backups);
-    }
+    // The Proton step appends its own backup.
+    #[cfg_attr(not(unix), allow(unused_mut))]
+    let mut backup_plans = request.plan.backups.clone();
 
     fs::create_dir_all(&user.grid_path).map_err(io_context(&user.grid_path))?;
     let mut skipped_change_ids = HashSet::new();
@@ -143,7 +143,17 @@ pub fn apply_plan_with_progress(
             .filter(|(candidate, _)| candidate.needs_proton)
             .map(|(_, shortcut)| shortcut.app_id)
             .collect::<Vec<_>>();
-        proton::setup_compat_tool_mapping(&install_path, &proton_app_ids, backup_dir)?;
+        // Rewrites config.vdf. The manifest is written below, so the backup is recorded.
+        if let Some(config_backup) =
+            proton::setup_compat_tool_mapping(&install_path, &proton_app_ids, backup_dir)?
+        {
+            backups_created.push(config_backup.destination.clone());
+            backup_plans.push(config_backup);
+        }
+    }
+
+    if let Some(backup_dir) = backup_dir {
+        backups::write_manifest(backup_dir, &backup_plans);
     }
 
     shortcuts::append_missing(&mut existing, additions);

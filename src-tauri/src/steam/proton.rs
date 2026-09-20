@@ -1,27 +1,33 @@
-use crate::error::{io_context, AppResult};
-use std::{fs, path::Path};
+use crate::{
+    error::{io_context, AppResult},
+    models::BackupPlan,
+};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-/// Compatibility tool id available on every Linux Steam client.
 const DEFAULT_COMPAT_TOOL: &str = "proton_experimental";
 
-/// Ensures each of `app_ids` has a `CompatToolMapping` entry in `config/config.vdf`, forcing Steam to run that shortcut through Proton.
+/// Forces Steam to run each of `app_ids` through Proton, by adding a
+/// `CompatToolMapping` entry to `config/config.vdf`.
 ///
-/// `backup_dir` is optional. When set, it receives a copy of `config.vdf`
-/// before the write. `shortcuts.vdf` and the collections file are backed
-/// up the same way before apply.
+/// `backup_dir` is optional. When set, the original `config.vdf` is copied
+/// there before the write. The returned plan records that copy, which is what
+/// a restore replays.
 pub fn setup_compat_tool_mapping(
     install_path: &Path,
     app_ids: &[u32],
     backup_dir: Option<&Path>,
-) -> AppResult<()> {
+) -> AppResult<Option<BackupPlan>> {
     if app_ids.is_empty() {
-        return Ok(());
+        return Ok(None);
     }
 
     let config_path = install_path.join("config").join("config.vdf");
     let Ok(content) = fs::read_to_string(&config_path) else {
         tracing::warn!(path = %config_path.display(), "config.vdf not found; skipping Proton setup");
-        return Ok(());
+        return Ok(None);
     };
 
     let ids: Vec<String> = app_ids.iter().map(u32::to_string).collect();
@@ -30,27 +36,38 @@ pub fn setup_compat_tool_mapping(
             "Could not find a unique CompatToolMapping section in config.vdf; skipping Proton setup. \
              Force a Steam Play compatibility tool on at least one game manually, then retry."
         );
-        return Ok(());
+        return Ok(None);
     };
 
     if updated == content {
-        return Ok(());
+        return Ok(None);
     }
 
-    if let Some(backup_dir) = backup_dir {
-        let backup_path = backup_dir.join("config.vdf");
-        if let Err(error) = fs::copy(&config_path, &backup_path) {
-            tracing::warn!(%error, path = %config_path.display(), "Could not back up config.vdf before Proton setup");
+    let backup = match backup_dir {
+        Some(backup_dir) => {
+            let backup_path = backup_dir.join("config.vdf");
+            match fs::copy(&config_path, &backup_path) {
+                Ok(_) => Some(BackupPlan {
+                    source: config_path.clone(),
+                    destination: backup_path,
+                }),
+                Err(error) => {
+                    tracing::warn!(%error, path = %config_path.display(), "Could not back up config.vdf before Proton setup");
+                    None
+                }
+            }
         }
-    }
+        None => None,
+    };
 
-    fs::write(&config_path, updated).map_err(io_context(&config_path))
+    fs::write(&config_path, updated).map_err(io_context(&config_path))?;
+    Ok(backup)
 }
 
 struct CompatToolMappingSection {
     /// Byte offset where the section's entries begin.
     entries_start: usize,
-    /// Byte offset right after the last entry's content, where a new entry can be inserted.
+    /// Byte offset where a new entry can be inserted.
     entries_end: usize,
     /// Indentation (in tabs) of each entry's `"<appid>"` key line.
     entry_indent: usize,
@@ -60,9 +77,7 @@ fn find_compat_tool_mapping_section(vdf: &str) -> Option<CompatToolMappingSectio
     const KEY: &str = "\"CompatToolMapping\"\n";
 
     let key_start = vdf.find(KEY)?;
-    // A real config.vdf has exactly one CompatToolMapping key.
-    // A second occurrence means the file is unusual. Don't guess.
-    // Steam might read a different one than we edit.
+    // More than one key means the file is unusual. Don't guess which one Steam reads.
     if vdf[key_start + KEY.len()..].contains(KEY) {
         return None;
     }
@@ -76,7 +91,8 @@ fn find_compat_tool_mapping_section(vdf: &str) -> Option<CompatToolMappingSectio
     let entries_start = key_start + KEY.len() + open_brace_offset + "{\n".len();
     let rest = &vdf[entries_start..];
 
-    // The section's closing brace shares its opening brace's indentation, so this skips nested entry blocks (which close one level deeper).
+    // The closing brace shares the opening brace's indentation. Nested entry
+    // blocks close one level deeper, so they are skipped.
     let close_line = format!("{}}}", "\t".repeat(section_indent));
     let entries_end = if rest.starts_with(&close_line) {
         entries_start
@@ -223,7 +239,11 @@ mod tests {
 
     #[test]
     fn empty_app_ids_is_a_noop() {
-        setup_compat_tool_mapping(Path::new("/nonexistent"), &[], None).unwrap();
+        assert!(
+            setup_compat_tool_mapping(Path::new("/nonexistent"), &[], None)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
