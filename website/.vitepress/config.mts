@@ -46,6 +46,9 @@ export default defineConfig({
 					]
 				: []),
 		],
-		socialLinks: [{ icon: 'github', link: 'https://github.com/creeperkatze/full-steam-ahead' }],
+		socialLinks: [
+			{ icon: 'github', link: 'https://github.com/creeperkatze/full-steam-ahead' },
+			{ icon: 'discord', link: 'https://link.creeperkatze.dev/discord' },
+		],
 	},
 })
