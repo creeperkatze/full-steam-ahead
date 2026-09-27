@@ -323,6 +323,7 @@ pub fn candidate_from_parts(
     ImportCandidate {
         id: format!("{source_slug}-{app_id}"),
         source,
+        original_name: name.clone(),
         name,
         executable_path,
         start_dir,

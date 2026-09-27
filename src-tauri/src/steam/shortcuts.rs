@@ -500,6 +500,7 @@ mod tests {
             id: "test".to_string(),
             source: ImportSource::Manual,
             name: name.to_string(),
+            original_name: name.to_string(),
             executable_path: PathBuf::from(exe),
             start_dir: PathBuf::from("C:\\Games"),
             launch_options: launch_options.map(String::from),

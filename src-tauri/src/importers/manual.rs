@@ -23,6 +23,7 @@ pub fn candidate(request: ManualImportRequest) -> ImportCandidate {
     ImportCandidate {
         id: format!("manual-{app_id}"),
         source: request.source,
+        original_name: name.clone(),
         name,
         executable_path,
         start_dir,

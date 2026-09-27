@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Pencil } from '@lucide/vue'
+import { Pencil, RotateCcw } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -117,28 +117,40 @@ function focusInput(el: unknown) {
 				}}</small>
 
 				<template #trailing>
-					<div
-						v-if="candidate.urlScheme && !showSource"
-						class="flex shrink-0 items-center gap-1.5"
-						:title="!candidate.launcherPath ? t('sourceCard.urlOnlyTitle') : undefined"
-					>
-						<span class="text-xs text-secondary">{{ t('sourceCard.viaLauncher') }}</span>
-						<Toggle
-							:model-value="state.usesUrlLaunch(candidate)"
-							:disabled="!candidate.launcherPath"
-							@update:model-value="state.toggleUrlLaunch(candidate.id)"
-						/>
+					<div class="flex shrink-0 items-center gap-2">
+						<div
+							v-if="candidate.urlScheme && !showSource"
+							class="flex items-center gap-1.5"
+							:title="!candidate.launcherPath ? t('sourceCard.urlOnlyTitle') : undefined"
+						>
+							<span class="text-xs text-secondary">{{ t('sourceCard.viaLauncher') }}</span>
+							<Toggle
+								:model-value="state.usesUrlLaunch(candidate)"
+								:disabled="!candidate.launcherPath"
+								@update:model-value="state.toggleUrlLaunch(candidate.id)"
+							/>
+						</div>
+						<UiButton
+							class="h-8 w-8"
+							:disabled="renamingId === candidate.id"
+							size="icon"
+							variant="ghost"
+							:title="t('sourceCard.rename')"
+							@click.prevent="startRename(candidate)"
+						>
+							<Pencil :size="14" />
+						</UiButton>
+						<UiButton
+							class="h-8 w-8"
+							size="icon"
+							variant="ghost"
+							:title="t('sourceCard.resetName')"
+							:disabled="candidate.name === candidate.originalName"
+							@click.prevent="state.renameCandidate(candidate.id, candidate.originalName)"
+						>
+							<RotateCcw :size="14" />
+						</UiButton>
 					</div>
-					<UiButton
-						class="h-8 w-8 shrink-0"
-						:disabled="renamingId === candidate.id"
-						size="icon"
-						variant="ghost"
-						:title="t('sourceCard.rename')"
-						@click.prevent="startRename(candidate)"
-					>
-						<Pencil :size="14" />
-					</UiButton>
 				</template>
 			</ItemRow>
 

@@ -22,6 +22,7 @@ export interface ImportCandidate {
 	id: string
 	source: ImportSource
 	name: string
+	originalName: string
 	executablePath: string
 	startDir: string
 	launchOptions?: string | null

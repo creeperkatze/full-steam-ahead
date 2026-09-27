@@ -672,6 +672,7 @@ mod tests {
             id: "test".to_string(),
             source: ImportSource::Manual,
             name: "Game".to_string(),
+            original_name: "Game".to_string(),
             executable_path: PathBuf::from("game.exe"),
             start_dir: PathBuf::from("."),
             launch_options: None,
