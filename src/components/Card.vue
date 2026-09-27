@@ -9,9 +9,11 @@ withDefaults(
 		color: string
 		title: string
 		description?: string
+		highlight?: boolean
 	}>(),
 	{
 		description: undefined,
+		highlight: false,
 	},
 )
 </script>
@@ -19,8 +21,9 @@ withDefaults(
 <template>
 	<button
 		type="button"
-		class="card group flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors"
-		:style="{ '--c': color }"
+		class="group flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors"
+		:class="highlight ? 'card-highlight' : 'border-border bg-surface-3 hover:bg-surface-4'"
+		:style="highlight ? { '--c': color } : undefined"
 		@click="openUrl(href)"
 	>
 		<component
@@ -36,12 +39,12 @@ withDefaults(
 </template>
 
 <style>
-.card {
+.card-highlight {
 	background-color: color-mix(in srgb, var(--c) 8%, var(--color-surface-3));
 	border-color: color-mix(in srgb, var(--c) 22%, transparent);
 }
 
-.card:hover {
+.card-highlight:hover {
 	background-color: color-mix(in srgb, var(--c) 22%, var(--color-surface-3));
 	border-color: color-mix(in srgb, var(--c) 60%, transparent);
 }

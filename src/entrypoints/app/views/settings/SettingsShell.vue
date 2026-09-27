@@ -53,6 +53,7 @@ const sections = computed(
 					color="#FF5E5B"
 					:title="t('settingsShell.donateCard.title')"
 					:description="t('settingsShell.donateCard.description')"
+					highlight
 				/>
 				<Card
 					href="https://crowdin.com/project/full-steam-ahead"
