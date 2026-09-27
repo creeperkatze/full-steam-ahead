@@ -76,7 +76,7 @@ pub fn prepare_candidate(
     // Searched by the launcher's name, which finds more than a name the user made up.
     artwork::apply_source_preference(
         &mut candidate.artwork,
-        &candidate.name,
+        &candidate.original_name,
         settings.default_artwork_source,
         &settings.steam_grid_db,
     );
