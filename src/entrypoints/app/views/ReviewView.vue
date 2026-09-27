@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, FolderArchive, Image, Library, ListChecks } from '@lucide/vue'
+import { Archive, ChevronDown, Image, Library, ListChecks } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -197,7 +197,7 @@ function fileName(path: string) {
 					class="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-transparent bg-surface-4 px-3 py-2.5 text-sm transition-colors group-open:border-border hover:bg-surface-hover"
 				>
 					<span class="inline-flex items-center gap-2">
-						<FolderArchive :size="15" />
+						<Archive :size="15" />
 						<strong>{{ t('reviewView.backup') }}</strong>
 					</span>
 					<span class="flex items-center gap-2">
@@ -213,7 +213,7 @@ function fileName(path: string) {
 				<div class="grid gap-1.5 bg-surface-3 p-2">
 					<ItemRow v-for="backup in plan.backups" :key="backup.destination">
 						<template #leading>
-							<FolderArchive :size="14" class="shrink-0 text-accent" />
+							<Archive :size="14" class="shrink-0 text-accent" />
 						</template>
 						<span class="truncate">{{ fileName(backup.source) }}</span>
 					</ItemRow>
