@@ -167,7 +167,11 @@ async function onFlatpakPermissionModalClosed() {
 						</UiButton>
 
 						<template v-if="state.step.value === 'start'">
-							<UiButton :disabled="scanDisabled" @click="scan">
+							<UiButton
+								:variant="state.scanPhase.value === 'done' ? 'default' : 'primary'"
+								:disabled="scanDisabled"
+								@click="scan"
+							>
 								{{ t('app.actions.scan') }}
 								<template #icon><Search :size="16" /></template>
 							</UiButton>
