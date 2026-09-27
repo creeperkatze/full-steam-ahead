@@ -29,8 +29,11 @@ pub fn build_preview_plan(
     let existing_collection_app_ids =
         super::collections::existing_managed_app_ids(&user.collections_path);
 
+    let mut candidates = candidates.to_vec();
+    super::shortcuts::link_existing(&mut candidates, &existing_shortcuts);
+
     let mut changes = Vec::new();
-    for candidate in candidates {
+    for candidate in &candidates {
         let (c, artwork_files) = candidate_changes(
             candidate,
             &user.shortcuts_path,
@@ -79,11 +82,11 @@ fn candidate_changes(
     let mut changes = Vec::new();
     let mut artwork_files = Vec::new();
 
-    let exe = candidate.effective_executable();
+    let app_id = super::candidate_app_id(candidate);
 
-    let existing_shortcut = existing_shortcuts
-        .iter()
-        .find(|s| s.app_name.eq_ignore_ascii_case(&candidate.name));
+    let existing_shortcut = candidate
+        .existing_app_id
+        .and_then(|id| existing_shortcuts.iter().find(|s| s.app_id == id));
     let shortcut_unchanged = existing_shortcut.is_some_and(|s| shortcut_is_unchanged(s, candidate));
     if !shortcut_unchanged {
         let shortcut_exists = existing_shortcut.is_some();
@@ -107,18 +110,7 @@ fn candidate_changes(
         let collection_name = candidate.source.collection_name();
         let already_in_collection = existing_collection_app_ids
             .get(&collection_name)
-            .is_some_and(|ids| {
-                // Checks both the effective and raw exe path so games are still recognised after the launcher toggle changes.
-                [candidate.effective_executable(), &candidate.executable_path]
-                    .iter()
-                    .any(|p| {
-                        let id = super::non_steam_app_id(
-                            &format!("\"{}\"", p.display()),
-                            &candidate.name,
-                        );
-                        ids.contains(&id)
-                    })
-            });
+            .is_some_and(|ids| ids.contains(&app_id));
         changes.push(PlannedChange {
             id: format!("collection:{}:{}", collection_name, candidate.id),
             game_name: candidate.name.clone(),
@@ -131,7 +123,6 @@ fn candidate_changes(
         });
     }
 
-    let app_id = super::non_steam_app_id(&format!("\"{}\"", exe.display()), &candidate.name);
     for asset in super::artwork::selected_artwork_assets(candidate) {
         let is_official_steam = asset.source == ArtworkSource::OfficialSteam;
         let is_noop_delete = asset.source == ArtworkSource::Missing && !asset.will_replace_existing;
@@ -165,7 +156,8 @@ fn shortcut_is_unchanged(existing: &ShortcutEntry, candidate: &ImportCandidate) 
     let exe = format!("\"{}\"", candidate.effective_executable().display());
     let start_dir = format!("\"{}\"", candidate.effective_start_dir().display());
     let launch_options = candidate.effective_launch_options().unwrap_or("");
-    existing.exe == exe
+    existing.app_name == candidate.name
+        && existing.exe == exe
         && existing.start_dir == start_dir
         && existing.launch_options == launch_options
         && existing.tags == candidate.tags
@@ -237,6 +229,14 @@ mod tests {
         );
         let shortcut = make_shortcut_matching(&candidate);
         assert!(shortcut_is_unchanged(&shortcut, &candidate));
+    }
+
+    #[test]
+    fn shortcut_changed_when_renamed() {
+        let candidate = make_candidate("game.exe", "C:\\Games", None, vec![]);
+        let mut shortcut = make_shortcut_matching(&candidate);
+        shortcut.app_name = "Old Name".to_string();
+        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
     }
 
     #[test]

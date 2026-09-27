@@ -126,6 +126,14 @@ pub fn steam_preferred_plan(
     )
 }
 
+/// Reads the existing artwork again under the app id of the shortcut the candidate was linked to.
+pub fn relink_existing(plan: &mut ArtworkPlan, grid_path: &Path, app_id: u32) {
+    plan.existing = existing_assets(grid_path, app_id);
+    for asset in &mut plan.proposed {
+        asset.will_replace_existing = plan.existing.iter().any(|e| e.kind == asset.kind);
+    }
+}
+
 pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
     ArtworkPlan {
         mode: ArtworkMode::PreserveExisting,
@@ -138,10 +146,7 @@ pub fn apply_candidate_artwork(
     grid_path: &Path,
     candidate: &ImportCandidate,
 ) -> AppResult<Vec<ArtworkSkip>> {
-    let shortcut_app_id = crate::steam::non_steam_app_id(
-        &format!("\"{}\"", candidate.effective_executable().display()),
-        &candidate.name,
-    );
+    let shortcut_app_id = crate::steam::candidate_app_id(candidate);
 
     let mut skipped = Vec::new();
     for asset in selected_artwork_assets(candidate) {

@@ -91,10 +91,15 @@ pub fn apply_plan_with_progress(
     #[cfg_attr(not(unix), allow(unused_mut))]
     let mut backup_plans = request.plan.backups.clone();
 
+    // Linked before artwork is written, since artwork is keyed by the shortcut's app id.
+    let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
+    let mut candidates = request.candidates;
+    shortcuts::link_existing(&mut candidates, &existing);
+
     fs::create_dir_all(&user.grid_path).map_err(io_context(&user.grid_path))?;
     let mut skipped_change_ids = HashSet::new();
 
-    if request.candidates.is_empty() {
+    if candidates.is_empty() {
         current += 1;
         on_progress(ApplyProgressEvent {
             step: ApplyStep::ApplyingArtwork { game_name: None },
@@ -102,7 +107,7 @@ pub fn apply_plan_with_progress(
             total,
         });
     } else {
-        for candidate in &request.candidates {
+        for candidate in &candidates {
             current += 1;
             on_progress(ApplyProgressEvent {
                 step: ApplyStep::ApplyingArtwork {
@@ -124,13 +129,7 @@ pub fn apply_plan_with_progress(
         current,
         total,
     });
-    let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
-    let new_candidates = request
-        .candidates
-        .iter()
-        .filter(|candidate| candidate.existing_app_id.is_none())
-        .collect::<Vec<_>>();
-    let mut additions = new_candidates
+    let mut additions = candidates
         .iter()
         .map(|candidate| sources::shortcut_from_candidate(candidate, &user.grid_path))
         .collect::<Vec<_>>();
@@ -141,11 +140,10 @@ pub fn apply_plan_with_progress(
 
     #[cfg(unix)]
     {
-        let proton_app_ids = new_candidates
+        let proton_app_ids = candidates
             .iter()
-            .zip(&additions)
-            .filter(|(candidate, _)| candidate.needs_proton)
-            .map(|(_, shortcut)| shortcut.app_id)
+            .filter(|candidate| candidate.needs_proton)
+            .map(crate::steam::candidate_app_id)
             .collect::<Vec<_>>();
         // Rewrites config.vdf. The manifest is written below, so the backup is recorded.
         if let Some(config_backup) = proton::setup_compat_tool_mapping(
@@ -162,7 +160,9 @@ pub fn apply_plan_with_progress(
         backups::write_manifest(backup_dir, &backup_plans);
     }
 
-    shortcuts::append_missing(&mut existing, additions);
+    for addition in additions {
+        shortcuts::upsert(&mut existing, addition);
+    }
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
     current += 1;
@@ -172,7 +172,7 @@ pub fn apply_plan_with_progress(
         total,
     });
     if request.options.create_collections {
-        collections::update_modern_collections(&user.collections_path, &request.candidates)?;
+        collections::update_modern_collections(&user.collections_path, &candidates)?;
     }
 
     if request.options.restart_steam {

@@ -129,6 +129,14 @@ function toggleUrlLaunch(id: string) {
 	invalidatePreview()
 }
 
+function renameCandidate(id: string, name: string) {
+	const trimmed = name.trim()
+	const idx = candidates.value.findIndex((c) => c.id === id)
+	if (idx === -1 || !trimmed || candidates.value[idx].name === trimmed) return
+	candidates.value[idx] = { ...candidates.value[idx], name: trimmed }
+	invalidatePreview()
+}
+
 function invalidatePreview() {
 	previewPlan.value = null
 	applyResult.value = null
@@ -171,6 +179,7 @@ export function useAppState() {
 		selectedCandidates,
 		usesUrlLaunch,
 		toggleUrlLaunch,
+		renameCandidate,
 		invalidatePreview,
 		loadSettingsFromDisk,
 		applySettings,

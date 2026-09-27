@@ -1,6 +1,7 @@
 use crate::{
     error::{io_context, AppError, AppResult},
-    models::ShortcutEntry,
+    importers::quote_path,
+    models::{ImportCandidate, ShortcutEntry},
     steam::non_steam_app_id,
 };
 use std::{fs, path::Path};
@@ -28,22 +29,55 @@ pub fn write_shortcuts(path: &Path, shortcuts: &[ShortcutEntry]) -> AppResult<()
     fs::write(path, bytes).map_err(io_context(path))
 }
 
-pub fn append_missing(existing: &mut Vec<ShortcutEntry>, additions: Vec<ShortcutEntry>) {
-    for mut addition in additions {
-        if addition.app_id == 0 {
-            addition.app_id = non_steam_app_id(&addition.exe, &addition.app_name);
-        }
+/// Finds the shortcut a candidate was imported as by its app id, which Steam keeps on a rename.
+pub fn find_existing<'a>(
+    shortcuts: &'a [ShortcutEntry],
+    candidate: &ImportCandidate,
+) -> Option<&'a ShortcutEntry> {
+    // Both paths so games are still recognised after the launcher toggle changes.
+    let computed_ids = [
+        Some(candidate.executable_path.as_path()),
+        candidate.launcher_path.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    .map(|exe| non_steam_app_id(&quote_path(exe), &candidate.name));
 
-        if let Some(item) = existing
-            .iter_mut()
-            .find(|item| same_shortcut_identity(item, &addition))
-        {
-            *item = addition;
-            continue;
-        }
+    candidate
+        .existing_app_id
+        .into_iter()
+        .chain(computed_ids)
+        .find_map(|id| shortcuts.iter().find(|s| s.app_id == id))
+}
 
-        existing.push(addition);
+/// Points each candidate at the shortcut it already has, or at none.
+pub fn link_existing(candidates: &mut [ImportCandidate], shortcuts: &[ShortcutEntry]) {
+    for candidate in candidates {
+        candidate.existing_app_id = find_existing(shortcuts, candidate).map(|s| s.app_id);
     }
+}
+
+/// Adds the shortcut, or updates the fields FSA manages on the one with the same app id.
+pub fn upsert(existing: &mut Vec<ShortcutEntry>, mut shortcut: ShortcutEntry) {
+    if shortcut.app_id == 0 {
+        shortcut.app_id = non_steam_app_id(&shortcut.exe, &shortcut.app_name);
+    }
+
+    let Some(item) = existing
+        .iter_mut()
+        .find(|item| item.app_id == shortcut.app_id)
+    else {
+        existing.push(shortcut);
+        return;
+    };
+
+    // Everything else belongs to the user, like play time and hidden state.
+    item.app_name = shortcut.app_name;
+    item.exe = shortcut.exe;
+    item.start_dir = shortcut.start_dir;
+    item.icon = shortcut.icon;
+    item.launch_options = shortcut.launch_options;
+    item.tags = shortcut.tags;
 }
 
 pub fn parse_shortcuts(bytes: &[u8]) -> AppResult<Vec<ShortcutEntry>> {
@@ -117,10 +151,6 @@ pub fn serialize_shortcuts(shortcuts: &[ShortcutEntry]) -> Vec<u8> {
     out.push(TYPE_END);
     out.push(TYPE_END);
     out
-}
-
-fn same_shortcut_identity(left: &ShortcutEntry, right: &ShortcutEntry) -> bool {
-    left.app_name.eq_ignore_ascii_case(&right.app_name)
 }
 
 fn write_object_start(out: &mut Vec<u8>, name: &str) {
@@ -294,7 +324,8 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::ShortcutEntry;
+    use crate::models::{ArtworkMode, ArtworkPlan, ImportSource, ShortcutEntry};
+    use std::path::PathBuf;
 
     fn make_shortcut(name: &str, exe: &str) -> ShortcutEntry {
         ShortcutEntry {
@@ -411,44 +442,142 @@ mod tests {
     }
 
     #[test]
-    fn append_adds_new_shortcut() {
+    fn upsert_adds_new_shortcut() {
         let mut existing = Vec::new();
-        append_missing(
-            &mut existing,
-            vec![make_shortcut("New Game", "\"new.exe\"")],
-        );
+        upsert(&mut existing, make_shortcut("New Game", "\"new.exe\""));
         assert_eq!(existing.len(), 1);
         assert_eq!(existing[0].app_name, "New Game");
     }
 
     #[test]
-    fn append_updates_existing_by_name_case_insensitive() {
+    fn upsert_adds_when_only_the_name_matches() {
         let mut existing = vec![{
             let mut s = make_shortcut("My Game", "\"old.exe\"");
             s.app_id = 111;
             s
         }];
-        let updated = {
-            let mut s = make_shortcut("my game", "\"new.exe\"");
+        let other = {
+            let mut s = make_shortcut("My Game", "\"new.exe\"");
             s.app_id = 222;
             s
         };
-        append_missing(&mut existing, vec![updated]);
-        assert_eq!(existing.len(), 1, "must not add a duplicate");
-        assert_eq!(existing[0].exe, "\"new.exe\"", "must update the exe");
-        assert_eq!(existing[0].app_id, 222, "must update the app_id");
+        upsert(&mut existing, other);
+        assert_eq!(existing.len(), 2);
     }
 
     #[test]
-    fn append_computes_app_id_when_zero() {
+    fn upsert_renames_by_app_id_and_keeps_user_state() {
+        let mut existing = vec![{
+            let mut s = make_shortcut("Old Name", "\"game.exe\"");
+            s.is_hidden = true;
+            s.last_play_time = 1_700_000_000;
+            s.allow_overlay = false;
+            s
+        }];
+        upsert(&mut existing, make_shortcut("New Name", "\"game.exe\""));
+        assert_eq!(existing.len(), 1, "must not add a duplicate");
+        assert_eq!(existing[0].app_name, "New Name");
+        assert!(existing[0].is_hidden);
+        assert_eq!(existing[0].last_play_time, 1_700_000_000);
+        assert!(!existing[0].allow_overlay);
+    }
+
+    #[test]
+    fn upsert_computes_app_id_when_zero() {
         let mut existing = Vec::new();
         let mut s = make_shortcut("Auto ID", "\"auto.exe\"");
         s.app_id = 0;
-        append_missing(&mut existing, vec![s]);
+        upsert(&mut existing, s);
         assert_ne!(existing[0].app_id, 0, "app_id must be computed");
         assert!(
             existing[0].app_id & 0x8000_0000 != 0,
             "computed app_id must have high bit set"
         );
+    }
+
+    fn make_candidate(name: &str, exe: &str, launch_options: Option<&str>) -> ImportCandidate {
+        ImportCandidate {
+            id: "test".to_string(),
+            source: ImportSource::Manual,
+            name: name.to_string(),
+            executable_path: PathBuf::from(exe),
+            start_dir: PathBuf::from("C:\\Games"),
+            launch_options: launch_options.map(String::from),
+            existing_app_id: None,
+            matched_steam_app_id: None,
+            tags: Vec::new(),
+            artwork: ArtworkPlan {
+                mode: ArtworkMode::PreserveExisting,
+                existing: Vec::new(),
+                proposed: Vec::new(),
+            },
+            url_scheme: None,
+            launcher_path: None,
+            use_launcher_url: false,
+            needs_proton: false,
+        }
+    }
+
+    // A shortcut as FSA wrote it for the candidate, then renamed in Steam.
+    fn renamed_in_steam(candidate: &ImportCandidate, new_name: &str) -> ShortcutEntry {
+        let exe = quote_path(&candidate.executable_path);
+        ShortcutEntry {
+            app_id: non_steam_app_id(&exe, &candidate.name),
+            app_name: new_name.to_string(),
+            exe,
+            launch_options: candidate.launch_options.clone().unwrap_or_default(),
+            ..ShortcutEntry::default()
+        }
+    }
+
+    #[test]
+    fn finds_shortcut_renamed_in_steam_by_app_id() {
+        let candidate = make_candidate("Game", "launcher.exe", Some("launch a"));
+        let other = make_candidate("Other", "launcher.exe", Some("launch b"));
+        let shortcuts = [
+            renamed_in_steam(&other, "Other"),
+            renamed_in_steam(&candidate, "My Renamed Game"),
+        ];
+        let found = find_existing(&shortcuts, &candidate).unwrap();
+        assert_eq!(found.app_name, "My Renamed Game");
+    }
+
+    #[test]
+    fn finds_shortcut_after_the_launcher_toggle_changed() {
+        let mut candidate = make_candidate("Game", "game.exe", None);
+        candidate.launcher_path = Some(PathBuf::from("launcher.exe"));
+        let exe = quote_path(Path::new("launcher.exe"));
+        let via_launcher = ShortcutEntry {
+            app_id: non_steam_app_id(&exe, "Game"),
+            exe,
+            ..ShortcutEntry::default()
+        };
+        assert!(find_existing(&[via_launcher], &candidate).is_some());
+    }
+
+    #[test]
+    fn ignores_a_shortcut_with_only_the_same_name() {
+        let candidate = make_candidate("Game", "game.exe", None);
+        let mut shortcut = renamed_in_steam(&candidate, "Game");
+        shortcut.app_id = 42;
+        assert!(find_existing(&[shortcut], &candidate).is_none());
+    }
+
+    #[test]
+    fn linked_app_id_survives_a_rename_in_fsa() {
+        let mut candidate = make_candidate("Game", "game.exe", None);
+        let shortcut = renamed_in_steam(&candidate, "Game");
+        candidate.existing_app_id = Some(shortcut.app_id);
+        candidate.name = "Renamed In FSA".to_string();
+        candidate.executable_path = PathBuf::from("moved/game.exe");
+        assert!(find_existing(&[shortcut], &candidate).is_some());
+    }
+
+    #[test]
+    fn link_clears_a_stale_app_id() {
+        let mut candidates = [make_candidate("Game", "game.exe", None)];
+        candidates[0].existing_app_id = Some(7);
+        link_existing(&mut candidates, &[]);
+        assert_eq!(candidates[0].existing_app_id, None);
     }
 }

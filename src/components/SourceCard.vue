@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { Pencil } from '@lucide/vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAppState } from '../composables/useAppState'
@@ -7,6 +8,7 @@ import { importSourceName } from '../helpers/sourceNames'
 import type { ImportCandidate } from '../types'
 import GameIcon from './GameIcon.vue'
 import SourceIcon from './SourceIcon.vue'
+import UiButton from './ui/Button.vue'
 import Checkbox from './ui/Checkbox.vue'
 import ItemRow from './ui/ItemRow.vue'
 import Toggle from './ui/Toggle.vue'
@@ -41,6 +43,32 @@ const allSelected = computed(
 )
 
 const someSelected = computed(() => selectedCount.value > 0 && !allSelected.value)
+
+const renamingId = ref<string | null>(null)
+const renameDraft = ref('')
+
+function startRename(candidate: ImportCandidate) {
+	renamingId.value = candidate.id
+	renameDraft.value = candidate.name
+}
+
+function commitRename() {
+	if (renamingId.value === null) return
+	state.renameCandidate(renamingId.value, renameDraft.value)
+	renamingId.value = null
+}
+
+function cancelRename() {
+	renamingId.value = null
+}
+
+// Called on every render, so only the first call may move the focus.
+function focusInput(el: unknown) {
+	if (el instanceof HTMLInputElement && document.activeElement !== el) {
+		el.focus()
+		el.select()
+	}
+}
 </script>
 
 <template>
@@ -73,7 +101,16 @@ const someSelected = computed(() => selectedCount.value > 0 && !allSelected.valu
 					<GameIcon :candidate="candidate" :size="20" />
 				</template>
 
-				<strong class="block truncate">{{ candidate.name }}</strong>
+				<input
+					v-if="renamingId === candidate.id"
+					:ref="focusInput"
+					v-model="renameDraft"
+					class="block h-7 w-full rounded-md border border-border bg-surface-3 px-2 font-bold text-primary"
+					@keydown.enter.prevent="commitRename"
+					@keydown.esc.prevent="cancelRename"
+					@blur="commitRename"
+				/>
+				<strong v-else class="block truncate">{{ candidate.name }}</strong>
 				<small class="block text-secondary/70">{{ candidate.executablePath }}</small>
 				<small v-if="showSource" class="block text-secondary">{{
 					importSourceName(candidate.source)
@@ -92,6 +129,16 @@ const someSelected = computed(() => selectedCount.value > 0 && !allSelected.valu
 							@update:model-value="state.toggleUrlLaunch(candidate.id)"
 						/>
 					</div>
+					<UiButton
+						class="h-8 w-8 shrink-0"
+						:disabled="renamingId === candidate.id"
+						size="icon"
+						variant="ghost"
+						:title="t('sourceCard.rename')"
+						@click.prevent="startRename(candidate)"
+					>
+						<Pencil :size="14" />
+					</UiButton>
 				</template>
 			</ItemRow>
 

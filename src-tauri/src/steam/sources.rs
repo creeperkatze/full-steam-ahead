@@ -5,7 +5,7 @@ use crate::{
         ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanProgressEvent, ScanRequest,
         Settings, ShortcutEntry, SteamUser,
     },
-    steam::{artwork, non_steam_app_id},
+    steam::{artwork, candidate_app_id, shortcuts},
 };
 use std::path::Path;
 
@@ -17,6 +17,7 @@ pub fn scan_sources_with_progress(
 ) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
     let enabled_sources = enabled_sources(request, settings);
+    let existing_shortcuts = read_existing_shortcuts(user);
 
     for source in &enabled_sources {
         on_progress(ScanProgressEvent {
@@ -35,13 +36,7 @@ pub fn scan_sources_with_progress(
         .entered();
         let mut found = scan_single_source(source, user, custom_path);
         for candidate in &mut found {
-            artwork::apply_source_preference(
-                &mut candidate.artwork,
-                &candidate.name,
-                settings.default_artwork_source,
-                &settings.steam_grid_db,
-            );
-            candidate.apply_launcher_mode(settings.launcher_mode);
+            prepare_candidate(candidate, user, &existing_shortcuts, settings, true);
         }
         let found_count = found.len();
         candidates.extend(found);
@@ -60,6 +55,44 @@ pub fn scan_sources_with_progress(
     }
 
     Ok(candidates)
+}
+
+pub fn read_existing_shortcuts(user: &SteamUser) -> Vec<ShortcutEntry> {
+    shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_else(|error| {
+        tracing::warn!(%error, "Existing shortcuts could not be read");
+        Vec::new()
+    })
+}
+
+/// Applies the user's settings and links the candidate to the shortcut it already has in Steam.
+pub fn prepare_candidate(
+    candidate: &mut ImportCandidate,
+    user: &SteamUser,
+    existing_shortcuts: &[ShortcutEntry],
+    settings: &Settings,
+    use_steam_name: bool,
+) {
+    candidate.apply_launcher_mode(settings.launcher_mode);
+
+    let existing = shortcuts::find_existing(existing_shortcuts, candidate);
+    if let Some(shortcut) = existing {
+        candidate.existing_app_id = Some(shortcut.app_id);
+        artwork::relink_existing(&mut candidate.artwork, &user.grid_path, shortcut.app_id);
+    }
+
+    // Searched by the launcher's name, which finds more than a name the user made up.
+    artwork::apply_source_preference(
+        &mut candidate.artwork,
+        &candidate.name,
+        settings.default_artwork_source,
+        &settings.steam_grid_db,
+    );
+
+    // A rename in Steam is kept instead of being reverted on the next import.
+    if let Some(shortcut) = existing.filter(|s| use_steam_name && s.app_name != candidate.name) {
+        tracing::debug!(game = %candidate.name, steam_name = %shortcut.app_name, "Using the name from Steam");
+        candidate.name = shortcut.app_name.clone();
+    }
 }
 
 type ScanFn = fn(&SteamUser, Option<&Path>) -> AppResult<Vec<ImportCandidate>>;
@@ -142,7 +175,7 @@ fn enabled_sources(request: &ScanRequest, settings: &Settings) -> Vec<ImportSour
 pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) -> ShortcutEntry {
     let exe = candidate.effective_executable();
     ShortcutEntry {
-        app_id: non_steam_app_id(&quote_path(exe), &candidate.name),
+        app_id: candidate_app_id(candidate),
         app_name: candidate.name.clone(),
         exe: quote_path(exe),
         start_dir: quote_path(candidate.effective_start_dir()),
@@ -177,7 +210,7 @@ fn shortcut_icon(candidate: &ImportCandidate, grid_path: &Path) -> String {
             Path::new(&asset.path_or_url).to_path_buf()
         }
         ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb | ArtworkSource::LocalFile => {
-            let app_id = non_steam_app_id(&quote_path(&candidate.executable_path), &candidate.name);
+            let app_id = candidate_app_id(candidate);
             artwork::target_path(grid_path, app_id, &ArtworkKind::Icon, &asset.path_or_url)
         }
     };

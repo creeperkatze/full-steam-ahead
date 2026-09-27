@@ -1,7 +1,7 @@
 use crate::{
     error::{io_context, AppError, AppResult},
     models::ImportCandidate,
-    steam::non_steam_app_id,
+    steam::candidate_app_id,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -33,10 +33,7 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
         grouped
             .entry(candidate.source.collection_name())
             .or_default()
-            .push(non_steam_app_id(
-                &format!("\"{}\"", candidate.effective_executable().display()),
-                &candidate.name,
-            ));
+            .push(candidate_app_id(candidate));
     }
 
     collections.extend(

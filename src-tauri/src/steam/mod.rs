@@ -13,6 +13,16 @@ pub fn non_steam_app_id(exe: &str, name: &str) -> u32 {
     crc32fast::hash(format!("{exe}{name}").as_bytes()) | 0x8000_0000
 }
 
+/// The app id of the candidate's shortcut, which artwork and collections are keyed by.
+pub fn candidate_app_id(candidate: &crate::models::ImportCandidate) -> u32 {
+    candidate.existing_app_id.unwrap_or_else(|| {
+        non_steam_app_id(
+            &crate::importers::quote_path(candidate.effective_executable()),
+            &candidate.name,
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

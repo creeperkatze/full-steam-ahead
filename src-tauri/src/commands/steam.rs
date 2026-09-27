@@ -107,13 +107,17 @@ pub fn create_preview_plan(
 pub fn create_manual_candidate(request: ManualImportRequest) -> CommandResult<ImportCandidate> {
     let user = steam::detect::find_user(&request.user_steam_id)?;
     let settings = super::load_settings().unwrap_or_default();
+    // A name typed by the user wins over the one in Steam.
+    let use_steam_name = request.display_name.is_none();
     let mut candidate =
         crate::importers::manual::candidate_with_grid_path(request, &user.grid_path);
-    steam::artwork::apply_source_preference(
-        &mut candidate.artwork,
-        &candidate.name,
-        settings.default_artwork_source,
-        &settings.steam_grid_db,
+    let existing_shortcuts = steam::sources::read_existing_shortcuts(&user);
+    steam::sources::prepare_candidate(
+        &mut candidate,
+        &user,
+        &existing_shortcuts,
+        &settings,
+        use_steam_name,
     );
     Ok(candidate)
 }
