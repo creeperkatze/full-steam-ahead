@@ -146,6 +146,8 @@ function removeCandidate(id: string) {
 }
 
 function invalidatePreview() {
+	// A finished import no longer matches the plan, so it has to be reviewed again.
+	if (step.value === 'done' && applyResult.value) step.value = 'review'
 	previewPlan.value = null
 	applyResult.value = null
 	previewVersion.value++
