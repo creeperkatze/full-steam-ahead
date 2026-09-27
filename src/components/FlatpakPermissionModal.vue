@@ -60,7 +60,7 @@ function close() {
 				{{ t('flatpakPermissionModal.close') }}
 			</UiButton>
 			<template v-else>
-				<UiButton variant="ghost" @click="close">
+				<UiButton @click="close">
 					{{ t('flatpakPermissionModal.later') }}
 				</UiButton>
 				<UiButton variant="primary" :disabled="status === 'granting'" @click="grant">

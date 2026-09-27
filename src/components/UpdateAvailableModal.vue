@@ -103,7 +103,7 @@ function onNotesClick(e: MouseEvent) {
 				{{ t('updateModal.restartNow') }}
 			</UiButton>
 			<template v-else>
-				<UiButton variant="ghost" :disabled="status === 'downloading'" @click="close">
+				<UiButton :disabled="status === 'downloading'" @click="close">
 					{{ t('updateModal.later') }}
 				</UiButton>
 				<UiButton variant="primary" :disabled="status === 'downloading'" @click="emit('update')">

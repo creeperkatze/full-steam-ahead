@@ -94,10 +94,9 @@ onUnmounted(() => unlisten?.())
 				{{ step }}
 			</button>
 		</nav>
-		<div class="ml-auto flex items-center gap-1" data-tauri-drag-region>
+		<div class="ml-auto flex items-center gap-2" data-tauri-drag-region>
 			<UiButton
 				size="icon"
-				variant="ghost"
 				:title="settingsOpen ? t('titleBar.closeSettings') : t('titleBar.settings')"
 				:active="settingsOpen"
 				@click="$emit('toggle-settings')"
@@ -106,17 +105,11 @@ onUnmounted(() => unlisten?.())
 				<Settings v-else :size="17" />
 			</UiButton>
 			<template v-if="!isMac">
-				<UiButton
-					size="icon"
-					variant="ghost"
-					:title="t('titleBar.minimize')"
-					@click="win.minimize()"
-				>
+				<UiButton size="icon" :title="t('titleBar.minimize')" @click="win.minimize()">
 					<Minus :size="14" />
 				</UiButton>
 				<UiButton
 					size="icon"
-					variant="ghost"
 					:title="isMaximized ? t('titleBar.restore') : t('titleBar.maximize')"
 					@click="win.toggleMaximize()"
 				>
@@ -125,7 +118,6 @@ onUnmounted(() => unlisten?.())
 				</UiButton>
 				<UiButton
 					size="icon"
-					variant="ghost"
 					:title="t('titleBar.close')"
 					class="hover:bg-red-800! hover:border-red-700!"
 					@click="win.close()"

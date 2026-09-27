@@ -106,11 +106,11 @@ function pick(image: SteamGridDbImage) {
 			<Search :size="16" class="shrink-0 text-secondary" />
 			<input
 				v-model="query"
-				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
+				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-5 px-2 text-sm text-primary"
 				:placeholder="t('steamGridDbBrowser.searchPlaceholder')"
 				@keydown.enter="runSearch"
 			/>
-			<UiButton size="icon" variant="ghost" :title="t('common.close')" @click="emit('close')">
+			<UiButton size="icon" :title="t('common.close')" @click="emit('close')">
 				<X :size="16" />
 			</UiButton>
 		</div>

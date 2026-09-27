@@ -137,25 +137,20 @@ function toggleCandidate(id: string) {
 				<div
 					class="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-5 px-3 py-2"
 				>
-					<UiButton
-						size="icon"
-						variant="secondary"
-						:title="t('sourcesView.pickExecutable')"
-						@click="pickExecutable"
-					>
+					<UiButton size="icon" :title="t('sourcesView.pickExecutable')" @click="pickExecutable">
 						<FolderPlus :size="18" />
 					</UiButton>
 					<input
 						v-model="state.manualPath.value"
-						class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-3 px-2 text-primary"
+						class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-5 px-2 text-primary"
 						:placeholder="t('sourcesView.executablePathPlaceholder')"
 					/>
 					<input
 						v-model="state.manualName.value"
-						class="h-9 w-64 rounded-md border border-border bg-surface-3 px-2 text-primary"
+						class="h-9 w-64 rounded-md border border-border bg-surface-5 px-2 text-primary"
 						:placeholder="t('sourcesView.displayNamePlaceholder')"
 					/>
-					<UiButton variant="secondary" :disabled="!state.manualPath.value" @click="addManual">
+					<UiButton :disabled="!state.manualPath.value" @click="addManual">
 						{{ t('sourcesView.add') }}
 						<template #icon><Plus :size="20" /></template>
 					</UiButton>

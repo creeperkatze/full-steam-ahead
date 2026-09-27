@@ -105,7 +105,7 @@ function focusInput(el: unknown) {
 					v-if="renamingId === candidate.id"
 					:ref="focusInput"
 					v-model="renameDraft"
-					class="block h-7 w-full rounded-md border border-border bg-surface-3 px-2 font-bold text-primary"
+					class="block h-7 w-full rounded-md border border-border bg-surface-5 px-2 font-bold text-primary"
 					@keydown.enter.prevent="commitRename"
 					@keydown.esc.prevent="cancelRename"
 					@blur="commitRename"
@@ -134,7 +134,6 @@ function focusInput(el: unknown) {
 							class="h-8 w-8"
 							:disabled="renamingId === candidate.id"
 							size="icon"
-							variant="ghost"
 							:title="t('sourceCard.rename')"
 							@click.prevent="startRename(candidate)"
 						>
@@ -143,7 +142,6 @@ function focusInput(el: unknown) {
 						<UiButton
 							class="h-8 w-8"
 							size="icon"
-							variant="ghost"
 							:title="t('sourceCard.resetName')"
 							:disabled="candidate.name === candidate.originalName"
 							@click.prevent="state.renameCandidate(candidate.id, candidate.originalName)"

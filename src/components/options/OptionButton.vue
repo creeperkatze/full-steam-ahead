@@ -32,7 +32,7 @@ defineEmits<{
 			<p class="text-sm font-medium">{{ label }}</p>
 			<p v-if="description" class="mt-0.5 text-xs text-secondary">{{ description }}</p>
 		</div>
-		<UiButton variant="ghost" :disabled="disabled" @click="$emit('click')">
+		<UiButton :disabled="disabled" @click="$emit('click')">
 			{{ buttonLabel }}
 		</UiButton>
 	</div>

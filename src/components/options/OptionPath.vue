@@ -36,7 +36,7 @@ const { t } = useI18n()
 				<input
 					:value="modelValue"
 					:placeholder="placeholder"
-					class="h-9 w-full rounded-md border bg-surface-4 px-2 text-sm text-primary"
+					class="h-9 w-full rounded-md border bg-surface-5 px-2 text-sm text-primary"
 					:class="[
 						valid === false ? 'border-danger-border' : 'border-border',
 						valid === null || valid === undefined ? '' : 'pr-7',
@@ -57,13 +57,12 @@ const { t } = useI18n()
 			<UiButton
 				v-if="modelValue"
 				size="icon"
-				variant="ghost"
 				:title="t('common.clear')"
 				@click="$emit('update:modelValue', '')"
 			>
 				<X :size="16" />
 			</UiButton>
-			<UiButton size="icon" variant="ghost" :title="t('common.browse')" @click="$emit('browse')">
+			<UiButton size="icon" :title="t('common.browse')" @click="$emit('browse')">
 				<FolderOpen :size="16" />
 			</UiButton>
 		</div>

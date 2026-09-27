@@ -67,11 +67,10 @@ const apiKey = computed({
 						v-model="apiKey"
 						type="password"
 						:placeholder="t('settings.artwork.apiKey.placeholder')"
-						class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
+						class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-5 px-2 text-sm text-primary"
 					/>
 					<UiButton
 						size="icon"
-						variant="ghost"
 						:title="t('settings.artwork.apiKey.getKeyTitle')"
 						@click="openUrl('https://www.steamgriddb.com/profile/preferences/api')"
 					>

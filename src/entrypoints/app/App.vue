@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ArrowRight, Check, Search, X } from '@lucide/vue'
-import { invoke } from '@tauri-apps/api/core'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
+import { commands } from '../../bindings'
 import AppShell from '../../components/AppShell.vue'
 import FlatpakPermissionModal from '../../components/FlatpakPermissionModal.vue'
 import TitleBar from '../../components/TitleBar.vue'
@@ -162,26 +162,27 @@ async function onFlatpakPermissionModalClosed() {
 			<template #footer>
 				<div v-if="showActionBar" class="flex shrink-0 justify-center px-2">
 					<div class="flex items-center gap-2">
-						<UiButton v-if="state.step.value !== 'start'" variant="ghost" @click="back">
+						<UiButton v-if="state.step.value !== 'start'" @click="back">
 							{{ t('app.actions.back') }}
 						</UiButton>
 
 						<template v-if="state.step.value === 'start'">
-							<UiButton
-								:variant="state.scanPhase.value === 'done' ? 'ghost' : undefined"
-								:disabled="scanDisabled"
-								@click="scan"
-							>
+							<UiButton :disabled="scanDisabled" @click="scan">
 								{{ t('app.actions.scan') }}
 								<template #icon><Search :size="16" /></template>
 							</UiButton>
-							<UiButton v-if="state.scanPhase.value === 'done'" @click="continueToSources">
+							<UiButton
+								v-if="state.scanPhase.value === 'done'"
+								variant="primary"
+								@click="continueToSources"
+							>
 								{{ t('app.actions.continue') }}
 								<template #icon><ArrowRight :size="16" /></template>
 							</UiButton>
 						</template>
 						<UiButton
 							v-else-if="state.step.value !== 'done'"
+							variant="primary"
 							:disabled="nextDisabled"
 							@click="next"
 						>
@@ -194,7 +195,7 @@ async function onFlatpakPermissionModalClosed() {
 
 						<UiButton
 							v-else-if="state.step.value === 'done' && !task.loading.value"
-							@click="invoke('close_app')"
+							@click="commands.closeApp()"
 						>
 							{{ t('app.actions.close') }}
 							<template #icon><X :size="16" /></template>

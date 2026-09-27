@@ -84,7 +84,7 @@ async function refreshSteam() {
 				<p class="text-sm text-danger">
 					{{ t('startView.steamNotFound') }}
 				</p>
-				<UiButton size="sm" variant="ghost" @click="refreshSteam">
+				<UiButton size="sm" @click="refreshSteam">
 					<RotateCw :size="14" />
 					{{ t('startView.tryAgain') }}
 				</UiButton>

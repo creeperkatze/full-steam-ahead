@@ -34,19 +34,18 @@ const { t } = useI18n()
 			<input
 				:value="customPath"
 				:placeholder="t('common.autoDetected')"
-				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-4 px-2 text-sm text-primary"
+				class="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-5 px-2 text-sm text-primary"
 				@input="$emit('update:customPath', ($event.target as HTMLInputElement).value)"
 			/>
 			<UiButton
 				v-if="customPath"
 				size="icon"
-				variant="ghost"
 				:title="t('common.clear')"
 				@click="$emit('update:customPath', '')"
 			>
 				<X :size="16" />
 			</UiButton>
-			<UiButton size="icon" variant="ghost" :title="t('common.browse')" @click="$emit('browse')">
+			<UiButton size="icon" :title="t('common.browse')" @click="$emit('browse')">
 				<FolderOpen :size="16" />
 			</UiButton>
 		</div>

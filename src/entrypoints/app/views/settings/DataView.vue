@@ -143,9 +143,7 @@ async function confirmReset() {
 			</div>
 		</div>
 		<div class="flex justify-end gap-2">
-			<UiButton variant="ghost" @click="showExportWarning = false">{{
-				t('common.cancel')
-			}}</UiButton>
+			<UiButton @click="showExportWarning = false">{{ t('common.cancel') }}</UiButton>
 			<UiButton variant="danger" @click="confirmExport">
 				{{ t('settings.data.export.warning.confirm') }}
 			</UiButton>
@@ -161,9 +159,7 @@ async function confirmReset() {
 			</div>
 		</div>
 		<div class="flex justify-end gap-2">
-			<UiButton variant="ghost" @click="showResetConfirm = false">{{
-				t('common.cancel')
-			}}</UiButton>
+			<UiButton @click="showResetConfirm = false">{{ t('common.cancel') }}</UiButton>
 			<UiButton variant="danger" @click="confirmReset">
 				{{ t('settings.data.reset.confirm.confirm') }}
 			</UiButton>

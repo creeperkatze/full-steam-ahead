@@ -233,7 +233,6 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 							<UiButton
 								class="h-9 flex-1"
 								size="icon"
-								variant="secondary"
 								:title="t('artworkView.pickLocalArtworkTitle')"
 								@click="pickArtwork(candidate.id, slot.kind)"
 							>
@@ -243,7 +242,6 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								v-if="steamGridDbAvailable"
 								class="h-9 flex-1"
 								size="icon"
-								variant="secondary"
 								:title="t('artworkView.browseSteamGridDbTitle')"
 								@click="openSteamGridDbBrowser(candidate, slot.kind)"
 							>
@@ -252,7 +250,6 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 							<UiButton
 								class="h-9 flex-1"
 								size="icon"
-								variant="ghost"
 								:title="t('artworkView.useOfficialArtworkTitle')"
 								:disabled="
 									!candidate.artwork.proposed.some(
@@ -266,7 +263,6 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 							<UiButton
 								class="h-9 flex-1"
 								size="icon"
-								variant="ghost"
 								:title="t('artworkView.deleteArtworkTitle')"
 								:disabled="!displayAsset(candidate, slot.kind)?.pathOrUrl"
 								@click="deleteArtwork(candidate.id, slot.kind)"

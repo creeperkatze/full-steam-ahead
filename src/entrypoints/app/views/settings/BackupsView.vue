@@ -139,19 +139,20 @@ async function confirmAction() {
 								{{ formatSize(backup.sizeBytes) }}
 							</p>
 						</div>
-						<UiButton variant="ghost" :disabled="busy" @click="startRestore(backup.id)">
-							<RotateCcw :size="14" />
-							{{ t('settings.backups.restore') }}
-						</UiButton>
-						<UiButton
-							size="icon"
-							variant="ghost"
-							:title="t('settings.backups.deleteBackupTitle')"
-							:disabled="busy"
-							@click="startDelete(backup.id)"
-						>
-							<Trash2 :size="14" />
-						</UiButton>
+						<div class="flex shrink-0 items-center gap-2">
+							<UiButton :disabled="busy" @click="startRestore(backup.id)">
+								<RotateCcw :size="14" />
+								{{ t('settings.backups.restore') }}
+							</UiButton>
+							<UiButton
+								size="icon"
+								:title="t('settings.backups.deleteBackupTitle')"
+								:disabled="busy"
+								@click="startDelete(backup.id)"
+							>
+								<Trash2 :size="14" />
+							</UiButton>
+						</div>
 					</div>
 				</div>
 
@@ -215,7 +216,7 @@ async function confirmAction() {
 			</div>
 		</div>
 		<div class="flex justify-end gap-2">
-			<UiButton variant="ghost" @click="cancelConfirm">{{ t('common.cancel') }}</UiButton>
+			<UiButton @click="cancelConfirm">{{ t('common.cancel') }}</UiButton>
 			<UiButton variant="danger" @click="confirmAction">
 				{{
 					confirmingAction === 'delete-all'
