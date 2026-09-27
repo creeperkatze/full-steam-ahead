@@ -137,6 +137,14 @@ function renameCandidate(id: string, name: string) {
 	invalidatePreview()
 }
 
+function removeCandidate(id: string) {
+	candidates.value = candidates.value.filter((c) => c.id !== id)
+	const selected = new Set(selectedCandidateIds.value)
+	selected.delete(id)
+	selectedCandidateIds.value = selected
+	invalidatePreview()
+}
+
 function invalidatePreview() {
 	previewPlan.value = null
 	applyResult.value = null
@@ -183,6 +191,7 @@ export function useAppState() {
 		usesUrlLaunch,
 		toggleUrlLaunch,
 		renameCandidate,
+		removeCandidate,
 		invalidatePreview,
 		loadSettingsFromDisk,
 		applySettings,

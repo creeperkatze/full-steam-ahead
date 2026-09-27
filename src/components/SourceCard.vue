@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Pencil, RotateCcw } from '@lucide/vue'
+import { Pencil, RotateCcw, Trash2 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -22,11 +22,13 @@ const props = defineProps<{
 	candidates: ImportCandidate[]
 	selectedIds: Set<string>
 	showSource?: boolean
+	removable?: boolean
 }>()
 
 const emit = defineEmits<{
 	toggle: [id: string]
 	'set-all': [value: boolean]
+	remove: [id: string]
 }>()
 
 defineSlots<{
@@ -147,6 +149,15 @@ function focusInput(el: unknown) {
 							@click.prevent="state.renameCandidate(candidate.id, candidate.originalName)"
 						>
 							<RotateCcw :size="14" />
+						</UiButton>
+						<UiButton
+							v-if="removable"
+							class="h-8 w-8"
+							size="icon"
+							:title="t('sourceCard.remove')"
+							@click.prevent="emit('remove', candidate.id)"
+						>
+							<Trash2 :size="14" />
 						</UiButton>
 					</div>
 				</template>

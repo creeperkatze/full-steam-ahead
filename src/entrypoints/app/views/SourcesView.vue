@@ -130,8 +130,10 @@ function toggleCandidate(id: string) {
 			:title="importSourceName('manual')"
 			:candidates="manualCandidates"
 			:selected-ids="state.selectedCandidateIds.value"
+			removable
 			@toggle="toggleCandidate"
 			@set-all="setCandidatesSelected(manualCandidates, $event)"
+			@remove="state.removeCandidate"
 		>
 			<template #before-list>
 				<div

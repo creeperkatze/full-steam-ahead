@@ -68,7 +68,8 @@
 		"viaLauncher": "Über Launcher",
 		"urlOnlyTitle": "Dieses Spiel kann nur über sein URL-Schema gestartet werden",
 		"rename": "Umbenennen",
-		"resetName": "Namen zurücksetzen"
+		"resetName": "Namen zurücksetzen",
+		"remove": "Entfernen"
 	},
 	"artworkView": {
 		"selectGamesPrompt": "Wähle Spiele aus, bevor du das Artwork überprüfst.",
