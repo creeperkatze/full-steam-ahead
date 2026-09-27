@@ -1,6 +1,8 @@
 use crate::{
     error::AppResult,
-    importers::{gog, host_binary_path, launcher_candidate, read_launcher_json, shell_quote},
+    importers::{
+        gog, launcher_candidate, read_launcher_json, sandbox::host_binary_path, shell_quote,
+    },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
 use serde::Deserialize;
@@ -336,14 +338,6 @@ mod tests {
             {"app_name":"game","title":"Game","is_dlc":false,"install_path":"/","executable":"g"},
             {"app_name":"dlc","title":"DLC","is_dlc":true,"install_path":"/","executable":"d"}
         ]"#;
-        let games: HashMap<String, HeroicEpicGame> = serde_json::from_str(
-            &json
-                .replace('[', "{\"a\":")
-                .replace("},\n            {", ",\"b\":")
-                .replace(']', "}"),
-        )
-        .unwrap_or_default();
-        // Test the filtering logic directly on deserialized data
         let non_dlc_count = serde_json::from_str::<Vec<serde_json::Value>>(json)
             .unwrap()
             .into_iter()

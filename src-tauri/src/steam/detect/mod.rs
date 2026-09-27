@@ -65,9 +65,9 @@ pub fn needs_flatpak_permission() -> bool {
 /// Checks Steam's effective Flatpak permissions for the required talk-name.
 #[cfg(unix)]
 fn steam_flatpak_permission_granted() -> bool {
-    let flatpak = crate::importers::host_binary_path("flatpak");
+    let flatpak = crate::importers::sandbox::host_binary_path("flatpak");
     let Some(output) = crate::importers::command_stdout(
-        crate::importers::host_command(&flatpak.display().to_string()).args([
+        crate::importers::sandbox::host_command(&flatpak.display().to_string()).args([
             "info",
             "--show-permissions",
             STEAM_FLATPAK_APP_ID,
@@ -82,8 +82,8 @@ fn steam_flatpak_permission_granted() -> bool {
 /// Grants sandboxed Steam permission to reach the host via `flatpak-spawn` (not on by default).
 #[cfg(unix)]
 pub fn grant_steam_flatpak_permission() -> AppResult<()> {
-    let flatpak = crate::importers::host_binary_path("flatpak");
-    let status = crate::importers::host_command(&flatpak.display().to_string())
+    let flatpak = crate::importers::sandbox::host_binary_path("flatpak");
+    let status = crate::importers::sandbox::host_command(&flatpak.display().to_string())
         .args([
             "override",
             "--user",

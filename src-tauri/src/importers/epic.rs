@@ -102,12 +102,12 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         #[cfg(all(unix, not(target_os = "macos")))]
         if let Some(ref compat) = paths.compat_folder {
             if let Some(translated) =
-                super::translate_windows_path(compat, &manifest.manifest_location)
+                super::wine::translate_windows_path(compat, &manifest.manifest_location)
             {
                 manifest.manifest_location = translated.to_string_lossy().to_string();
             }
             if let Some(translated) =
-                super::translate_windows_path(compat, &manifest.install_location)
+                super::wine::translate_windows_path(compat, &manifest.install_location)
             {
                 manifest.install_location = translated.to_string_lossy().to_string();
             }
@@ -156,7 +156,7 @@ fn candidate_from_manifest(
     // On Linux with Proton, embed the compat path into the launch options
     #[cfg(all(unix, not(target_os = "macos")))]
     let launch_url = if let Some(ref compat) = paths.compat_folder {
-        super::proton_launch_options(compat, &launch_url)
+        super::wine::proton_launch_options(compat, &launch_url)
     } else {
         launch_url
     };
@@ -232,7 +232,7 @@ fn find_epic_paths(custom_path: Option<&Path>) -> Option<EpicPaths> {
 
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        let compat_dir = super::compat_data_dir()?;
+        let compat_dir = super::wine::compat_data_dir()?;
 
         for entry in std::fs::read_dir(&compat_dir)
             .inspect_err(|error| {

@@ -1,8 +1,9 @@
 use crate::{
     error::AppResult,
     importers::{
-        command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
-        read_launcher_json, shell_quote,
+        command_stdout, launcher_candidate, parse_launcher_json, read_launcher_json,
+        sandbox::{host_binary_path, host_command},
+        shell_quote,
     },
     models::{ImportCandidate, ImportSource, SteamUser},
 };
@@ -20,7 +21,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
         (exe, games)
     } else if let Some(games) = run_legendary("legendary") {
         ("legendary".to_string(), games)
-    } else if super::resolve_host_binary("rare").is_some() {
+    } else if super::sandbox::resolve_host_binary("rare").is_some() {
         // Rare is a GUI without `list-installed`, but it shares Legendary's config
         // and can launch games itself
         tracing::debug!("Legendary not available, reading its config for Rare");

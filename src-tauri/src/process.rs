@@ -4,7 +4,7 @@ use std::process::{Child, Output};
 use std::process::Command;
 
 #[cfg(unix)]
-use crate::importers::host_command;
+use crate::importers::sandbox::host_command;
 
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -95,6 +95,7 @@ pub fn stop_steam() -> std::io::Result<Output> {
 }
 
 #[allow(unreachable_code)]
+#[cfg_attr(target_os = "macos", allow(unused_variables))]
 pub fn restart_steam(install_path: &std::path::Path) -> std::io::Result<Option<Child>> {
     #[cfg(windows)]
     {

@@ -29,7 +29,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
     #[cfg(unix)]
     {
         let mut candidates = Vec::new();
-        for registry in super::wine_registries(custom_path, "Ubisoft") {
+        for registry in super::wine::wine_registries(custom_path, "Ubisoft") {
             let Some(launcher) = launcher_path(&registry) else {
                 tracing::debug!(
                     prefix = %registry.prefix().display(),
@@ -92,7 +92,7 @@ fn scan_registry(
             let url = format!("uplay://launch/{id}/0");
             #[cfg(unix)]
             let url = match compat_folder {
-                Some(compat) => super::proton_launch_options(compat, &url),
+                Some(compat) => super::wine::proton_launch_options(compat, &url),
                 None => url,
             };
             #[cfg_attr(not(unix), allow(unused_mut))]

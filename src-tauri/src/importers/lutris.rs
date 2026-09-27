@@ -1,7 +1,8 @@
 use crate::{
     error::AppResult,
     importers::{
-        command_stdout, host_binary_path, host_command, launcher_candidate, parse_launcher_json,
+        command_stdout, launcher_candidate, parse_launcher_json,
+        sandbox::{host_binary_path, host_command},
         shell_quote,
     },
     models::{ImportCandidate, ImportSource, SteamUser},

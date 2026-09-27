@@ -38,7 +38,7 @@ static HOST_BINARIES: std::sync::OnceLock<
     std::sync::Mutex<std::collections::HashMap<String, PathBuf>>,
 > = std::sync::OnceLock::new();
 
-fn resolve_host_binary(name: &str) -> Option<PathBuf> {
+pub fn resolve_host_binary(name: &str) -> Option<PathBuf> {
     let output = host_command("sh")
         .arg("-c")
         .arg(format!("command -v {name}"))

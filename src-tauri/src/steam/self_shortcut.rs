@@ -42,7 +42,7 @@ struct LaunchTarget {
 fn launch_target() -> AppResult<LaunchTarget> {
     #[cfg(unix)]
     if let Some(app_id) = flatpak_app_id() {
-        let flatpak = crate::importers::host_binary_path("flatpak");
+        let flatpak = crate::importers::sandbox::host_binary_path("flatpak");
         return Ok(host_target(flatpak, format!("run {app_id}")));
     }
 
@@ -69,7 +69,7 @@ fn launch_target() -> AppResult<LaunchTarget> {
 /// Routes through `flatpak-spawn --host` when Steam itself is sandboxed and cannot see us.
 #[cfg(unix)]
 fn host_target(exe: std::path::PathBuf, options: String) -> LaunchTarget {
-    let (exe, launch_options) = crate::importers::host_launch(exe, options);
+    let (exe, launch_options) = crate::importers::sandbox::host_launch(exe, options);
     let start_dir = exe.parent().unwrap_or(Path::new("/")).to_path_buf();
 
     LaunchTarget {
