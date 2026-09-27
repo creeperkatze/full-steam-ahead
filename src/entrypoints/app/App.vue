@@ -199,6 +199,7 @@ async function onFlatpakPermissionModalClosed() {
 
 						<UiButton
 							v-else-if="state.step.value === 'done' && !task.loading.value"
+							variant="primary"
 							@click="commands.closeApp()"
 						>
 							{{ t('app.actions.close') }}
