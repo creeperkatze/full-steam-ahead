@@ -1,7 +1,6 @@
-import { listen } from '@tauri-apps/api/event'
 import { ref, watch } from 'vue'
 
-import { api } from '../helpers/api'
+import { commands, events } from '../bindings'
 import type { ApplyProgressEvent } from '../types'
 import { useAppState } from './useAppState'
 import { useTaskStatus } from './useTaskStatus'
@@ -22,7 +21,7 @@ async function createPreview() {
 		for (;;) {
 			const versionAtStart = state.previewVersion.value
 			const plan = await task.runTask('Creating preview', () =>
-				api.createPreviewPlan(
+				commands.createPreviewPlan(
 					state.selectedUserId.value,
 					state.selectedCandidates.value,
 					state.settings,
@@ -49,12 +48,16 @@ async function applyPreview() {
 	if (!state.previewPlan.value) return
 
 	applyProgress.value = null
-	const unlisten = await listen<ApplyProgressEvent>('apply-progress', (event) => {
+	const unlisten = await events.applyProgressEvent.listen((event) => {
 		applyProgress.value = event.payload
 	})
 
 	const result = await task.runTask('Applying changes', () =>
-		api.applyPlan(state.previewPlan.value!, state.selectedCandidates.value, state.settings),
+		commands.applyPlan({
+			plan: state.previewPlan.value!,
+			candidates: state.selectedCandidates.value,
+			options: state.settings,
+		}),
 	)
 
 	unlisten()

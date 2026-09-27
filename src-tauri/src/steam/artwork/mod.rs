@@ -134,14 +134,6 @@ pub fn relink_existing(plan: &mut ArtworkPlan, grid_path: &Path, app_id: u32) {
     }
 }
 
-pub fn preserve_existing_plan(grid_path: &Path, app_id: u32) -> ArtworkPlan {
-    ArtworkPlan {
-        mode: ArtworkMode::PreserveExisting,
-        existing: existing_assets(grid_path, app_id),
-        proposed: Vec::new(),
-    }
-}
-
 pub fn apply_candidate_artwork(
     grid_path: &Path,
     candidate: &ImportCandidate,

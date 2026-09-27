@@ -4,12 +4,12 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../../../../bindings'
 import Modal from '../../../../components/Modal.vue'
 import OptionButton from '../../../../components/options/OptionButton.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import UiButton from '../../../../components/ui/Button.vue'
 import { useAppState } from '../../../../composables/useAppState'
-import { api } from '../../../../helpers/api'
 
 const { t } = useI18n()
 const state = useAppState()
@@ -34,7 +34,7 @@ async function confirmExport() {
 	busy.value = true
 	feedback.value = null
 	try {
-		await api.exportSettings(path, { ...state.settings })
+		await commands.exportSettings(path, { ...state.settings })
 		feedback.value = { type: 'success', message: t('settings.data.export.success') }
 	} catch (e: unknown) {
 		feedback.value = {
@@ -55,7 +55,7 @@ async function triggerImport() {
 	if (typeof path !== 'string') return
 	busy.value = true
 	try {
-		const imported = await api.importSettings(path)
+		const imported = await commands.importSettings(path)
 		state.applySettings(imported)
 		feedback.value = { type: 'success', message: t('settings.data.import.success') }
 	} catch (e: unknown) {
@@ -77,7 +77,7 @@ async function confirmReset() {
 	showResetConfirm.value = false
 	busy.value = true
 	try {
-		const defaults = await api.resetSettings()
+		const defaults = await commands.resetSettings()
 		state.applySettings(defaults)
 		feedback.value = { type: 'success', message: t('settings.data.reset.success') }
 	} catch (e: unknown) {

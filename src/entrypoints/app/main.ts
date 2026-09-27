@@ -3,7 +3,7 @@ import '../../assets/main.css'
 
 import { createApp } from 'vue'
 
-import { api } from '../../helpers/api'
+import { commands } from '../../bindings'
 import { i18n } from '../../i18n'
 import App from './App.vue'
 import { router } from './router'
@@ -12,4 +12,4 @@ document.addEventListener('contextmenu', (event) => event.preventDefault())
 
 createApp(App).use(router).use(i18n).mount('#app')
 
-void api.showMainWindow()
+void commands.showMainWindow()

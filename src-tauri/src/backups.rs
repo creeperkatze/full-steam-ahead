@@ -1,6 +1,6 @@
 use crate::{
     error::{io_context, AppError, AppResult},
-    models::{BackupInfo, BackupPlan},
+    models::{BackupInfo, BackupPlan, SteamUser},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -33,6 +33,40 @@ pub fn delete_backup(backup_id: &str) -> AppResult<()> {
 
 pub fn delete_all_backups() -> AppResult<()> {
     delete_all_from_dir(&crate::paths::backups_dir())
+}
+
+/// Copies the planned files and returns where they went.
+pub fn create(plans: &[BackupPlan], user: &SteamUser) -> AppResult<Vec<PathBuf>> {
+    let mut created = Vec::new();
+    for backup in plans {
+        // The plan round-trips through the frontend. Both ends are re-checked here.
+        // A source must be one of FSA's own known backup files for this user.
+        let is_known_backup_source = backup.source == user.shortcuts_path
+            || backup.source == user.collections_path
+            || backup.source.starts_with(&user.grid_path);
+        if !is_known_backup_source {
+            return Err(AppError::Message(format!(
+                "Refusing to back up a file outside the managed Steam files: {}",
+                backup.source.display()
+            )));
+        }
+        if !backup.source.exists() {
+            continue;
+        }
+        if !is_valid_destination(&backup.destination) {
+            return Err(AppError::Message(format!(
+                "Refusing to write a backup outside the backups directory: {}",
+                backup.destination.display()
+            )));
+        }
+        if let Some(parent) = backup.destination.parent() {
+            fs::create_dir_all(parent).map_err(io_context(parent))?;
+        }
+        fs::copy(&backup.source, &backup.destination).map_err(io_context(&backup.destination))?;
+        debug!(src = %backup.source.display(), dst = %backup.destination.display(), "Backup created");
+        created.push(backup.destination.clone());
+    }
+    Ok(created)
 }
 
 /// True when `destination` is lexically contained in the backups directory.

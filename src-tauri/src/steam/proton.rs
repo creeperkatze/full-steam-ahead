@@ -2,9 +2,11 @@ use crate::{
     error::{io_context, AppResult},
     models::BackupPlan,
 };
-use std::{fs, path::Path};
+use keyvalues_parser::{Obj, Value};
+use std::{borrow::Cow, collections::BTreeMap, fs, path::Path};
 
 const DEFAULT_COMPAT_TOOL: &str = "proton_experimental";
+const MAPPING_KEY: &str = "CompatToolMapping";
 
 /// Forces Steam to run each of `app_ids` through Proton, by adding a
 /// `CompatToolMapping` entry to `config/config.vdf`.
@@ -27,18 +29,9 @@ pub fn setup_compat_tool_mapping(
         return Ok(None);
     };
 
-    let ids: Vec<String> = app_ids.iter().map(u32::to_string).collect();
-    let Some(updated) = add_missing_compat_tool_entries(&content, &ids) else {
-        tracing::warn!(
-            "Could not find a unique CompatToolMapping section in config.vdf; skipping Proton setup. \
-             Force a Steam Play compatibility tool on at least one game manually, then retry."
-        );
+    let Some(updated) = add_missing_compat_tool_entries(&content, app_ids) else {
         return Ok(None);
     };
-
-    if updated == content {
-        return Ok(None);
-    }
 
     let backup = match backup_dir {
         Some(backup_dir) => {
@@ -61,81 +54,70 @@ pub fn setup_compat_tool_mapping(
     Ok(backup)
 }
 
-struct CompatToolMappingSection {
-    /// Byte offset where the section's entries begin.
-    entries_start: usize,
-    /// Byte offset where a new entry can be inserted.
-    entries_end: usize,
-    /// Indentation (in tabs) of each entry's `"<appid>"` key line.
-    entry_indent: usize,
-}
+/// The updated file, or `None` when nothing needs to change or the file can't be changed safely.
+fn add_missing_compat_tool_entries(vdf: &str, app_ids: &[u32]) -> Option<String> {
+    let mut config = keyvalues_parser::parse(vdf)
+        .inspect_err(|error| tracing::warn!(%error, "Could not parse config.vdf"))
+        .ok()?
+        .into_vdf();
+    let root = config.value.get_mut_obj()?;
 
-fn find_compat_tool_mapping_section(vdf: &str) -> Option<CompatToolMappingSection> {
-    const KEY: &str = "\"CompatToolMapping\"\n";
-
-    let key_start = vdf.find(KEY)?;
-    // More than one key means the file is unusual. Don't guess which one Steam reads.
-    if vdf[key_start + KEY.len()..].contains(KEY) {
+    // More than one section means the file is unusual. Don't guess which one Steam reads.
+    if count_mappings(root) != 1 {
+        tracing::warn!(
+            "Could not find a unique CompatToolMapping section in config.vdf, skipping Proton setup. \
+             Force a Steam Play compatibility tool on at least one game manually, then retry."
+        );
         return None;
     }
-    let after_key = &vdf[key_start + KEY.len()..];
+    let mapping = find_mapping(root)?;
 
-    // The tab count before the opening brace is the section's indentation.
-    let open_brace_offset = after_key.find('{')?;
-    let section_indent = open_brace_offset;
-    let entry_indent = section_indent + 1;
-
-    let entries_start = key_start + KEY.len() + open_brace_offset + "{\n".len();
-    let rest = &vdf[entries_start..];
-
-    // The closing brace shares the opening brace's indentation. Nested entry
-    // blocks close one level deeper, so they are skipped.
-    let close_line = format!("{}}}", "\t".repeat(section_indent));
-    let entries_end = if rest.starts_with(&close_line) {
-        entries_start
-    } else {
-        let marker = format!("\n{close_line}");
-        entries_start + rest.find(&marker)? + 1
-    };
-
-    Some(CompatToolMappingSection {
-        entries_start,
-        entries_end,
-        entry_indent,
-    })
+    let mut changed = false;
+    for id in app_ids {
+        let id = id.to_string();
+        if !mapping.contains_key(id.as_str()) {
+            mapping.insert(Cow::Owned(id), vec![Value::Obj(compat_tool_entry())]);
+            changed = true;
+        }
+    }
+    changed.then(|| config.to_string())
 }
 
-fn add_missing_compat_tool_entries(vdf: &str, app_ids: &[String]) -> Option<String> {
-    let section = find_compat_tool_mapping_section(vdf)?;
-    let entries = &vdf[section.entries_start..section.entries_end];
+fn count_mappings(obj: &Obj) -> usize {
+    obj.iter()
+        .flat_map(|(key, values)| {
+            values
+                .iter()
+                .filter_map(Value::get_obj)
+                .map(move |child| usize::from(*key == MAPPING_KEY) + count_mappings(child))
+        })
+        .sum()
+}
 
-    let missing: Vec<&String> = app_ids
-        .iter()
-        .filter(|id| !entries.contains(&format!("\"{id}\"\n")))
-        .collect();
-    if missing.is_empty() {
-        return Some(vdf.to_string());
+fn find_mapping<'a, 'text>(obj: &'a mut Obj<'text>) -> Option<&'a mut Obj<'text>> {
+    for (key, values) in obj.iter_mut() {
+        for value in values {
+            let Some(child) = value.get_mut_obj() else {
+                continue;
+            };
+            if *key == MAPPING_KEY {
+                return Some(child);
+            }
+            if let Some(found) = find_mapping(child) {
+                return Some(found);
+            }
+        }
     }
+    None
+}
 
-    let indent = "\t".repeat(section.entry_indent);
-    let field_indent = "\t".repeat(section.entry_indent + 1);
-    let mut new_entries = String::new();
-    for id in missing {
-        new_entries.push_str(&format!(
-            "{indent}\"{id}\"\n{indent}{{\n\
-             {field_indent}\"name\"\t\t\"{DEFAULT_COMPAT_TOOL}\"\n\
-             {field_indent}\"config\"\t\t\"\"\n\
-             {field_indent}\"Priority\"\t\t\"250\"\n\
-             {indent}}}\n"
-        ));
-    }
-
-    Some(format!(
-        "{}{}{}",
-        &vdf[..section.entries_end],
-        new_entries,
-        &vdf[section.entries_end..]
-    ))
+fn compat_tool_entry() -> Obj<'static> {
+    let field = |value: &'static str| vec![Value::Str(Cow::Borrowed(value))];
+    Obj(BTreeMap::from([
+        (Cow::Borrowed("name"), field(DEFAULT_COMPAT_TOOL)),
+        (Cow::Borrowed("config"), field("")),
+        (Cow::Borrowed("Priority"), field("250")),
+    ]))
 }
 
 #[cfg(test)]
@@ -148,6 +130,7 @@ mod tests {
              {{\n\
              \t\"Software\"\n\
              \t{{\n\
+             \t\t\"Language\"\t\t\"english\"\n\
              \t\t\"CompatToolMapping\"\n\
              \t\t{{\n\
              {entries}\
@@ -168,70 +151,67 @@ mod tests {
         )
     }
 
-    #[test]
-    fn finds_section_bounds_with_no_existing_entries() {
-        let vdf = sample_config("");
-        let section = find_compat_tool_mapping_section(&vdf).unwrap();
-        assert_eq!(section.entry_indent, 3);
-        assert_eq!(section.entries_start, section.entries_end);
-        assert_eq!(&vdf[section.entries_start..section.entries_end], "");
+    // The compat tool of every entry in the mapping, by app id.
+    fn mapping(vdf: &str) -> Vec<(String, String)> {
+        let mut config = keyvalues_parser::parse(vdf).unwrap().into_vdf();
+        let mapping = find_mapping(config.value.get_mut_obj().unwrap()).unwrap();
+        mapping
+            .iter()
+            .map(|(id, values)| {
+                let tool = values[0].get_obj().unwrap()["name"][0].get_str().unwrap();
+                (id.to_string(), tool.to_string())
+            })
+            .collect()
     }
 
     #[test]
-    fn finds_section_bounds_with_existing_entries() {
-        let vdf = sample_config(&entry("42", "proton_9"));
-        let section = find_compat_tool_mapping_section(&vdf).unwrap();
+    fn adds_entry_to_empty_section() {
+        let updated = add_missing_compat_tool_entries(&sample_config(""), &[42]).unwrap();
         assert_eq!(
-            &vdf[section.entries_start..section.entries_end],
-            entry("42", "proton_9")
+            mapping(&updated),
+            [("42".to_string(), DEFAULT_COMPAT_TOOL.to_string())]
         );
+    }
+
+    #[test]
+    fn preserves_existing_entries_and_settings_when_adding() {
+        let vdf = sample_config(&entry("1", "proton_9"));
+        let updated = add_missing_compat_tool_entries(&vdf, &[2]).unwrap();
+        assert_eq!(
+            mapping(&updated),
+            [
+                ("1".to_string(), "proton_9".to_string()),
+                ("2".to_string(), DEFAULT_COMPAT_TOOL.to_string())
+            ]
+        );
+        assert!(updated.contains("\"Language\"\t\"english\""));
+    }
+
+    #[test]
+    fn nothing_to_add_is_no_change() {
+        let vdf = sample_config(&entry("42", "proton_9"));
+        assert!(add_missing_compat_tool_entries(&vdf, &[42]).is_none());
+    }
+
+    #[test]
+    fn adds_multiple_missing_ids() {
+        let updated = add_missing_compat_tool_entries(&sample_config(""), &[1, 2]).unwrap();
+        assert_eq!(mapping(&updated).len(), 2);
     }
 
     #[test]
     fn returns_none_when_section_absent() {
         let vdf = "\"InstallConfigStore\"\n{\n\t\"Software\"\n\t{\n\t}\n}\n";
-        assert!(find_compat_tool_mapping_section(vdf).is_none());
+        assert!(add_missing_compat_tool_entries(vdf, &[42]).is_none());
     }
 
     #[test]
-    fn adds_entry_to_empty_section() {
-        let vdf = sample_config("");
-        let updated = add_missing_compat_tool_entries(&vdf, &["42".to_string()]).unwrap();
-        assert!(updated.contains(&format!(
-            "\"42\"\n\t\t\t{{\n\t\t\t\t\"name\"\t\t\"{DEFAULT_COMPAT_TOOL}\""
-        )));
-        let reparsed = find_compat_tool_mapping_section(&updated).unwrap();
-        assert!(!updated[reparsed.entries_start..reparsed.entries_end].is_empty());
-    }
-
-    #[test]
-    fn preserves_existing_entries_when_adding() {
-        let vdf = sample_config(&entry("1", "proton_experimental"));
-        let updated = add_missing_compat_tool_entries(&vdf, &["2".to_string()]).unwrap();
-        assert!(updated.contains("\"1\""));
-        assert!(updated.contains("\"2\""));
-    }
-
-    #[test]
-    fn skips_ids_that_already_have_an_entry() {
-        let vdf = sample_config(&entry("42", "proton_experimental"));
-        let updated = add_missing_compat_tool_entries(&vdf, &["42".to_string()]).unwrap();
-        assert_eq!(updated, vdf, "must not duplicate an existing entry");
-    }
-
-    #[test]
-    fn adds_multiple_missing_ids() {
-        let vdf = sample_config("");
-        let updated =
-            add_missing_compat_tool_entries(&vdf, &["1".to_string(), "2".to_string()]).unwrap();
-        assert!(updated.contains("\"1\""));
-        assert!(updated.contains("\"2\""));
-    }
-
-    #[test]
-    fn returns_none_when_no_section_and_ids_present() {
-        let vdf = "\"InstallConfigStore\"\n{\n}\n";
-        assert!(add_missing_compat_tool_entries(vdf, &["42".to_string()]).is_none());
+    fn rejects_a_duplicate_compat_tool_mapping_section() {
+        let vdf = sample_config(&entry("1", "proton_9")).replace(
+            "\t\"Software\"\n",
+            "\t\"Other\"\n\t{\n\t\t\"CompatToolMapping\"\n\t\t{\n\t\t}\n\t}\n\t\"Software\"\n",
+        );
+        assert!(add_missing_compat_tool_entries(&vdf, &[2]).is_none());
     }
 
     #[test]
@@ -241,29 +221,5 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
-    }
-
-    #[test]
-    fn rejects_a_duplicate_compat_tool_mapping_key() {
-        let vdf = format!(
-            "\"CompatToolMapping\"\n{{\n}}\n{}",
-            sample_config(&entry("1", "proton_experimental"))
-        );
-        assert!(find_compat_tool_mapping_section(&vdf).is_none());
-        assert!(add_missing_compat_tool_entries(&vdf, &["2".to_string()]).is_none());
-    }
-
-    #[test]
-    fn result_reparses_cleanly_after_multiple_additions() {
-        let vdf = sample_config(&entry("1", "proton_experimental"));
-        let updated =
-            add_missing_compat_tool_entries(&vdf, &["2".to_string(), "3".to_string()]).unwrap();
-        let section = find_compat_tool_mapping_section(&updated).unwrap();
-        let body = &updated[section.entries_start..section.entries_end];
-        assert!(body.contains("\"1\""));
-        assert!(body.contains("\"2\""));
-        assert!(body.contains("\"3\""));
-        // Two tabs is the section's own closing brace, not a nested entry's (three tabs).
-        assert!(updated[section.entries_end..].starts_with("\t\t}"));
     }
 }

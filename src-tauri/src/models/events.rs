@@ -1,16 +1,29 @@
 use super::importers::ImportSource;
 use serde::Serialize;
+use specta::Type;
+use tauri_specta::Event;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanProgressEvent {
     pub source: ImportSource,
-    pub status: String,
+    pub status: ScanStatus,
     pub found: usize,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase", tag = "kind")]
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ScanStatus {
+    Scanning,
+    Done,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    tag = "kind"
+)]
 pub enum ApplyStep {
     StoppingSteam,
     CreatingBackups,
@@ -20,7 +33,7 @@ pub enum ApplyStep {
     RestartingSteam,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplyProgressEvent {
     pub step: ApplyStep,

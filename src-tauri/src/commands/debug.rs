@@ -3,13 +3,14 @@ use crate::{
     paths,
 };
 use serde::Serialize;
+use specta::Type;
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 use tracing::{info, instrument};
 
 type CommandResult<T> = Result<T, CommandError>;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DebugInfo {
     pub app_version: String,
@@ -29,6 +30,7 @@ fn format_os(os: &str) -> String {
 
 #[tauri::command]
 #[instrument]
+#[specta::specta]
 pub fn get_debug_info() -> CommandResult<DebugInfo> {
     Ok(DebugInfo {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -40,6 +42,7 @@ pub fn get_debug_info() -> CommandResult<DebugInfo> {
 
 #[tauri::command]
 #[instrument(skip(app))]
+#[specta::specta]
 pub fn open_logs_folder(app: AppHandle) -> CommandResult<()> {
     let logs_dir = paths::logs_dir();
     app.opener()

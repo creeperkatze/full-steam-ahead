@@ -27,6 +27,7 @@ interface CollectionChange {
 }
 
 interface GameReview {
+	id: string
 	name: string
 	shortcut?: PlannedChange
 	collections: CollectionChange[]
@@ -37,10 +38,13 @@ const games = computed(() => {
 	const grouped = new Map<string, GameReview>()
 
 	for (const change of props.plan?.changes ?? []) {
-		const name = change.gameName
-		if (!name) continue
-
-		const game = grouped.get(name) ?? { name, collections: [], artwork: [] }
+		const id = change.candidateId
+		const game = grouped.get(id) ?? {
+			id,
+			name: change.gameName,
+			collections: [],
+			artwork: [],
+		}
 
 		if (change.kind === 'addShortcut' || change.kind === 'updateShortcut') {
 			game.shortcut = change
@@ -57,13 +61,13 @@ const games = computed(() => {
 			})
 		}
 
-		grouped.set(name, game)
+		grouped.set(id, game)
 	}
 
 	return Array.from(grouped.values()).sort((a, b) => a.name.localeCompare(b.name))
 })
 
-const candidateByName = computed(() => new Map(state.candidates.value.map((c) => [c.name, c])))
+const candidateById = computed(() => new Map(state.candidates.value.map((c) => [c.id, c])))
 
 function changeCount(game: GameReview) {
 	return Number(Boolean(game.shortcut)) + game.collections.length + game.artwork.length
@@ -124,7 +128,7 @@ function fileName(path: string) {
 			<div v-if="games.length > 0" class="grid gap-2">
 				<article
 					v-for="game in games"
-					:key="game.name"
+					:key="game.id"
 					class="overflow-hidden rounded-lg border border-border"
 				>
 					<div
@@ -132,8 +136,8 @@ function fileName(path: string) {
 					>
 						<div class="flex min-w-0 items-center gap-2">
 							<GameIcon
-								v-if="candidateByName.get(game.name)"
-								:candidate="candidateByName.get(game.name)!"
+								v-if="candidateById.get(game.id)"
+								:candidate="candidateById.get(game.id)!"
 								:size="20"
 							/>
 							<strong class="min-w-0 truncate text-base">{{ game.name }}</strong>
@@ -161,7 +165,7 @@ function fileName(path: string) {
 							</template>
 						</ItemRow>
 
-						<ItemRow v-for="asset in game.artwork" :key="`${game.name}:${asset.kind}`">
+						<ItemRow v-for="asset in game.artwork" :key="`${game.id}:${asset.kind}`">
 							<template #leading>
 								<Image :size="15" class="text-accent" />
 							</template>
@@ -175,7 +179,7 @@ function fileName(path: string) {
 							</template>
 						</ItemRow>
 
-						<ItemRow v-for="coll in game.collections" :key="`${game.name}:coll:${coll.name}`">
+						<ItemRow v-for="coll in game.collections" :key="`${game.id}:coll:${coll.name}`">
 							<template #leading>
 								<Library :size="15" class="text-accent" />
 							</template>

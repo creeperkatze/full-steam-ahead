@@ -4,11 +4,11 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../../../bindings'
 import SourceCard from '../../../components/SourceCard.vue'
 import UiButton from '../../../components/ui/Button.vue'
 import { useAppState } from '../../../composables/useAppState'
 import { useTaskStatus } from '../../../composables/useTaskStatus'
-import { api } from '../../../helpers/api'
 import { importSourceName } from '../../../helpers/sourceNames'
 import type { ImportCandidate, ImportSource, ScannableSource } from '../../../types'
 
@@ -70,10 +70,10 @@ async function addManual() {
 	if (!state.selectedUserId.value || !state.manualPath.value.trim()) return
 
 	const candidate = await task.runTask('Adding manual entry', () =>
-		api.createManualCandidate({
+		commands.createManualCandidate({
 			userSteamId: state.selectedUserId.value,
 			executablePath: state.manualPath.value.trim(),
-			displayName: state.manualName.value.trim() || undefined,
+			displayName: state.manualName.value.trim() || null,
 			source: 'manual',
 			tags: ['Manual'],
 		}),

@@ -1,8 +1,9 @@
 use super::settings::LauncherMode;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ImportSource {
     Manual,
@@ -70,7 +71,7 @@ impl ImportSource {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ManualImportRequest {
     pub user_steam_id: String,
@@ -80,15 +81,14 @@ pub struct ManualImportRequest {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanRequest {
     pub user_steam_id: String,
-    #[serde(default)]
     pub include_sources: Vec<ImportSource>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportCandidate {
     pub id: String,
@@ -105,7 +105,6 @@ pub struct ImportCandidate {
     pub url_scheme: Option<String>,
     pub launcher_path: Option<PathBuf>,
     pub use_launcher_url: bool,
-    #[serde(default)]
     pub needs_proton: bool,
 }
 
@@ -155,7 +154,7 @@ impl ImportCandidate {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtworkPlan {
     pub mode: ArtworkMode,
@@ -163,7 +162,7 @@ pub struct ArtworkPlan {
     pub proposed: Vec<ArtworkAsset>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ArtworkMode {
     PreserveExisting,
@@ -172,7 +171,7 @@ pub enum ArtworkMode {
     LocalOverride,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtworkAsset {
     pub kind: ArtworkKind,
@@ -181,7 +180,7 @@ pub struct ArtworkAsset {
     pub will_replace_existing: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ArtworkKind {
     Header,
@@ -203,7 +202,7 @@ impl ArtworkKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ArtworkSource {
     ExistingCustom,

@@ -1,6 +1,6 @@
 import { computed, reactive, ref, watch } from 'vue'
 
-import { api } from '../helpers/api'
+import { commands } from '../bindings'
 import { applyLocale, type SupportedLocale } from '../i18n'
 import { applyColorScheme, type ColorScheme } from '../theme'
 import type {
@@ -53,7 +53,7 @@ async function flushSettingsSave() {
 	if (!settingsReady.value || !settingsSaveTimer) return
 	clearTimeout(settingsSaveTimer)
 	settingsSaveTimer = undefined
-	await api.saveSettings({ ...settings })
+	await commands.saveSettings({ ...settings })
 }
 
 document.addEventListener('visibilitychange', () => {
@@ -68,7 +68,7 @@ watch(
 		clearTimeout(settingsSaveTimer)
 		settingsSaveTimer = setTimeout(() => {
 			settingsSaveTimer = undefined
-			void api.saveSettings({ ...settings })
+			void commands.saveSettings({ ...settings })
 		}, 400)
 	},
 	{ deep: true },
@@ -91,7 +91,7 @@ watch(
 		clearTimeout(steamLocationRefreshTimer)
 		steamLocationRefreshTimer = setTimeout(async () => {
 			try {
-				const detected = await api.detectSteam()
+				const detected = await commands.detectSteam()
 				install.value = detected
 				if (!detected.users.some((user) => user.steamId === selectedUserId.value)) {
 					selectedUserId.value = detected.users[0]?.steamId ?? ''
@@ -149,7 +149,10 @@ function applySettings(newSettings: Settings) {
 
 async function loadSettingsFromDisk() {
 	try {
-		const [saved, sources] = await Promise.all([api.loadSettings(), api.availableSources()])
+		const [saved, sources] = await Promise.all([
+			commands.loadSettings(),
+			commands.availableSources(),
+		])
 		availableSources.value = sources
 		applySettings(saved)
 	} catch {

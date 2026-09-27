@@ -1,9 +1,8 @@
-import { listen } from '@tauri-apps/api/event'
 import { ref } from 'vue'
 
-import { api } from '../helpers/api'
+import { commands, events } from '../bindings'
 import { importSourceName } from '../helpers/sourceNames'
-import type { ImportCandidate, ScannableSource, ScanProgressEvent } from '../types'
+import type { ImportCandidate, ScannableSource } from '../types'
 import { useAppState } from './useAppState'
 import { useTaskStatus } from './useTaskStatus'
 
@@ -49,7 +48,7 @@ export function useScanSources() {
 		state.scanPhase.value = 'scanning'
 
 		unlistenScan?.()
-		unlistenScan = await listen<ScanProgressEvent>('scan-progress', (event) => {
+		unlistenScan = await events.scanProgressEvent.listen((event) => {
 			const { source, status, found } = event.payload
 			const entry =
 				typeof source === 'string' ? sourceStates.value.find((s) => s.key === source) : undefined
@@ -64,7 +63,7 @@ export function useScanSources() {
 		})
 
 		const found = await task.runTask('Scanning sources', () =>
-			api.scanSources({ userSteamId: state.selectedUserId.value, includeSources: [] }),
+			commands.scanSources({ userSteamId: state.selectedUserId.value, includeSources: [] }),
 		)
 
 		unlistenScan()

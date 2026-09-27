@@ -254,8 +254,28 @@ pub(super) fn download_asset(url: &str, target: &Path) -> AppResult<()> {
     fs::write(target, bytes).map_err(io_context(target))
 }
 
+pub(super) fn name_distance(left: &str, right: &str) -> usize {
+    let left = normalize_name(left);
+    let right = normalize_name(right);
+    if left == right {
+        return 0;
+    }
+    if left.contains(&right) || right.contains(&left) {
+        return 1;
+    }
+    left.len().abs_diff(right.len()) + 10
+}
+
+fn normalize_name(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
 #[cfg(test)]
-mod download_asset_tests {
+mod tests {
     use super::is_allowed_artwork_url;
 
     #[test]
@@ -296,24 +316,4 @@ mod download_asset_tests {
             "http://169.254.169.254/latest/meta-data/"
         ));
     }
-}
-
-pub(super) fn name_distance(left: &str, right: &str) -> usize {
-    let left = normalize_name(left);
-    let right = normalize_name(right);
-    if left == right {
-        return 0;
-    }
-    if left.contains(&right) || right.contains(&left) {
-        return 1;
-    }
-    left.len().abs_diff(right.len()) + 10
-}
-
-fn normalize_name(value: &str) -> String {
-    value
-        .chars()
-        .filter(|character| character.is_ascii_alphanumeric())
-        .flat_map(char::to_lowercase)
-        .collect()
 }

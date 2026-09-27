@@ -4,11 +4,11 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../../../../bindings'
 import OptionPath from '../../../../components/options/OptionPath.vue'
 import OptionToggle from '../../../../components/options/OptionToggle.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import { useAppState } from '../../../../composables/useAppState'
-import { api } from '../../../../helpers/api'
 
 const state = useAppState()
 const { t } = useI18n()
@@ -40,7 +40,7 @@ watch(
 			return
 		}
 		steamLocationCheckTimer = setTimeout(async () => {
-			const valid = await api.validateSteamLocation(trimmed)
+			const valid = await commands.validateSteamLocation(trimmed)
 			if ((state.settings.steamLocation ?? '').trim() === trimmed) {
 				steamLocationValid.value = valid
 			}

@@ -1,9 +1,11 @@
+mod app;
 mod artwork;
 mod backups;
 mod debug;
 mod settings;
 mod steam;
 
+pub use app::*;
 pub use artwork::*;
 pub use backups::*;
 pub use debug::*;

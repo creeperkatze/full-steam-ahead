@@ -64,6 +64,44 @@ fn log_panics() {
     }));
 }
 
+/// Every command and event the frontend can use. The TypeScript bindings are generated from it.
+fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
+    tauri_specta::Builder::<tauri::Wry>::new()
+        .commands(tauri_specta::collect_commands![
+            detect_steam,
+            validate_steam_location,
+            grant_steam_flatpak_permission,
+            read_shortcuts_for_user,
+            scan_sources,
+            create_manual_candidate,
+            create_preview_plan,
+            apply_plan,
+            load_settings,
+            save_settings,
+            export_settings,
+            import_settings,
+            reset_settings,
+            available_sources,
+            steamgriddb_search,
+            steamgriddb_images,
+            close_app,
+            show_main_window,
+            list_backups,
+            restore_backup,
+            delete_backup,
+            delete_all_backups,
+            get_debug_info,
+            open_logs_folder,
+        ])
+        .events(tauri_specta::collect_events![
+            models::ScanProgressEvent,
+            models::ApplyProgressEvent
+        ])
+        .error_handling(tauri_specta::ErrorHandlingMode::Throw)
+        // Counts and file sizes stay far below the largest safe JavaScript number.
+        .dangerously_cast_bigints_to_number()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let _log_guard = init_logging();
@@ -93,8 +131,19 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
     }
 
+    let specta = specta_builder();
+    #[cfg(debug_assertions)]
+    if let Err(error) = specta.export(
+        specta_typescript::Typescript::default(),
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts"),
+    ) {
+        tracing::warn!(%error, "Could not export the TypeScript bindings");
+    }
+    let invoke_handler = specta.invoke_handler();
+
     builder
-        .setup(|app| {
+        .setup(move |app| {
+            specta.mount_events(app);
             #[cfg(not(target_os = "linux"))]
             if let Some(window) = app.get_webview_window("main") {
                 if let Err(e) = window.set_shadow(true) {
@@ -111,32 +160,7 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            detect_steam,
-            validate_steam_location,
-            grant_steam_flatpak_permission,
-            read_shortcuts_for_user,
-            scan_sources,
-            create_manual_candidate,
-            create_preview_plan,
-            apply_plan,
-            load_settings,
-            save_settings,
-            export_settings,
-            import_settings,
-            reset_settings,
-            available_sources,
-            steamgriddb_search,
-            steamgriddb_images,
-            close_app,
-            show_main_window,
-            list_backups,
-            restore_backup,
-            delete_backup,
-            delete_all_backups,
-            get_debug_info,
-            open_logs_folder,
-        ])
+        .invoke_handler(invoke_handler)
         .run(tauri::generate_context!())
         .expect("error while running Full Steam Ahead");
 }

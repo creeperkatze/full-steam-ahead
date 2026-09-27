@@ -2,10 +2,10 @@
 use crate::steam::proton;
 use crate::{
     backups,
-    error::{io_context, AppError, AppResult},
+    error::{io_context, AppResult},
     models::{ApplyProgressEvent, ApplyRequest, ApplyResult, ApplyStep},
     process,
-    steam::{artwork, collections, detect, shortcuts, sources},
+    steam::{artwork, collections, detect, shortcuts},
 };
 use std::{
     collections::HashSet,
@@ -36,53 +36,24 @@ pub fn apply_plan_with_progress(
         + 1 // collections
         + usize::from(request.options.restart_steam);
     let mut current = 0usize;
-
-    if request.options.stop_steam {
+    let mut step = |step: ApplyStep| {
         current += 1;
         on_progress(ApplyProgressEvent {
-            step: ApplyStep::StoppingSteam,
+            step,
             current,
             total,
         });
+    };
+
+    if request.options.stop_steam {
+        step(ApplyStep::StoppingSteam);
         tracing::info!("Stopping Steam");
         stop_steam();
     }
 
-    current += 1;
-    on_progress(ApplyProgressEvent {
-        step: ApplyStep::CreatingBackups,
-        current,
-        total,
-    });
-    let mut backups_created = Vec::new();
-    for backup in &request.plan.backups {
-        // The plan round-trips through the frontend. Both ends are re-checked here.
-        // A source must be one of FSA's own known backup files for this user.
-        let is_known_backup_source = backup.source == user.shortcuts_path
-            || backup.source == user.collections_path
-            || backup.source.starts_with(&user.grid_path);
-        if !is_known_backup_source {
-            return Err(AppError::Message(format!(
-                "Refusing to back up a file outside the managed Steam files: {}",
-                backup.source.display()
-            )));
-        }
-        if !backup.source.exists() {
-            continue;
-        }
-        if !backups::is_valid_destination(&backup.destination) {
-            return Err(AppError::Message(format!(
-                "Refusing to write a backup outside the backups directory: {}",
-                backup.destination.display()
-            )));
-        }
-        if let Some(parent) = backup.destination.parent() {
-            fs::create_dir_all(parent).map_err(io_context(parent))?;
-        }
-        fs::copy(&backup.source, &backup.destination).map_err(io_context(&backup.destination))?;
-        tracing::debug!(src = %backup.source.display(), dst = %backup.destination.display(), "Backup created");
-        backups_created.push(backup.destination.clone());
-    }
+    step(ApplyStep::CreatingBackups);
+    #[cfg_attr(not(unix), allow(unused_mut))]
+    let mut backups_created = backups::create(&request.plan.backups, &user)?;
     let backup_dir = backups_created
         .first()
         .and_then(|p| p.parent())
@@ -92,7 +63,7 @@ pub fn apply_plan_with_progress(
     let mut backup_plans = request.plan.backups.clone();
 
     // Linked before artwork is written, since artwork is keyed by the shortcut's app id.
-    let mut existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
+    let existing = shortcuts::read_shortcuts(&user.shortcuts_path)?;
     let mut candidates = request.candidates;
     shortcuts::link_existing(&mut candidates, &existing);
 
@@ -100,21 +71,11 @@ pub fn apply_plan_with_progress(
     let mut skipped_change_ids = HashSet::new();
 
     if candidates.is_empty() {
-        current += 1;
-        on_progress(ApplyProgressEvent {
-            step: ApplyStep::ApplyingArtwork { game_name: None },
-            current,
-            total,
-        });
+        step(ApplyStep::ApplyingArtwork { game_name: None });
     } else {
         for candidate in &candidates {
-            current += 1;
-            on_progress(ApplyProgressEvent {
-                step: ApplyStep::ApplyingArtwork {
-                    game_name: Some(candidate.name.clone()),
-                },
-                current,
-                total,
+            step(ApplyStep::ApplyingArtwork {
+                game_name: Some(candidate.name.clone()),
             });
             let candidate_skipped = artwork::apply_candidate_artwork(&user.grid_path, candidate)?;
             for skip in candidate_skipped {
@@ -123,22 +84,14 @@ pub fn apply_plan_with_progress(
         }
     }
 
-    current += 1;
-    on_progress(ApplyProgressEvent {
-        step: ApplyStep::UpdatingShortcuts,
-        current,
-        total,
-    });
-    let mut additions = candidates
-        .iter()
-        .map(|candidate| {
-            let shortcut = sources::shortcut_from_candidate(candidate, &user.grid_path);
-            (shortcut, artwork::changes_icon(candidate))
-        })
-        .collect::<Vec<_>>();
-
+    step(ApplyStep::UpdatingShortcuts);
+    let mut updated = shortcuts::with_candidates(&existing, &candidates, &user.grid_path);
     if request.options.add_self_shortcut {
-        additions.push((super::self_shortcut::build(&user.grid_path)?, true));
+        shortcuts::upsert(
+            &mut updated,
+            super::self_shortcut::build(&user.grid_path)?,
+            true,
+        );
     }
 
     #[cfg(unix)]
@@ -163,28 +116,15 @@ pub fn apply_plan_with_progress(
         backups::write_manifest(backup_dir, &backup_plans);
     }
 
-    for (shortcut, replace_icon) in additions {
-        shortcuts::upsert(&mut existing, shortcut, replace_icon);
-    }
-    shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
+    shortcuts::write_shortcuts(&user.shortcuts_path, &updated)?;
 
-    current += 1;
-    on_progress(ApplyProgressEvent {
-        step: ApplyStep::UpdatingCollections,
-        current,
-        total,
-    });
+    step(ApplyStep::UpdatingCollections);
     if request.options.create_collections {
         collections::update_modern_collections(&user.collections_path, &candidates)?;
     }
 
     if request.options.restart_steam {
-        current += 1;
-        on_progress(ApplyProgressEvent {
-            step: ApplyStep::RestartingSteam,
-            current,
-            total,
-        });
+        step(ApplyStep::RestartingSteam);
         tracing::info!("Restarting Steam");
         if let Err(error) = process::restart_steam(&install_path) {
             tracing::warn!(%error, "Failed to restart Steam");

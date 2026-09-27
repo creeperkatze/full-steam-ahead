@@ -3,11 +3,11 @@ import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, RotateCcw, Trash2 } 
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../../../../bindings'
 import Modal from '../../../../components/Modal.vue'
 import OptionButton from '../../../../components/options/OptionButton.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
 import UiButton from '../../../../components/ui/Button.vue'
-import { api } from '../../../../helpers/api'
 import type { BackupInfo } from '../../../../types'
 
 const { t } = useI18n()
@@ -25,7 +25,7 @@ const actionError = ref<string | null>(null)
 
 onMounted(async () => {
 	try {
-		backups.value = await api.listBackups()
+		backups.value = await commands.listBackups()
 	} catch {
 		// Keep empty state
 	} finally {
@@ -79,13 +79,13 @@ async function confirmAction() {
 	restoreResult.value = null
 	try {
 		if (action === 'restore') {
-			const count = await api.restoreBackup(backupId as string)
+			const count = await commands.restoreBackup(backupId as string)
 			restoreResult.value = { backupId: backupId as string, count }
 		} else if (action === 'delete') {
-			await api.deleteBackup(backupId as string)
+			await commands.deleteBackup(backupId as string)
 			backups.value = backups.value.filter((backup) => backup.id !== backupId)
 		} else {
-			await api.deleteAllBackups()
+			await commands.deleteAllBackups()
 			backups.value = []
 		}
 	} catch (e: unknown) {

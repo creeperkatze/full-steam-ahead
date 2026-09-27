@@ -3,9 +3,9 @@ import { AlertCircle, FolderOpen } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../../../../bindings'
 import OptionButton from '../../../../components/options/OptionButton.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
-import { api } from '../../../../helpers/api'
 import type { DebugInfo } from '../../../../types'
 
 const { t } = useI18n()
@@ -28,7 +28,7 @@ const metadataFields = computed(() => {
 
 onMounted(async () => {
 	try {
-		debugInfo.value = await api.getDebugInfo()
+		debugInfo.value = await commands.getDebugInfo()
 	} finally {
 		loading.value = false
 	}
@@ -37,7 +37,7 @@ onMounted(async () => {
 async function openLogsFolder() {
 	openError.value = null
 	try {
-		await api.openLogsFolder()
+		await commands.openLogsFolder()
 	} catch (e: unknown) {
 		openError.value = (e as { message?: string })?.message ?? t('settings.debug.openError')
 	}

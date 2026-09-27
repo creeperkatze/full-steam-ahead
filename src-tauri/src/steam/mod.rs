@@ -7,7 +7,6 @@ pub mod plan;
 pub mod proton;
 pub mod self_shortcut;
 pub mod shortcuts;
-pub mod sources;
 
 pub fn non_steam_app_id(exe: &str, name: &str) -> u32 {
     crc32fast::hash(format!("{exe}{name}").as_bytes()) | 0x8000_0000

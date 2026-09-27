@@ -9,12 +9,14 @@ type CommandResult<T> = Result<T, CommandError>;
 
 #[tauri::command]
 #[instrument(skip(api_key), err(Debug))]
+#[specta::specta]
 pub fn steamgriddb_search(api_key: String, query: String) -> CommandResult<Vec<SteamGridDbGame>> {
     steam::artwork::steamgriddb::search_games(&api_key, &query).map_err(Into::into)
 }
 
 #[tauri::command]
 #[instrument(skip(api_key), err(Debug))]
+#[specta::specta]
 pub fn steamgriddb_images(
     api_key: String,
     game_id: u32,

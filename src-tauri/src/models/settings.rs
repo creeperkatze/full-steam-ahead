@@ -1,9 +1,11 @@
 use super::importers::ImportSource;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use specta::Type;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SourceSettings {
     pub enabled: bool,
     pub custom_path: Option<String>,
@@ -18,15 +20,15 @@ impl Default for SourceSettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase", default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SteamGridDbSettings {
     pub enabled: bool,
     pub api_key: Option<String>,
     pub allow_nsfw: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum DefaultArtworkSource {
     None,
@@ -36,7 +38,7 @@ pub enum DefaultArtworkSource {
 }
 
 /// Whether games start through their launcher or from their own executable.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum LauncherMode {
     Always,
@@ -45,15 +47,14 @@ pub enum LauncherMode {
     WhenNoExecutable,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub stop_steam: bool,
     pub restart_steam: bool,
     pub create_collections: bool,
     pub add_self_shortcut: bool,
     pub steam_location: Option<String>,
-    #[serde(alias = "launchers")]
     pub sources: HashMap<String, SourceSettings>,
     pub steam_grid_db: SteamGridDbSettings,
     pub default_artwork_source: DefaultArtworkSource,
@@ -83,6 +84,19 @@ impl Default for Settings {
 }
 
 impl Settings {
+    /// Reads saved settings. Fields missing from older files keep their defaults.
+    pub fn from_json(raw: &str) -> serde_json::Result<Self> {
+        let mut saved: Value = serde_json::from_str(raw)?;
+        if let Some(saved) = saved.as_object_mut() {
+            if let Some(launchers) = saved.remove("launchers") {
+                saved.entry("sources").or_insert(launchers);
+            }
+        }
+        let mut settings = serde_json::to_value(Self::default())?;
+        merge(&mut settings, saved);
+        serde_json::from_value(settings)
+    }
+
     // Flatpak defaults to off since it lists every installed flatpak, not just games.
     fn default_source_settings(source: &ImportSource) -> SourceSettings {
         SourceSettings {
@@ -124,6 +138,17 @@ impl Settings {
     }
 }
 
+fn merge(base: &mut Value, saved: Value) {
+    match (base, saved) {
+        (Value::Object(base), Value::Object(saved)) => {
+            for (key, value) in saved {
+                merge(base.entry(key).or_insert(Value::Null), value);
+            }
+        }
+        (base, saved) => *base = saved,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,7 +161,7 @@ mod tests {
 
     #[test]
     fn origin_settings_move_to_ea_app() {
-        let mut settings: Settings = serde_json::from_str(
+        let mut settings = Settings::from_json(
             r#"{"sources": {"origin": {"enabled": false, "customPath": "D:/EA"}}}"#,
         )
         .unwrap();
@@ -145,6 +170,13 @@ mod tests {
         let ea_app = settings.source_settings(&ImportSource::EaApp);
         assert!(!ea_app.enabled);
         assert_eq!(ea_app.custom_path.as_deref(), Some("D:/EA"));
+    }
+
+    #[test]
+    fn launchers_move_to_sources() {
+        let settings =
+            Settings::from_json(r#"{"launchers": {"gog": {"enabled": false}}}"#).unwrap();
+        assert!(!settings.source_settings(&ImportSource::Gog).enabled);
     }
 
     #[test]
@@ -166,11 +198,22 @@ mod tests {
 
     #[test]
     fn game_pass_settings_move_to_xbox() {
-        let mut settings: Settings =
-            serde_json::from_str(r#"{"sources": {"gamePass": {"enabled": false}}}"#).unwrap();
+        let mut settings =
+            Settings::from_json(r#"{"sources": {"gamePass": {"enabled": false}}}"#).unwrap();
         settings.ensure_source_defaults(&[ImportSource::Xbox]);
         assert!(!settings.sources.contains_key("gamePass"));
         assert!(!settings.source_settings(&ImportSource::Xbox).enabled);
+    }
+
+    #[test]
+    fn fields_missing_from_older_files_keep_their_defaults() {
+        let settings =
+            Settings::from_json(r#"{"stopSteam": false, "steamGridDb": {"enabled": true}}"#)
+                .unwrap();
+        assert!(!settings.stop_steam);
+        assert!(settings.restart_steam);
+        assert!(settings.steam_grid_db.enabled);
+        assert!(!settings.steam_grid_db.allow_nsfw);
     }
 
     #[test]

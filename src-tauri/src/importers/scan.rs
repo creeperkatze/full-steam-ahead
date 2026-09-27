@@ -1,11 +1,11 @@
 use crate::{
     error::AppResult,
-    importers::{self, quote_path},
+    importers,
     models::{
-        ArtworkKind, ArtworkSource, ImportCandidate, ImportSource, ScanProgressEvent, ScanRequest,
-        Settings, ShortcutEntry, SteamUser,
+        ImportCandidate, ImportSource, ScanProgressEvent, ScanRequest, ScanStatus, Settings,
+        ShortcutEntry, SteamUser,
     },
-    steam::{artwork, candidate_app_id, shortcuts},
+    steam::{artwork, shortcuts},
 };
 use std::path::Path;
 
@@ -17,12 +17,12 @@ pub fn scan_sources_with_progress(
 ) -> AppResult<Vec<ImportCandidate>> {
     let mut candidates = Vec::new();
     let enabled_sources = enabled_sources(request, settings);
-    let existing_shortcuts = read_existing_shortcuts(user);
+    let existing_shortcuts = shortcuts::read_shortcuts_or_empty(&user.shortcuts_path);
 
     for source in &enabled_sources {
         on_progress(ScanProgressEvent {
             source: source.clone(),
-            status: "scanning".to_string(),
+            status: ScanStatus::Scanning,
             found: 0,
         });
 
@@ -49,19 +49,12 @@ pub fn scan_sources_with_progress(
 
         on_progress(ScanProgressEvent {
             source: source.clone(),
-            status: "done".to_string(),
+            status: ScanStatus::Done,
             found: found_count,
         });
     }
 
     Ok(candidates)
-}
-
-pub fn read_existing_shortcuts(user: &SteamUser) -> Vec<ShortcutEntry> {
-    shortcuts::read_shortcuts(&user.shortcuts_path).unwrap_or_else(|error| {
-        tracing::warn!(%error, "Existing shortcuts could not be read");
-        Vec::new()
-    })
 }
 
 /// Applies the user's settings and links the candidate to the shortcut it already has in Steam.
@@ -170,54 +163,4 @@ fn enabled_sources(request: &ScanRequest, settings: &Settings) -> Vec<ImportSour
         .into_iter()
         .filter(|source| settings.source_settings(source).enabled)
         .collect()
-}
-
-pub fn shortcut_from_candidate(candidate: &ImportCandidate, grid_path: &Path) -> ShortcutEntry {
-    let exe = candidate.effective_executable();
-    ShortcutEntry {
-        app_id: candidate_app_id(candidate),
-        app_name: candidate.name.clone(),
-        exe: quote_path(exe),
-        start_dir: quote_path(candidate.effective_start_dir()),
-        icon: shortcut_icon(candidate, grid_path),
-        shortcut_path: String::new(),
-        launch_options: candidate
-            .effective_launch_options()
-            .unwrap_or("")
-            .to_string(),
-        is_hidden: false,
-        allow_desktop_config: true,
-        allow_overlay: true,
-        open_vr: false,
-        devkit: false,
-        devkit_game_id: String::new(),
-        last_play_time: 0,
-        tags: candidate.tags.clone(),
-    }
-}
-
-fn shortcut_icon(candidate: &ImportCandidate, grid_path: &Path) -> String {
-    let fallback = candidate.executable_path.display().to_string();
-    let Some(asset) = artwork::selected_artwork_assets(candidate)
-        .into_iter()
-        .find(|asset| asset.kind == ArtworkKind::Icon)
-    else {
-        return fallback;
-    };
-
-    let icon_path = match asset.source {
-        ArtworkSource::ExistingCustom | ArtworkSource::Missing => {
-            Path::new(&asset.path_or_url).to_path_buf()
-        }
-        ArtworkSource::OfficialSteam | ArtworkSource::SteamGridDb | ArtworkSource::LocalFile => {
-            let app_id = candidate_app_id(candidate);
-            artwork::target_path(grid_path, app_id, &ArtworkKind::Icon, &asset.path_or_url)
-        }
-    };
-
-    if icon_path.exists() {
-        icon_path.display().to_string()
-    } else {
-        fallback
-    }
 }

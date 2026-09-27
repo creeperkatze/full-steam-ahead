@@ -21,7 +21,7 @@ pub enum AppError {
     Message(String),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct CommandError {
     pub message: String,
 }

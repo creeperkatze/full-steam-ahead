@@ -1,9 +1,10 @@
 use super::importers::{ArtworkKind, ArtworkSource, ImportCandidate};
 use super::settings::Settings;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPlan {
     pub user_steam_id: String,
@@ -13,17 +14,18 @@ pub struct PreviewPlan {
     pub requires_steam_restart: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BackupPlan {
     pub source: PathBuf,
     pub destination: PathBuf,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PlannedChange {
     pub id: String,
+    pub candidate_id: String,
     pub game_name: String,
     pub file: PathBuf,
     pub kind: ChangeKind,
@@ -33,7 +35,7 @@ pub struct PlannedChange {
     pub collection_name: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ChangeKind {
     AddShortcut,
@@ -42,7 +44,7 @@ pub enum ChangeKind {
     UpdateCollections,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplyRequest {
     pub plan: PreviewPlan,
@@ -50,14 +52,14 @@ pub struct ApplyRequest {
     pub options: Settings,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplyResult {
     pub applied_changes: Vec<PlannedChange>,
     pub backups_created: Vec<PathBuf>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BackupInfo {
     pub id: String,

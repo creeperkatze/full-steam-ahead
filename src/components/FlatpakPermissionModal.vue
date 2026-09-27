@@ -3,8 +3,8 @@ import { Loader2, ShieldAlert } from '@lucide/vue'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../bindings'
 import { useAppState } from '../composables/useAppState'
-import { api } from '../helpers/api'
 import Modal from './Modal.vue'
 import UiButton from './ui/Button.vue'
 
@@ -22,9 +22,9 @@ const errorMessage = ref('')
 async function grant() {
 	status.value = 'granting'
 	try {
-		await api.grantSteamFlatpakPermission()
+		await commands.grantSteamFlatpakPermission()
 		status.value = 'granted'
-		state.install.value = await api.detectSteam()
+		state.install.value = await commands.detectSteam()
 	} catch (error) {
 		errorMessage.value = error instanceof Error ? error.message : String(error)
 		status.value = 'error'

@@ -4,6 +4,7 @@ import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { commands } from '../../../bindings'
 import SourceIcon from '../../../components/SourceIcon.vue'
 import UiButton from '../../../components/ui/Button.vue'
 import Dropdown from '../../../components/ui/Dropdown.vue'
@@ -12,7 +13,6 @@ import UserAvatar from '../../../components/UserAvatar.vue'
 import { useAppState } from '../../../composables/useAppState'
 import { useScanSources } from '../../../composables/useScanSources'
 import { useTaskStatus } from '../../../composables/useTaskStatus'
-import { api } from '../../../helpers/api'
 
 const state = useAppState()
 const task = useTaskStatus()
@@ -49,7 +49,7 @@ function steamUserName(user: { accountName?: string | null }) {
 }
 
 async function refreshSteam() {
-	const detected = await task.runTask('Detecting Steam', () => api.detectSteam())
+	const detected = await task.runTask('Detecting Steam', () => commands.detectSteam())
 	if (!detected) return
 
 	state.install.value = detected

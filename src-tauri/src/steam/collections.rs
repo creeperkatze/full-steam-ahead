@@ -26,8 +26,6 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
         (Vec::new(), false)
     };
 
-    collections.retain(|(key, _)| !is_managed_key(key));
-
     let mut grouped: BTreeMap<String, Vec<u32>> = BTreeMap::new();
     for candidate in candidates {
         grouped
@@ -35,12 +33,7 @@ pub fn update_modern_collections(path: &Path, candidates: &[ImportCandidate]) ->
             .or_default()
             .push(candidate_app_id(candidate));
     }
-
-    collections.extend(
-        grouped
-            .into_iter()
-            .map(|(source, app_ids)| managed_collection_entry(&source, &app_ids)),
-    );
+    add_to_managed_collections(&mut collections, grouped);
 
     let mut serialized = serde_json::to_string(&collections).map_err(|source| AppError::Json {
         path: path.to_path_buf(),
@@ -83,6 +76,39 @@ fn parse_cloud_collections(raw: &str, path: &Path) -> AppResult<(Vec<(String, Va
                 .to_string(),
         )),
     }
+}
+
+// Games imported before stay, and collections of other sources are left alone.
+fn add_to_managed_collections(
+    collections: &mut Vec<(String, Value)>,
+    grouped: BTreeMap<String, Vec<u32>>,
+) {
+    for (source, app_ids) in grouped {
+        let key = format!("user-collections.{}", managed_collection_id(&source));
+        let position = collections.iter().position(|(k, _)| *k == key);
+        let mut added = position
+            .and_then(|i| read_collection(&key, &collections[i].1))
+            .map(|collection| collection.added)
+            .unwrap_or_default();
+        for id in app_ids {
+            if !added.contains(&id) {
+                added.push(id);
+            }
+        }
+
+        let entry = managed_collection_entry(&source, &added);
+        match position {
+            Some(i) => collections[i] = entry,
+            None => collections.push(entry),
+        }
+    }
+}
+
+fn read_collection(key: &str, entry: &Value) -> Option<SteamCollectionValue> {
+    let raw = entry.get("value")?.as_str()?;
+    serde_json::from_str(raw)
+        .inspect_err(|error| tracing::warn!(key, %error, "Skipping unreadable Steam collection"))
+        .ok()
 }
 
 fn managed_collection_entry(source: &str, app_ids: &[u32]) -> (String, Value) {
@@ -158,17 +184,9 @@ pub fn existing_managed_app_ids(path: &Path) -> HashMap<String, HashSet<u32>> {
         if !is_managed_key(&key) {
             continue;
         }
-        let Some(value_str) = value.get("value").and_then(|v| v.as_str()) else {
-            continue;
-        };
-        let coll = match serde_json::from_str::<SteamCollectionValue>(value_str) {
-            Ok(coll) => coll,
-            Err(error) => {
-                tracing::warn!(key, %error, "Skipping unreadable Steam collection");
-                continue;
-            }
-        };
-        result.insert(coll.name, coll.added.into_iter().collect());
+        if let Some(coll) = read_collection(&key, &value) {
+            result.insert(coll.name, coll.added.into_iter().collect());
+        }
     }
     result
 }
@@ -192,6 +210,39 @@ struct SteamCollectionValue {
 mod tests {
     use super::*;
     use std::path::Path;
+
+    fn added_ids(collections: &[(String, Value)], source: &str) -> Vec<u32> {
+        let key = format!("user-collections.{}", managed_collection_id(source));
+        let (_, entry) = collections.iter().find(|(k, _)| *k == key).unwrap();
+        read_collection(&key, entry).unwrap().added
+    }
+
+    #[test]
+    fn importing_one_source_keeps_the_other_collections() {
+        let mut collections = Vec::new();
+        add_to_managed_collections(
+            &mut collections,
+            BTreeMap::from([("Epic".into(), vec![1, 2])]),
+        );
+        add_to_managed_collections(&mut collections, BTreeMap::from([("GOG".into(), vec![3])]));
+        assert_eq!(added_ids(&collections, "Epic"), [1, 2]);
+        assert_eq!(added_ids(&collections, "GOG"), [3]);
+    }
+
+    #[test]
+    fn importing_again_keeps_games_imported_before() {
+        let mut collections = vec![("user-collections.favorite".to_string(), json!({}))];
+        add_to_managed_collections(
+            &mut collections,
+            BTreeMap::from([("Epic".into(), vec![1, 2])]),
+        );
+        add_to_managed_collections(
+            &mut collections,
+            BTreeMap::from([("Epic".into(), vec![2, 3])]),
+        );
+        assert_eq!(collections.len(), 2);
+        assert_eq!(added_ids(&collections, "Epic"), [1, 2, 3]);
+    }
 
     // managed_collection_id
 

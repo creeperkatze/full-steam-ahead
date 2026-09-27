@@ -3,7 +3,7 @@ import { Loader2, Search, X } from '@lucide/vue'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { api } from '../helpers/api'
+import { commands } from '../bindings'
 import type { ArtworkKind, SteamGridDbGame, SteamGridDbImage } from '../types'
 import Modal from './Modal.vue'
 import UiButton from './ui/Button.vue'
@@ -55,7 +55,7 @@ async function runSearch() {
 	searching.value = true
 	error.value = null
 	try {
-		games.value = await api.steamGridDbSearch(props.apiKey, term)
+		games.value = await commands.steamgriddbSearch(props.apiKey, term)
 		if (games.value.length > 0) {
 			await selectGame(games.value[0])
 		} else {
@@ -74,7 +74,12 @@ async function selectGame(game: SteamGridDbGame) {
 	loadingImages.value = true
 	error.value = null
 	try {
-		images.value = await api.steamGridDbImages(props.apiKey, game.id, props.kind, props.allowNsfw)
+		images.value = await commands.steamgriddbImages(
+			props.apiKey,
+			game.id,
+			props.kind,
+			props.allowNsfw,
+		)
 	} catch (e: unknown) {
 		error.value = describeError(e, t('steamGridDbBrowser.loadImagesFailed'))
 		images.value = []
