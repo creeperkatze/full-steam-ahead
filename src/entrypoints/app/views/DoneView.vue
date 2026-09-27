@@ -87,6 +87,7 @@ function stepLabel(step: ApplyStep): string {
 					color="#FF5E5B"
 					:title="t('doneView.kofiTitle')"
 					:description="t('doneView.kofiSubtitle')"
+					highlight
 				/>
 			</div>
 		</section>
