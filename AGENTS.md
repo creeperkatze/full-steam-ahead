@@ -6,7 +6,8 @@ This project uses pnpm. `website/` is the separate VitePress project site with i
 
 ## Commands
 
-- `pnpm dev` runs the app with auto-updates disabled.
+- `pnpm dev` runs the app with auto-updates disabled. It also regenerates `src/bindings.ts`.
+- `pnpm bindings` regenerates `src/bindings.ts` without starting the app.
 - `pnpm test` runs the Rust tests; the frontend has no tests.
 - `pnpm lint` runs ESLint, clippy and `cargo fmt --check`. `pnpm lint:fix` applies their fixes and formats.
 - `pnpm typecheck` checks the frontend.
@@ -20,4 +21,6 @@ This project uses pnpm. `website/` is the separate VitePress project site with i
 - Only write a comment when the code can't explain something itself. Keep it short and simple: no em dashes, no semicolons, no nested clauses.
 
 For how importers should find and read launcher data, see [docs/IMPORTERS.md](docs/IMPORTERS.md).
+For how FSA reads and writes Steam's files, see [docs/STEAM.md](docs/STEAM.md).
+For commands, events and the generated bindings, see [docs/IPC.md](docs/IPC.md).
 For logging, see [docs/LOGGING.md](docs/LOGGING.md).

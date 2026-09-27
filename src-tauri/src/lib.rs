@@ -102,8 +102,26 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         .dangerously_cast_bigints_to_number()
 }
 
+/// Writes `src/bindings.ts`. Only debug builds run from the source tree, so release builds skip it.
+#[cfg(debug_assertions)]
+fn export_bindings(
+    builder: &tauri_specta::Builder<tauri::Wry>,
+) -> Result<(), specta_typescript::Error> {
+    builder.export(
+        specta_typescript::Typescript::default(),
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts"),
+    )
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let specta = specta_builder();
+    #[cfg(debug_assertions)]
+    if std::env::args().any(|arg| arg == "--export-bindings") {
+        export_bindings(&specta).expect("Could not export the TypeScript bindings");
+        return;
+    }
+
     let _log_guard = init_logging();
     tracing::info!(
         version = env!("CARGO_PKG_VERSION"),
@@ -131,12 +149,8 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
     }
 
-    let specta = specta_builder();
     #[cfg(debug_assertions)]
-    if let Err(error) = specta.export(
-        specta_typescript::Typescript::default(),
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts"),
-    ) {
+    if let Err(error) = export_bindings(&specta) {
         tracing::warn!(%error, "Could not export the TypeScript bindings");
     }
     let invoke_handler = specta.invoke_handler();

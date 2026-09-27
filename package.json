@@ -13,6 +13,7 @@
         "lint": "eslint src/ && cargo clippy --manifest-path src-tauri/Cargo.toml && cargo fmt --manifest-path src-tauri/Cargo.toml --check",
         "lint:fix": "eslint src/ --fix && cargo clippy --manifest-path src-tauri/Cargo.toml --fix --allow-dirty && cargo fmt --manifest-path src-tauri/Cargo.toml",
         "typecheck": "vue-tsc --noEmit",
+        "bindings": "cargo run --manifest-path src-tauri/Cargo.toml -- --export-bindings",
         "test": "cargo test --manifest-path src-tauri/Cargo.toml",
         "test:coverage": "cargo llvm-cov --manifest-path src-tauri/Cargo.toml --lcov --output-path lcov.info",
         "version": "node scripts/sync-version.js",

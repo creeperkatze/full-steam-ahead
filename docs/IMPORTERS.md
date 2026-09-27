@@ -2,6 +2,12 @@
 
 Each importer finds one launcher's installed games and turns them into import candidates.
 
+## Adding an importer
+
+- Build candidates with `candidate_from_parts` or `launcher_candidate` from `importers/mod.rs`.
+- Register the scan function in `importer_registry` in `importers/scan.rs`. It also decides which sources appear in the settings.
+- Leave `existing_app_id` alone. The scan links every candidate to the shortcut it already has in Steam (see [STEAM.md](STEAM.md)).
+
 ## Where the data comes from
 
 In order of preference:
@@ -14,7 +20,10 @@ Never scan raw bytes for marker strings or cut text at guessed delimiters. If no
 
 ## Launching
 
-Prefer the launcher's own launch URL or command (`heroic://launch/<runner>/<id>`, `uplay://…`, `origin2://…`) over pointing Steam at the game executable. Under Proton, launch options go through `proton_launch_options`.
+Prefer the launcher's own launch URL or command (`heroic://launch/<runner>/<id>`, `uplay://…`, `origin2://…`) over pointing Steam at the game executable.
+
+- Under Proton, launch options go through `proton_launch_options`. The Wine and Proton helpers live in `importers/wine.rs`.
+- Host launchers are reached through `host_command` and `host_launch` in `importers/sandbox.rs`, which handle FSA or Steam running as a Flatpak.
 
 ## Scope
 
