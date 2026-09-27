@@ -58,7 +58,8 @@ pub fn link_existing(candidates: &mut [ImportCandidate], shortcuts: &[ShortcutEn
 }
 
 /// Adds the shortcut, or updates the fields FSA manages on the one with the same app id.
-pub fn upsert(existing: &mut Vec<ShortcutEntry>, mut shortcut: ShortcutEntry) {
+/// The icon, tags and launch options changed in Steam are kept.
+pub fn upsert(existing: &mut Vec<ShortcutEntry>, mut shortcut: ShortcutEntry, replace_icon: bool) {
     if shortcut.app_id == 0 {
         shortcut.app_id = non_steam_app_id(&shortcut.exe, &shortcut.app_name);
     }
@@ -71,13 +72,16 @@ pub fn upsert(existing: &mut Vec<ShortcutEntry>, mut shortcut: ShortcutEntry) {
         return;
     };
 
-    // Everything else belongs to the user, like play time and hidden state.
     item.app_name = shortcut.app_name;
-    item.exe = shortcut.exe;
     item.start_dir = shortcut.start_dir;
-    item.icon = shortcut.icon;
-    item.launch_options = shortcut.launch_options;
-    item.tags = shortcut.tags;
+    // Launch options only work with the exe they were written for.
+    if item.exe != shortcut.exe {
+        item.exe = shortcut.exe;
+        item.launch_options = shortcut.launch_options;
+    }
+    if replace_icon {
+        item.icon = shortcut.icon;
+    }
 }
 
 pub fn parse_shortcuts(bytes: &[u8]) -> AppResult<Vec<ShortcutEntry>> {
@@ -444,7 +448,11 @@ mod tests {
     #[test]
     fn upsert_adds_new_shortcut() {
         let mut existing = Vec::new();
-        upsert(&mut existing, make_shortcut("New Game", "\"new.exe\""));
+        upsert(
+            &mut existing,
+            make_shortcut("New Game", "\"new.exe\""),
+            true,
+        );
         assert_eq!(existing.len(), 1);
         assert_eq!(existing[0].app_name, "New Game");
     }
@@ -461,7 +469,7 @@ mod tests {
             s.app_id = 222;
             s
         };
-        upsert(&mut existing, other);
+        upsert(&mut existing, other, true);
         assert_eq!(existing.len(), 2);
     }
 
@@ -472,14 +480,36 @@ mod tests {
             s.is_hidden = true;
             s.last_play_time = 1_700_000_000;
             s.allow_overlay = false;
+            s.icon = "custom.ico".to_string();
+            s.launch_options = "-dx11".to_string();
+            s.tags = vec!["Favorites".to_string()];
             s
         }];
-        upsert(&mut existing, make_shortcut("New Name", "\"game.exe\""));
+        upsert(
+            &mut existing,
+            make_shortcut("New Name", "\"game.exe\""),
+            false,
+        );
         assert_eq!(existing.len(), 1, "must not add a duplicate");
         assert_eq!(existing[0].app_name, "New Name");
         assert!(existing[0].is_hidden);
         assert_eq!(existing[0].last_play_time, 1_700_000_000);
         assert!(!existing[0].allow_overlay);
+        assert_eq!(existing[0].icon, "custom.ico");
+        assert_eq!(existing[0].launch_options, "-dx11");
+        assert_eq!(existing[0].tags, ["Favorites"]);
+    }
+
+    #[test]
+    fn upsert_replaces_launch_options_along_with_the_exe() {
+        let mut existing = vec![{
+            let mut s = make_shortcut("Game", "\"launcher.exe\"");
+            s.launch_options = "launch game".to_string();
+            s
+        }];
+        upsert(&mut existing, make_shortcut("Game", "\"game.exe\""), false);
+        assert_eq!(existing[0].exe, "\"game.exe\"");
+        assert_eq!(existing[0].launch_options, "");
     }
 
     #[test]
@@ -487,7 +517,7 @@ mod tests {
         let mut existing = Vec::new();
         let mut s = make_shortcut("Auto ID", "\"auto.exe\"");
         s.app_id = 0;
-        upsert(&mut existing, s);
+        upsert(&mut existing, s, true);
         assert_ne!(existing[0].app_id, 0, "app_id must be computed");
         assert!(
             existing[0].app_id & 0x8000_0000 != 0,

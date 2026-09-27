@@ -237,6 +237,13 @@ fn remove_stale_variants(grid_path: &Path, stem: &str, keep: &Path) {
     }
 }
 
+/// Whether this import writes or deletes the icon. Otherwise the shortcut keeps its icon.
+pub fn changes_icon(candidate: &ImportCandidate) -> bool {
+    selected_artwork_assets(candidate).iter().any(|asset| {
+        asset.kind == ArtworkKind::Icon && asset.source != ArtworkSource::ExistingCustom
+    })
+}
+
 pub fn selected_artwork_assets(candidate: &ImportCandidate) -> Vec<ArtworkAsset> {
     [
         ArtworkKind::Header,

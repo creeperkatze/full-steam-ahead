@@ -152,15 +152,11 @@ fn candidate_changes(
     (changes, artwork_files)
 }
 
+// Tags and launch options are left to the user unless the exe changes. See `shortcuts::upsert`.
 fn shortcut_is_unchanged(existing: &ShortcutEntry, candidate: &ImportCandidate) -> bool {
     let exe = format!("\"{}\"", candidate.effective_executable().display());
     let start_dir = format!("\"{}\"", candidate.effective_start_dir().display());
-    let launch_options = candidate.effective_launch_options().unwrap_or("");
-    existing.app_name == candidate.name
-        && existing.exe == exe
-        && existing.start_dir == start_dir
-        && existing.launch_options == launch_options
-        && existing.tags == candidate.tags
+    existing.app_name == candidate.name && existing.exe == exe && existing.start_dir == start_dir
 }
 
 #[cfg(test)]
@@ -257,27 +253,12 @@ mod tests {
     }
 
     #[test]
-    fn shortcut_changed_when_launch_options_differ() {
+    fn launch_options_and_tags_changed_in_steam_are_no_change() {
         let candidate = make_candidate("game.exe", "C:\\Games", Some("--new"), vec![]);
         let mut shortcut = make_shortcut_matching(&candidate);
         shortcut.launch_options = "--old".to_string();
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
-    }
-
-    #[test]
-    fn shortcut_changed_when_tags_differ() {
-        let candidate = make_candidate("game.exe", "C:\\Games", None, vec!["Epic".to_string()]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.tags = vec!["GOG".to_string()];
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
-    }
-
-    #[test]
-    fn shortcut_changed_when_empty_options_vs_some() {
-        let candidate = make_candidate("game.exe", "C:\\Games", Some("--flag"), vec![]);
-        let mut shortcut = make_shortcut_matching(&candidate);
-        shortcut.launch_options = String::new();
-        assert!(!shortcut_is_unchanged(&shortcut, &candidate));
+        shortcut.tags = vec!["Favorites".to_string()];
+        assert!(shortcut_is_unchanged(&shortcut, &candidate));
     }
 
     #[test]

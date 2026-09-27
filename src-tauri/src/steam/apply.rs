@@ -131,11 +131,14 @@ pub fn apply_plan_with_progress(
     });
     let mut additions = candidates
         .iter()
-        .map(|candidate| sources::shortcut_from_candidate(candidate, &user.grid_path))
+        .map(|candidate| {
+            let shortcut = sources::shortcut_from_candidate(candidate, &user.grid_path);
+            (shortcut, artwork::changes_icon(candidate))
+        })
         .collect::<Vec<_>>();
 
     if request.options.add_self_shortcut {
-        additions.push(super::self_shortcut::build(&user.grid_path)?);
+        additions.push((super::self_shortcut::build(&user.grid_path)?, true));
     }
 
     #[cfg(unix)]
@@ -160,8 +163,8 @@ pub fn apply_plan_with_progress(
         backups::write_manifest(backup_dir, &backup_plans);
     }
 
-    for addition in additions {
-        shortcuts::upsert(&mut existing, addition);
+    for (shortcut, replace_icon) in additions {
+        shortcuts::upsert(&mut existing, shortcut, replace_icon);
     }
     shortcuts::write_shortcuts(&user.shortcuts_path, &existing)?;
 
