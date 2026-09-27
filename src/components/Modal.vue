@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 
-const props = withDefaults(defineProps<{ modelValue: boolean; fullscreen?: boolean }>(), {
-	fullscreen: false,
-})
+const props = withDefaults(
+	defineProps<{ modelValue: boolean; fullscreen?: boolean; wide?: boolean }>(),
+	{
+		fullscreen: false,
+		wide: false,
+	},
+)
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 function onKeydown(e: KeyboardEvent) {
@@ -40,7 +44,7 @@ function onBackdropClick(e: MouseEvent) {
 				:class="
 					fullscreen
 						? 'flex h-[85vh] w-[90vw] max-w-5xl flex-col overflow-hidden'
-						: 'mx-4 w-full max-w-sm p-6'
+						: ['mx-4 w-full p-6', wide ? 'max-w-xl' : 'max-w-sm']
 				"
 				@click.stop
 			>

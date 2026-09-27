@@ -47,7 +47,7 @@ function onNotesClick(e: MouseEvent) {
 </script>
 
 <template>
-	<Modal :model-value="modelValue" @update:model-value="close">
+	<Modal :model-value="modelValue" wide @update:model-value="close">
 		<div class="mb-5 flex items-start gap-3">
 			<Loader2
 				v-if="status === 'downloading'"
@@ -61,7 +61,7 @@ function onNotesClick(e: MouseEvent) {
 			/>
 			<AlertCircle v-else-if="status === 'error'" :size="20" class="mt-0.5 shrink-0 text-red-500" />
 			<Clock v-else :size="20" class="mt-0.5 shrink-0 text-accent" />
-			<div class="min-w-0">
+			<div class="min-w-0 flex-1">
 				<h2 class="mb-1.5 text-base font-semibold">
 					{{ status === 'ready' ? t('updateModal.readyTitle') : t('updateModal.title') }}
 				</h2>
@@ -82,7 +82,7 @@ function onNotesClick(e: MouseEvent) {
 				<!-- eslint-disable vue/no-v-html -- markdown-it escapes raw HTML -->
 				<div
 					v-if="status === 'available' && releaseNotes"
-					class="release-notes mt-3 max-h-40 overflow-y-auto rounded-lg border border-border bg-surface-3 p-2.5 text-sm text-secondary"
+					class="release-notes mt-3 max-h-[50vh] overflow-y-auto rounded-lg border border-border bg-surface-3 p-2.5 text-sm text-secondary"
 					@click="onNotesClick"
 					v-html="renderedNotes"
 				/>
