@@ -16,14 +16,6 @@ import HeartIcon from './icons/heart.svg'
 					class="footer-link"
 					>Creeperkatze</a
 				>
-				· Builds on
-				<a
-					href="https://github.com/PhilipK/BoilR"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="footer-link"
-					>BoilR</a
-				>
 			</p>
 		</div>
 	</footer>
