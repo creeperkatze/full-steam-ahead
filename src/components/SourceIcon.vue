@@ -6,7 +6,6 @@ import BottlesIcon from '../assets/icons/bottles.svg?url'
 import EaIcon from '../assets/icons/ea.svg'
 import EpicIcon from '../assets/icons/epic.svg'
 import FlatpakIcon from '../assets/icons/flatpak.svg?url'
-import GamePassIcon from '../assets/icons/gamepass.svg'
 import GogIcon from '../assets/icons/gog.svg'
 import HeroicIcon from '../assets/icons/heroic.svg?url'
 import ItchIcon from '../assets/icons/itch.svg'
@@ -15,6 +14,7 @@ import LutrisIcon from '../assets/icons/lutris.svg?url'
 import MinigalaxyIcon from '../assets/icons/minigalaxy.png'
 import PlayniteIcon from '../assets/icons/playnite.svg'
 import UbisoftIcon from '../assets/icons/ubisoft.svg'
+import XboxIcon from '../assets/icons/xbox.svg'
 
 const ICONS: Record<string, unknown> = {
 	amazon: AmazonIcon,
@@ -22,7 +22,6 @@ const ICONS: Record<string, unknown> = {
 	eaApp: EaIcon,
 	epic: EpicIcon,
 	flatpak: FlatpakIcon,
-	gamePass: GamePassIcon,
 	gog: GogIcon,
 	heroic: HeroicIcon,
 	itch: ItchIcon,
@@ -31,6 +30,7 @@ const ICONS: Record<string, unknown> = {
 	miniGalaxy: MinigalaxyIcon,
 	playnite: PlayniteIcon,
 	ubisoftConnect: UbisoftIcon,
+	xbox: XboxIcon,
 }
 
 const props = defineProps<{ source: string }>()

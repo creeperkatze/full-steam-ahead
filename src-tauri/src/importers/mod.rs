@@ -9,7 +9,7 @@ pub mod ubisoft;
 #[cfg(windows)]
 pub mod amazon;
 #[cfg(windows)]
-pub mod gamepass;
+pub mod xbox;
 #[cfg(windows)]
 pub mod playnite;
 

@@ -81,7 +81,7 @@ Prefer to build from source? See [Building from source](#-building-from-source) 
 | EA app | ✅ | - | ✅ |
 | Ubisoft Connect | ✅ | - | ✅ |
 | Amazon Games | ✅ | - | - |
-| Xbox Game Pass | ✅ | - | - |
+| Xbox | ✅ | - | - |
 | Playnite | ✅ | - | - |
 | Bottles | - | - | ✅ |
 | Flatpak | - | - | ✅ |

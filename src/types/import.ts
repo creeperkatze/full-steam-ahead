@@ -6,7 +6,7 @@ export type ImportSource =
 	| 'amazon'
 	| 'bottles'
 	| 'flatpak'
-	| 'gamePass'
+	| 'xbox'
 	| 'heroic'
 	| 'itch'
 	| 'legendary'

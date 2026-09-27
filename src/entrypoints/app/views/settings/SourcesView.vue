@@ -14,7 +14,7 @@ import type { ImportSource, LauncherMode } from '../../../../types'
 const state = useAppState()
 const { t } = useI18n()
 
-const PATHLESS_SOURCES = new Set(['gamePass'])
+const PATHLESS_SOURCES = new Set(['xbox'])
 
 const launcherModeOptions = computed(() => [
 	{ value: 'always', label: t('settings.sources.launcherMode.always') },

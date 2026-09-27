@@ -78,7 +78,7 @@ fn importer_registry() -> Vec<(ImportSource, ScanFn)> {
     registry.extend([
         (ImportSource::Playnite, importers::playnite::scan as ScanFn),
         (ImportSource::Amazon, importers::amazon::scan as ScanFn),
-        (ImportSource::GamePass, importers::gamepass::scan as ScanFn),
+        (ImportSource::Xbox, importers::xbox::scan as ScanFn),
     ]);
 
     #[cfg(unix)]

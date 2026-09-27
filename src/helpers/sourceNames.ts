@@ -8,7 +8,7 @@ export const IMPORT_SOURCE_NAMES: Record<Exclude<ImportSource, { other: string }
 	amazon: 'Amazon Games',
 	bottles: 'Bottles',
 	flatpak: 'Flatpak',
-	gamePass: 'Game Pass',
+	xbox: 'Xbox',
 	heroic: 'Heroic',
 	itch: 'itch.io',
 	legendary: 'Legendary',

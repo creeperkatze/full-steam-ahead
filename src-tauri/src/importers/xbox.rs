@@ -10,7 +10,7 @@ pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<Impo
     let Some(output) = command_output(Command::new("powershell").args([
         "/NoProfile",
         "/Command",
-        GAME_PASS_SCRIPT,
+        XBOX_SCRIPT,
     ])) else {
         return Ok(Vec::new());
     };
@@ -36,12 +36,12 @@ pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<Impo
             let uri = uri?;
             Some(launcher_candidate(
                 user,
-                ImportSource::GamePass,
-                "gamepass",
+                ImportSource::Xbox,
+                "xbox",
                 app.display_name,
                 explorer.clone(),
                 uri,
-                vec!["Game Pass".to_string()],
+                vec!["Xbox".to_string()],
             ))
         })
         .collect())
@@ -73,7 +73,7 @@ impl AppxInfo {
     }
 }
 
-const GAME_PASS_SCRIPT: &str = r#"
+const XBOX_SCRIPT: &str = r#"
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $apps = @(Get-AppxPackage |
 Where-Object { -not $_.IsFramework -and -not $_.IsResourcePackage } |
@@ -165,8 +165,8 @@ mod tests {
 
     fn run_fixtures(setup: &str) -> std::process::Output {
         let script = format!(
-            "{}\n{setup}\n{GAME_PASS_SCRIPT}",
-            include_str!("fixtures/gamepass.ps1")
+            "{}\n{setup}\n{XBOX_SCRIPT}",
+            include_str!("fixtures/xbox.ps1")
         );
         let output = crate::process::command_output_no_window(Command::new("powershell").args([
             "/NoProfile",

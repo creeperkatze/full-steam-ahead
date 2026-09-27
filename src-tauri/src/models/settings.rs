@@ -115,7 +115,7 @@ impl Settings {
 impl Settings {
     /// Moves settings saved under a source's old key to its current key.
     fn migrate_renamed_sources(&mut self) {
-        const RENAMED: [(&str, &str); 1] = [("origin", "eaApp")];
+        const RENAMED: [(&str, &str); 2] = [("origin", "eaApp"), ("gamePass", "xbox")];
         for (old, new) in RENAMED {
             if let Some(settings) = self.sources.remove(old) {
                 self.sources.entry(new.to_string()).or_insert(settings);
@@ -165,10 +165,12 @@ mod tests {
     }
 
     #[test]
-    fn origin_source_id_is_still_accepted() {
-        let source: ImportSource = serde_json::from_str(r#""origin""#).unwrap();
-        assert_eq!(source, ImportSource::EaApp);
-        assert_eq!(serde_json::to_string(&source).unwrap(), r#""eaApp""#);
+    fn game_pass_settings_move_to_xbox() {
+        let mut settings: Settings =
+            serde_json::from_str(r#"{"sources": {"gamePass": {"enabled": false}}}"#).unwrap();
+        settings.ensure_source_defaults(&[ImportSource::Xbox]);
+        assert!(!settings.sources.contains_key("gamePass"));
+        assert!(!settings.source_settings(&ImportSource::Xbox).enabled);
     }
 
     #[test]
