@@ -9,9 +9,9 @@ pub mod ubisoft;
 #[cfg(windows)]
 pub mod amazon;
 #[cfg(windows)]
-pub mod xbox;
-#[cfg(windows)]
 pub mod playnite;
+#[cfg(windows)]
+pub mod xbox;
 
 // Unix-only launchers
 #[cfg(unix)]

@@ -7,11 +7,9 @@ use serde::Deserialize;
 use std::{path::Path, process::Command};
 
 pub fn scan(user: &SteamUser, _custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
-    let Some(output) = command_output(Command::new("powershell").args([
-        "/NoProfile",
-        "/Command",
-        XBOX_SCRIPT,
-    ])) else {
+    let Some(output) =
+        command_output(Command::new("powershell").args(["/NoProfile", "/Command", XBOX_SCRIPT]))
+    else {
         return Ok(Vec::new());
     };
     // The script reports unreadable packages on stderr.
