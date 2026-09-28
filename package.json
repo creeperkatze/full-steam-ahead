@@ -16,6 +16,7 @@
         "bindings": "cargo run --manifest-path src-tauri/Cargo.toml -- --export-bindings",
         "test": "cargo test --manifest-path src-tauri/Cargo.toml",
         "test:coverage": "cargo llvm-cov --manifest-path src-tauri/Cargo.toml --lcov --output-path lcov.info",
+        "prune:locales": "node scripts/prune-locales.js",
         "version": "node scripts/sync-version.js",
         "release:patch": "pnpm version patch && git push && git push --tags",
         "release:minor": "pnpm version minor && git push && git push --tags",
