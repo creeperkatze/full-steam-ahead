@@ -21,7 +21,7 @@ withDefaults(
 <template>
 	<button
 		type="button"
-		class="group flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors"
+		class="group flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-start transition-colors"
 		:class="highlight ? 'card-highlight' : 'border-border bg-surface-3 hover:bg-surface-4'"
 		:style="highlight ? { '--c': color } : undefined"
 		@click="openUrl(href)"

@@ -33,7 +33,7 @@ onMounted(() =>
 		<span
 			class="pointer-events-none inline-block size-4 rounded-full bg-primary shadow-sm"
 			:class="[
-				modelValue ? 'translate-x-4' : 'translate-x-0',
+				modelValue ? 'translate-x-4 rtl:-translate-x-4' : 'translate-x-0',
 				mounted ? 'transition-transform duration-200' : '',
 			]"
 		/>

@@ -91,7 +91,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 		<button
 			type="button"
 			:disabled="disabled"
-			class="flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-border bg-surface-5 px-3 text-left text-sm transition-colors hover:bg-surface-4 disabled:cursor-not-allowed disabled:opacity-50"
+			class="flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-border bg-surface-5 px-3 text-start text-sm transition-colors hover:bg-surface-4 disabled:cursor-not-allowed disabled:opacity-50"
 			@click="toggle"
 		>
 			<slot v-if="selectedOption" name="leading" :option="selectedOption" />
@@ -119,7 +119,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 					:key="option.value"
 					type="button"
 					:disabled="option.disabled"
-					class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+					class="flex w-full items-center gap-2 px-3 py-2.5 text-start text-sm text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
 					:class="
 						!option.disabled && (option.value === modelValue || focusedIndex === index)
 							? 'bg-surface-4'

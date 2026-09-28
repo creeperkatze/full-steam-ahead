@@ -36,7 +36,7 @@ const sections = computed(
 
 <template>
 	<div class="flex h-full min-h-0 flex-1">
-		<nav class="flex w-56 shrink-0 flex-col gap-1.5 pr-4">
+		<nav class="flex w-56 shrink-0 flex-col gap-1.5 pe-4">
 			<SidebarTab
 				v-for="section in sections"
 				:key="section.name"
@@ -72,7 +72,7 @@ const sections = computed(
 			</div>
 		</nav>
 
-		<div class="min-h-0 min-w-0 flex-1 overflow-y-auto border-l border-border pl-4">
+		<div class="min-h-0 min-w-0 flex-1 overflow-y-auto border-s border-border ps-4">
 			<RouterView v-if="state.settingsReady.value" />
 		</div>
 	</div>

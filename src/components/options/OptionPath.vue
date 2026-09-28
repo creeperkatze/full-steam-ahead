@@ -39,19 +39,19 @@ const { t } = useI18n()
 					class="h-9 w-full rounded-md border bg-surface-5 px-2 text-sm text-primary"
 					:class="[
 						valid === false ? 'border-danger-border' : 'border-border',
-						valid === null || valid === undefined ? '' : 'pr-7',
+						valid === null || valid === undefined ? '' : 'pe-7',
 					]"
 					@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
 				/>
 				<CheckCircle2
 					v-if="valid === true"
 					:size="15"
-					class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-accent"
+					class="pointer-events-none absolute top-1/2 end-2 -translate-y-1/2 text-accent"
 				/>
 				<XCircle
 					v-else-if="valid === false"
 					:size="15"
-					class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-danger"
+					class="pointer-events-none absolute top-1/2 end-2 -translate-y-1/2 text-danger"
 				/>
 			</div>
 			<UiButton

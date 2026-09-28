@@ -51,9 +51,10 @@ onUnmounted(() => unlisten?.())
 <template>
 	<header
 		class="flex h-17 p-4 shrink-0 select-none items-center overflow-hidden"
+		:dir="isMac ? 'ltr' : undefined"
 		data-tauri-drag-region
 	>
-		<div :class="['flex items-center pr-2', { 'pl-16': isMac }]" data-tauri-drag-region>
+		<div :class="['flex items-center pe-2', { 'pl-16': isMac }]" data-tauri-drag-region>
 			<button
 				type="button"
 				class="cursor-pointer rounded opacity-90 transition-opacity hover:opacity-100"
@@ -75,7 +76,7 @@ onUnmounted(() => unlisten?.())
 				:key="step"
 				type="button"
 				:disabled="!navigableSteps[index]"
-				class="flex w-32 min-h-9 items-center justify-start gap-2 rounded-md border p-2 text-left text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border disabled:hover:bg-surface-5 disabled:hover:text-secondary"
+				class="flex w-32 min-h-9 items-center justify-start gap-2 rounded-md border p-2 text-start text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border disabled:hover:bg-surface-5 disabled:hover:text-secondary"
 				:class="
 					activeStep >= index
 						? 'border-accent bg-accent-bg text-primary'
@@ -94,14 +95,14 @@ onUnmounted(() => unlisten?.())
 				{{ step }}
 			</button>
 		</nav>
-		<div class="ml-auto flex items-center gap-2" data-tauri-drag-region>
+		<div class="ms-auto flex items-center gap-2" data-tauri-drag-region>
 			<UiButton
 				size="icon"
 				:title="settingsOpen ? t('titleBar.closeSettings') : t('titleBar.settings')"
 				:active="settingsOpen"
 				@click="$emit('toggle-settings')"
 			>
-				<Undo2 v-if="settingsOpen" :size="18" />
+				<Undo2 v-if="settingsOpen" :size="18" class="rtl:-scale-x-100" />
 				<Settings v-else :size="17" />
 			</UiButton>
 			<template v-if="!isMac">

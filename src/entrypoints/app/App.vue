@@ -181,7 +181,7 @@ async function onFlatpakPermissionModalClosed() {
 								@click="continueToSources"
 							>
 								{{ t('app.actions.continue') }}
-								<template #icon><ArrowRight :size="16" /></template>
+								<template #icon><ArrowRight :size="16" class="rtl:-scale-x-100" /></template>
 							</UiButton>
 						</template>
 						<UiButton
@@ -193,7 +193,7 @@ async function onFlatpakPermissionModalClosed() {
 							{{ nextLabel }}
 							<template #icon>
 								<Check v-if="state.step.value === 'review'" :size="18" />
-								<ArrowRight v-else :size="16" />
+								<ArrowRight v-else :size="16" class="rtl:-scale-x-100" />
 							</template>
 						</UiButton>
 

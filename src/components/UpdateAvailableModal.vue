@@ -130,7 +130,7 @@ function onNotesClick(e: MouseEvent) {
 }
 
 .release-notes :is(ul, ol) {
-	padding-left: 1rem;
+	padding-inline-start: 1rem;
 }
 
 .release-notes ul {

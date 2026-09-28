@@ -72,6 +72,14 @@ export const i18n = createI18n<[(typeof messages)['en-US']], SupportedLocale, fa
 	messages,
 })
 
+function setLocale(locale: SupportedLocale) {
+	i18n.global.locale.value = locale
+	document.documentElement.lang = locale
+	document.documentElement.dir = LOCALES.find((l) => l.code === locale)?.dir ?? 'ltr'
+}
+
+setLocale(i18n.global.locale.value)
+
 export function applyLocale(locale: SupportedLocale | null) {
-	i18n.global.locale.value = locale ?? detectBrowserLocale()
+	setLocale(locale ?? detectBrowserLocale())
 }
