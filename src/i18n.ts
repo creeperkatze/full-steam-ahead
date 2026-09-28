@@ -1,9 +1,9 @@
 import { createI18n } from 'vue-i18n'
 
-import de from './locales/de.json'
-import en from './locales/en.json'
+import deDE from './locales/de-DE.json'
+import enUS from './locales/en-US.json'
 
-const messages = { en, de }
+const messages = { 'en-US': enUS, 'de-DE': deDE }
 
 export interface LocaleDefinition {
 	code: keyof typeof messages
@@ -20,10 +20,10 @@ export const LOCALES: LocaleDefinition[] = [
 	// { code: 'cs-CZ', name: 'Čeština' },
 	// { code: 'da-DK', name: 'Dansk' },
 	// { code: 'nl-NL', name: 'Nederlands' },
-	{ code: 'en', name: 'English' },
+	{ code: 'en-US', name: 'English' },
 	// { code: 'fi-FI', name: 'Suomi' },
 	// { code: 'fr-FR', name: 'Français' },
-	{ code: 'de', name: 'Deutsch' },
+	{ code: 'de-DE', name: 'Deutsch' },
 	// { code: 'el-GR', name: 'Ελληνικά' },
 	// { code: 'he-IL', name: 'עברית', dir: 'rtl' },
 	// { code: 'hu-HU', name: 'Magyar' },
@@ -53,17 +53,22 @@ function isSupportedLocale(value: string): value is SupportedLocale {
 }
 
 export function detectBrowserLocale(): SupportedLocale {
-	for (const lang of navigator.languages?.length ? navigator.languages : [navigator.language]) {
-		const prefix = lang.split('-')[0].toLowerCase()
-		if (isSupportedLocale(prefix)) return prefix
+	const langs = navigator.languages?.length ? navigator.languages : [navigator.language]
+	for (const lang of langs) {
+		if (isSupportedLocale(lang)) return lang
 	}
-	return 'en'
+	for (const lang of langs) {
+		const prefix = lang.split('-')[0].toLowerCase()
+		const match = LOCALES.find((l) => l.code.split('-')[0] === prefix)
+		if (match) return match.code
+	}
+	return 'en-US'
 }
 
-export const i18n = createI18n<[(typeof messages)['en']], SupportedLocale, false>({
+export const i18n = createI18n<[(typeof messages)['en-US']], SupportedLocale, false>({
 	legacy: false,
 	locale: detectBrowserLocale(),
-	fallbackLocale: 'en',
+	fallbackLocale: 'en-US',
 	messages,
 })
 

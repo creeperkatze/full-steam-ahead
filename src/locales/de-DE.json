@@ -67,9 +67,9 @@
 	"sourceCard": {
 		"viaLauncher": "Über Launcher",
 		"urlOnlyTitle": "Dieses Spiel kann nur über sein URL-Schema gestartet werden",
-		"rename": "",
-		"resetName": "",
-		"remove": ""
+		"rename": "Umbenennen",
+		"resetName": "Namen zurücksetzen",
+		"remove": "Entfernen"
 	},
 	"artworkView": {
 		"selectGamesPrompt": "Wähle Spiele aus, bevor du das Artwork überprüfst.",
@@ -125,23 +125,23 @@
 	"updateModal": {
 		"title": "Neue Version verfügbar",
 		"description": "Version {latest} ist verfügbar. Du nutzt derzeit {current}.",
-		"downloading": "",
-		"readyTitle": "",
-		"readyDescription": "",
-		"error": "",
+		"downloading": "Update wird heruntergeladen...",
+		"readyTitle": "Update bereit",
+		"readyDescription": "Version {latest} wurde installiert. Starte neu, um das Update abzuschließen.",
+		"error": "Update konnte nicht installiert werden: {message}",
 		"later": "Später",
-		"update": "",
-		"retry": "",
-		"restartNow": ""
+		"update": "Aktualisieren",
+		"retry": "Erneut versuchen",
+		"restartNow": "Jetzt neu starten"
 	},
 	"flatpakPermissionModal": {
-		"title": "",
-		"description": "",
-		"granted": "",
-		"error": "",
-		"later": "",
-		"grant": "",
-		"close": ""
+		"title": "Steam benötigt eine weitere Berechtigung",
+		"description": "Steam läuft in einer Sandbox, wodurch es keine externen Verknüpfungen starten kann. Diese Berechtigung erlaubt Befehle außerhalb der Sandbox. Tu dies nur, wenn du dem vertraust, was du darüber startest.",
+		"granted": "Berechtigung erteilt.",
+		"error": "Die Berechtigung konnte nicht erteilt werden: {message}",
+		"later": "Überspringen",
+		"grant": "Berechtigung erteilen",
+		"close": "Schließen"
 	},
 	"steamGridDbBrowser": {
 		"searchPlaceholder": "SteamGridDB durchsuchen…",
@@ -241,11 +241,11 @@
 		"sources": {
 			"title": "Quellen",
 			"launcherMode": {
-				"label": "",
-				"description": "",
-				"always": "",
-				"whenRequired": "",
-				"whenNoExecutable": ""
+				"label": "Startmethode",
+				"description": "Legt fest, ob Spiele über ihre eigene ausführbare Datei oder über ihren Launcher gestartet werden. Spiele ohne eigene ausführbare Datei nutzen immer ihren Launcher.",
+				"always": "Launcher",
+				"whenRequired": "Launcher wenn nötig",
+				"whenNoExecutable": "Direkt"
 			}
 		},
 		"data": {

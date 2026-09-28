@@ -15,8 +15,8 @@ import { detectBrowserLocale, LOCALES, type SupportedLocale } from '../../../../
 import type { ColorScheme } from '../../../../theme'
 
 const FLAGS: Record<SupportedLocale, Component> = {
-	en: GbFlag,
-	de: DeFlag,
+	'en-US': GbFlag,
+	'de-DE': DeFlag,
 }
 
 const state = useAppState()
