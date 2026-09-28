@@ -4,7 +4,7 @@ The frontend calls the backend only through `src/bindings.ts`. [tauri-specta](ht
 
 ## Regenerating the bindings
 
-After changing a command, an event or a type they use, run `pnpm bindings` and commit the updated `src/bindings.ts`. Debug builds also export them whenever the app starts, so `pnpm dev` keeps them current too. Release builds never write the file.
+After changing a command, an event or a type they use, run `pnpm gen:bindings` and commit the updated `src/bindings.ts`. Debug builds also export them whenever the app starts, so `pnpm dev` keeps them current too. Release builds never write the file.
 
 ## Commands
 

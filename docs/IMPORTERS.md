@@ -7,7 +7,7 @@ An importer finds one launcher's installed games and returns them as `ImportCand
 1. Add a variant to `ImportSource` in `models/importers.rs`, with a `display_name` and a `settings_key`.
 2. Add the module to `importers/mod.rs`. Put it behind `#[cfg(windows)]` or `#[cfg(unix)]` if the launcher only exists on one platform.
 3. Register `scan` in `importer_registry` in `importers/scan.rs`. The registry also decides which sources the settings show.
-4. Add the name to `src/helpers/sourceNames.ts` and the icon to `src/components/SourceIcon.vue`, then run `pnpm bindings`.
+4. Add the name to `src/helpers/sourceNames.ts` and the icon to `src/components/SourceIcon.vue`, then run `pnpm gen:bindings`.
 
 Leave `existing_app_id` alone. The scan links every candidate to the shortcut it already has in Steam (see [STEAM.md](STEAM.md)).
 

@@ -5,8 +5,8 @@
     "identifier": "dev.creeperkatze.full-steam-ahead",
     "mainBinaryName": "Full Steam Ahead",
     "build": {
-        "beforeDevCommand": "pnpm dev:web",
-        "beforeBuildCommand": "pnpm build:web",
+        "beforeDevCommand": "pnpm web:dev",
+        "beforeBuildCommand": "pnpm web:build",
         "devUrl": "http://localhost:1420",
         "frontendDist": "../dist"
     },
