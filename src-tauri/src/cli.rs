@@ -7,10 +7,33 @@ use crate::{
     },
     paths, steam,
 };
-use clap::{builder::PossibleValuesParser, Parser, Subcommand};
+use anstream::{eprintln, println};
+use anstyle::{AnsiColor, RgbColor, Style};
+use clap::{
+    builder::{PossibleValuesParser, Styles},
+    Parser, Subcommand,
+};
+
+mod logo;
+
+const BOLD: Style = Style::new().bold();
+const DIM: Style = Style::new().dimmed();
+const ADDED: Style = AnsiColor::Green.on_default();
+const UPDATED: Style = AnsiColor::Yellow.on_default();
+const SUCCESS: Style = AnsiColor::Green.on_default().bold();
+const ERROR: Style = AnsiColor::Red.on_default().bold();
+
+const HELP_STYLES: Styles = Styles::styled()
+    .header(RgbColor(26, 159, 255).on_default().bold())
+    .usage(RgbColor(26, 159, 255).on_default().bold())
+    .literal(Style::new().bold())
+    .placeholder(DIM)
+    .error(ERROR)
+    .valid(ADDED)
+    .invalid(UPDATED);
 
 #[derive(Parser)]
-#[command(version, about)]
+#[command(version, about, styles = HELP_STYLES)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
@@ -37,9 +60,14 @@ struct ImportArgs {
     dry_run: bool,
 }
 
+/// Whether the app was started with a command instead of to open the window.
+pub fn requested() -> bool {
+    std::env::args_os().len() > 1
+}
+
 /// Runs the command given on the command line. Returns `None` when the window should open instead.
 pub fn run() -> Option<i32> {
-    if std::env::args_os().len() < 2 {
+    if !requested() {
         return None;
     }
     attach_console();
@@ -49,7 +77,7 @@ pub fn run() -> Option<i32> {
         Ok(()) => Some(0),
         Err(error) => {
             tracing::error!(%error, "Command line import failed");
-            eprintln!("Error: {error}");
+            eprintln!("{ERROR}error:{ERROR:#} {error}");
             Some(1)
         }
     }
@@ -92,7 +120,8 @@ fn import(args: &ImportArgs) -> AppResult<()> {
     }
 
     let user = select_user(args.user.as_deref())?;
-    println!("Scanning sources for {}", user_label(&user));
+    logo::print();
+    println!("Scanning sources for {BOLD}{}{BOLD:#}", user_label(&user));
     let request = ScanRequest {
         user_steam_id: user.steam_id.clone(),
         include_sources,
@@ -100,7 +129,12 @@ fn import(args: &ImportArgs) -> AppResult<()> {
     let candidates = scan::scan_sources_with_progress(
         |event| {
             if matches!(event.status, ScanStatus::Done) {
-                println!("  {}: {}", event.source.display_name(), event.found);
+                let count = if event.found == 0 { DIM } else { BOLD };
+                println!(
+                    "  {}  {count}{}{count:#}",
+                    event.source.display_name(),
+                    event.found
+                );
             }
         },
         &user,
@@ -117,12 +151,12 @@ fn import(args: &ImportArgs) -> AppResult<()> {
         "Command line import planned"
     );
     if plan.changes.is_empty() {
-        println!("Steam is already up to date.");
+        println!("{SUCCESS}Steam is already up to date.{SUCCESS:#}");
         return Ok(());
     }
     print_changes(&plan.changes);
     if args.dry_run {
-        println!("Dry run, nothing was changed.");
+        println!("{DIM}Dry run, nothing was changed.{DIM:#}");
         return Ok(());
     }
 
@@ -130,7 +164,7 @@ fn import(args: &ImportArgs) -> AppResult<()> {
     let result = steam::apply::apply_plan_with_progress(
         |event| {
             println!(
-                "[{}/{}] {}",
+                "{DIM}[{}/{}]{DIM:#} {}",
                 event.current,
                 event.total,
                 step_label(&event.step)
@@ -147,7 +181,10 @@ fn import(args: &ImportArgs) -> AppResult<()> {
         backups = result.backups_created.len(),
         "Plan applied"
     );
-    println!("Done. Applied {} changes.", result.applied_changes.len());
+    println!(
+        "{SUCCESS}Done.{SUCCESS:#} Applied {} changes.",
+        result.applied_changes.len()
+    );
     if restart_needed {
         println!("Restart Steam to see them.");
     }
@@ -189,17 +226,19 @@ fn print_changes(changes: &[PlannedChange]) {
     let mut collections = false;
     for change in changes {
         match change.kind {
-            ChangeKind::AddShortcut => println!("  Add {}", change.game_name),
-            ChangeKind::UpdateShortcut => println!("  Update {}", change.game_name),
+            ChangeKind::AddShortcut => println!("  {ADDED}+{ADDED:#} {}", change.game_name),
+            ChangeKind::UpdateShortcut => {
+                println!("  {UPDATED}~{UPDATED:#} {}", change.game_name);
+            }
             ChangeKind::WriteArtwork => artwork += 1,
             ChangeKind::UpdateCollections => collections = true,
         }
     }
     if artwork > 0 {
-        println!("  Write {artwork} artwork files");
+        println!("  {DIM}Write {artwork} artwork files{DIM:#}");
     }
     if collections {
-        println!("  Update collections");
+        println!("  {DIM}Update collections{DIM:#}");
     }
 }
 

@@ -19,6 +19,9 @@ disable-auto-updates = []
 tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
+anstream = "1"
+anstyle = "1"
+anstyle-query = "1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }
 crc32fast = "1.5.0"

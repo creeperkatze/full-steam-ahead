@@ -38,7 +38,8 @@ fn init_logging() -> WorkerGuard {
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new(format!("full_steam_ahead_lib={default_level}")));
 
-    let stderr_layer = if cfg!(debug_assertions) {
+    // Commands print their own output, so the log would only clutter it.
+    let stderr_layer = if cfg!(debug_assertions) && !cli::requested() {
         Some(fmt::layer().with_writer(std::io::stderr))
     } else {
         None
