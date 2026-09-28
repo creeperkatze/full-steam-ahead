@@ -6,7 +6,6 @@ use crate::{
     },
     steam,
 };
-use chrono::Utc;
 use tauri_specta::Event;
 use tracing::{debug, info, instrument};
 
@@ -96,10 +95,12 @@ pub fn create_preview_plan(
     options: crate::models::Settings,
 ) -> CommandResult<PreviewPlan> {
     let user = steam::detect::find_user(&user_steam_id)?;
-    let backup_root =
-        crate::paths::backups_dir().join(Utc::now().format("%Y%m%d-%H%M%S").to_string());
-
-    let plan = steam::plan::build_preview_plan(&user, &candidates, &options, &backup_root)?;
+    let plan = steam::plan::build_preview_plan(
+        &user,
+        &candidates,
+        &options,
+        &crate::paths::new_backup_dir(),
+    )?;
     info!(
         changes = plan.changes.len(),
         backups = plan.backups.len(),

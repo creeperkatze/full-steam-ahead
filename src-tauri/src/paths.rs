@@ -14,6 +14,10 @@ pub fn backups_dir() -> PathBuf {
     app_data_dir().join("backups")
 }
 
+pub fn new_backup_dir() -> PathBuf {
+    backups_dir().join(chrono::Utc::now().format("%Y%m%d-%H%M%S").to_string())
+}
+
 pub fn settings_path() -> PathBuf {
     app_data_dir().join("settings.json")
 }

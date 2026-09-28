@@ -1,4 +1,5 @@
 mod backups;
+mod cli;
 mod commands;
 pub mod error;
 mod importers;
@@ -122,13 +123,19 @@ pub fn run() {
         return;
     }
 
-    let _log_guard = init_logging();
+    let log_guard = init_logging();
     tracing::info!(
         version = env!("CARGO_PKG_VERSION"),
         os = std::env::consts::OS,
         arch = std::env::consts::ARCH,
         "Full Steam Ahead starting"
     );
+
+    if let Some(code) = cli::run() {
+        // Exiting skips destructors, so flush the log first.
+        drop(log_guard);
+        std::process::exit(code);
+    }
 
     #[allow(unused_mut)]
     let mut builder = tauri::Builder::default()
