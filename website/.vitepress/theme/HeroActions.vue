@@ -148,8 +148,8 @@ const otherGroups = computed<MethodGroup[]>(() => {
 </script>
 
 <template>
-	<div class="actions">
-		<div class="action">
+	<div class="hero-actions">
+		<div class="hero-action">
 			<div ref="root" class="install-group">
 				<VPButton
 					tag="a"
@@ -191,7 +191,7 @@ const otherGroups = computed<MethodGroup[]>(() => {
 				</div>
 			</div>
 		</div>
-		<div v-if="otherGroups.length" class="action">
+		<div v-if="otherGroups.length" class="hero-action">
 			<div ref="otherRoot" class="other-platforms-group">
 				<button
 					type="button"
@@ -227,7 +227,7 @@ const otherGroups = computed<MethodGroup[]>(() => {
 				</div>
 			</div>
 		</div>
-		<div class="action">
+		<div class="hero-action">
 			<VPButton
 				tag="a"
 				size="medium"
@@ -241,20 +241,20 @@ const otherGroups = computed<MethodGroup[]>(() => {
 </template>
 
 <style scoped>
-.actions {
+.hero-actions {
 	display: flex;
 	flex-wrap: wrap;
 	margin: -6px;
 	padding-top: 24px;
 }
 
-.action {
+.hero-action {
 	flex-shrink: 0;
 	padding: 6px;
 }
 
 @media (min-width: 640px) {
-	.actions {
+	.hero-actions {
 		padding-top: 32px;
 	}
 }
@@ -267,6 +267,22 @@ const otherGroups = computed<MethodGroup[]>(() => {
 
 a.install-button {
 	position: relative;
+}
+
+a.github-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+a.github-button::before {
+	content: '';
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	background-color: currentColor;
+	-webkit-mask: url('./icons/github.svg') no-repeat center / contain;
+	mask: url('./icons/github.svg') no-repeat center / contain;
 }
 
 a.install-button.os-windows,

@@ -1,6 +1,6 @@
 ---
 layout: home
 
-hero:
-  tagline: A desktop app to import games from other launchers into Steam.
+# The tagline comes from meta.summary in src/locales
+hero: {}
 ---

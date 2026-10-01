@@ -1,35 +1,18 @@
 :root {
-	--vp-c-brand-1: #1a9fff !important;
-	--vp-c-brand-2: #2fabff !important;
-	--vp-c-brand-3: #47b4ff !important;
-	--vp-c-brand-soft: #1a9fff24 !important;
-	--vp-c-brand-bg: var(--vp-c-brand-1) !important;
-	--vp-nav-logo-height: 32px;
-	--vp-button-brand-bg: var(--vp-c-brand-1) !important;
-	--vp-button-brand-hover-bg: var(--vp-c-brand-2) !important;
-	--vp-button-brand-active-bg: var(--vp-c-brand-3) !important;
+	--vp-c-brand-1: #1a9fff;
+	--vp-c-brand-2: #2fabff;
+	--vp-c-brand-3: #47b4ff;
+	--vp-c-brand-soft: #1a9fff24;
+	--vp-c-brand-bg: var(--vp-c-brand-1);
+	--vp-button-brand-bg: var(--vp-c-brand-1);
+	--vp-button-brand-hover-bg: var(--vp-c-brand-2);
+	--vp-button-brand-active-bg: var(--vp-c-brand-3);
 }
 
 .dark {
-	--vp-c-brand-1: #1a9fff !important;
-	--vp-c-brand-2: #2fabff !important;
-	--vp-c-brand-3: #47b4ff !important;
-	--vp-c-brand-soft: #1a9fff2e !important;
-	--vp-c-brand-bg: var(--vp-c-brand-1) !important;
-}
-
-.VPHero .actions a.github-button {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-}
-
-.VPHero .actions a.github-button::before {
-	content: "";
-	width: 16px;
-	height: 16px;
-	flex-shrink: 0;
-	background-color: currentColor;
-	-webkit-mask: url("./icons/github.svg") no-repeat center / contain;
-	mask: url("./icons/github.svg") no-repeat center / contain;
+	--vp-c-brand-1: #1a9fff;
+	--vp-c-brand-2: #2fabff;
+	--vp-c-brand-3: #47b4ff;
+	--vp-c-brand-soft: #1a9fff2e;
+	--vp-c-brand-bg: var(--vp-c-brand-1);
 }

@@ -1,54 +1,25 @@
-import svgLoader from 'vite-svg-loader'
-import { defineConfig } from 'vitepress'
+import { defineSiteConfig, readMessages } from './shared/config'
 
-const version = process.env.VERSION
-
-const title = 'Full Steam Ahead'
-const description = 'A desktop app to import games from other launchers into Steam.'
-const url = 'https://full-steam-ahead.creeperkatze.dev'
-const image = `${url}/banner.png`
-
-export default defineConfig({
-	title,
-	description,
-	cleanUrls: true,
-	head: [
-		['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
-		['meta', { property: 'og:type', content: 'website' }],
-		['meta', { property: 'og:url', content: url }],
-		['meta', { property: 'og:title', content: title }],
-		['meta', { property: 'og:description', content: description }],
-		['meta', { property: 'og:image', content: image }],
-		['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-		['meta', { name: 'twitter:title', content: title }],
-		['meta', { name: 'twitter:description', content: description }],
-		['meta', { name: 'twitter:image', content: image }],
-	],
-	vite: {
-		plugins: [svgLoader()],
-	},
-	themeConfig: {
-		logo: '/icon.svg',
-		siteTitle: false,
-		version,
-		nav: [
-			...(version
-				? [
-						{
-							text: `v${version}`,
-							items: [
-								{
-									text: 'Changelog',
-									link: 'https://github.com/creeperkatze/full-steam-ahead/releases',
-								},
-							],
-						},
-					]
-				: []),
+export default defineSiteConfig(
+	{
+		title: 'Full Steam Ahead',
+		url: 'https://full-steam-ahead.creeperkatze.dev',
+		repo: 'creeperkatze/full-steam-ahead',
+		version: process.env.VERSION,
+		messages: readMessages(new URL('../src/locales', import.meta.url)),
+		nav: (t) => [
+			{
+				text: t('nav.translate'),
+				link: 'https://crowdin.com/project/full-steam-ahead',
+				target: '_blank',
+			},
 		],
-		socialLinks: [
-			{ icon: 'github', link: 'https://github.com/creeperkatze/full-steam-ahead' },
-			{ icon: 'discord', link: 'https://link.creeperkatze.dev/discord' },
-		],
+		socialLinks: [{ icon: 'discord', link: 'https://link.creeperkatze.dev/discord' }],
 	},
-})
+	{
+		themeConfig: {
+			logo: '/icon.svg',
+			siteTitle: false,
+		},
+	},
+)
