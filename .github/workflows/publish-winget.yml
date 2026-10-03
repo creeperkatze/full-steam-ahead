@@ -16,7 +16,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: vedantmgoyal9/winget-releaser@a8fff44b123f115ce4c21543edf8b677376fc7e0 # main
+      - name: Publish to WinGet
+        uses: vedantmgoyal9/winget-releaser@a8fff44b123f115ce4c21543edf8b677376fc7e0 # main
         with:
           identifier: Creeperkatze.FullSteamAhead
           installers-regex: '-setup\.exe$'
