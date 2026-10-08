@@ -5,6 +5,7 @@ import { VPButton } from 'vitepress/theme'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const REPO = 'https://github.com/creeperkatze/full-steam-ahead'
+const FLATHUB = 'https://flathub.org/apps/dev.creeperkatze.full-steam-ahead'
 
 interface NavigatorUaData {
 	getHighEntropyValues(hints: string[]): Promise<{ architecture?: string }>
@@ -77,7 +78,7 @@ const primary = computed(() => {
 	if (!version.value || !os.value) return { label: 'Download', url: `${REPO}/releases/latest` }
 
 	const v = version.value
-	const suffix = os.value !== 'macos' && arch.value === 'arm64' ? ' (ARM64)' : ''
+	const suffix = os.value === 'windows' && arch.value === 'arm64' ? ' (ARM64)' : ''
 	const label = `Download for ${OS_LABELS[os.value]}${suffix}`
 
 	if (os.value === 'windows') {
@@ -86,8 +87,7 @@ const primary = computed(() => {
 	if (os.value === 'macos') {
 		return { label, url: asset(`full-steam-ahead-${v}-darwin-universal.dmg`) }
 	}
-	const linuxArch = arch.value === 'arm64' ? 'aarch64' : 'amd64'
-	return { label, url: asset(`full-steam-ahead-${v}-linux-${linuxArch}.AppImage`) }
+	return { label, url: FLATHUB }
 })
 
 interface Method {
@@ -119,6 +119,7 @@ function methodsFor(targetOs: Exclude<Os, null>, v: string): Method[] {
 		return [{ label: 'Universal .dmg', url: asset(`full-steam-ahead-${v}-darwin-universal.dmg`) }]
 	}
 	return [
+		{ label: 'Flathub', url: FLATHUB },
 		{ label: 'AppImage (x64)', url: asset(`full-steam-ahead-${v}-linux-amd64.AppImage`) },
 		{
 			label: 'AppImage (ARM64)',
