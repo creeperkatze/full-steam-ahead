@@ -1,0 +1,57 @@
+{
+	"meta": {
+		"summary": "Un'applicazione desktop per importare su Steam i giochi da altri launcher.",
+		"feature": {
+			"steamUser": {
+				"title": "Scegli il tuo utente Steam",
+				"description": "Scansiona i launcher installati e seleziona l'utente Steam in cui effettuare l'importazione, direttamente all'apertura dell'app."
+			},
+			"games": {
+				"title": "Scegli quali giochi importare",
+				"description": "Ogni gioco rilevato da Epic, GOG, itch.io e altri viene elencato con un interruttore di attivazione; in alternativa, aggiungi manualmente qualsiasi eseguibile come gioco personalizzato non di Steam."
+			},
+			"artwork": {
+				"title": "Rivedi le immagini della griglia, le copertine grandi e i loghi abbinati",
+				"description": "Full Steam Ahead recupera le immagini della griglia, le copertine grandi (hero art), i loghi e le icone corrispondenti per ogni gioco importato."
+			},
+			"steamGridDb": {
+				"title": "Sfoglia le copertine personalizzate su SteamGridDB",
+				"description": "Esplora l'intera libreria di SteamGridDB per ogni gioco e sostituisci le immagini con le copertine che preferisci."
+			},
+			"review": {
+				"title": "Rivedi prima di applicare qualsiasi modifica",
+				"description": "Visualizza ogni singola voce di Steam e il collegamento al launcher che stanno per essere aggiunti o aggiornati prima di confermare le modifiche."
+			},
+			"done": {
+				"title": "Tutto fatto, con un backup automatico",
+				"description": "Le modifiche vengono applicate e viene creato automaticamente un backup della tua configurazione di Steam, così potrai sempre tornare sui tuoi passi."
+			},
+			"customization": {
+				"title": "Falla sentire tua",
+				"description": "Scegli la tua lingua e passa dallo schema colori chiaro, scuro o di sistema direttamente dalle impostazioni."
+			},
+			"steamSettings": {
+				"title": "Decidi come gestire Steam",
+				"description": "Scegli se chiudere e riavviare Steam automaticamente, raggruppa le importazioni in collezioni suddivise per launcher e sostituisci il percorso di installazione se non viene rilevato in automatico."
+			},
+			"sources": {
+				"title": "Configura le sorgenti",
+				"description": "Abilita o disabilita ogni launcher e sostituisci il suo percorso di installazione rilevato automaticamente se Full Steam Ahead non riesce a trovarlo da solo."
+			},
+			"artworkSource": {
+				"title": "Scegli da dove provengono le tue copertine",
+				"description": "Scegli da quale sorgente recuperare automaticamente le copertine (Steam o SteamGridDB), poi abilita la ricerca su SteamGridDB e inserisci la tua chiave API personale."
+			},
+			"backups": {
+				"title": "Ogni backup, a portata di ripristino",
+				"description": "Sfoglia tutti i backup automatici creati da Full Steam Ahead, ripristina uno qualsiasi di essi o elimina quelli che non ti servono più."
+			}
+		}
+	},
+	"nav": {
+		"translate": "Traduci"
+	},
+	"stats": {
+		"downloads": "Download per {platform}"
+	}
+}
