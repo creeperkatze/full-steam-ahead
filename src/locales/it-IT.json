@@ -53,7 +53,7 @@
 		"steamUser": "Utente Steam",
 		"unnamedUser": "Utente Steam senza nome",
 		"scanningTitle": "Scansione dei giochi in corso",
-		"sourceFound": "{count} trovato",
+		"sourceFound": "{count} trovato(i)",
 		"sourcePending": "nessuno",
 		"sourcesScanned": "{done} di {total} sorgenti scansionate"
 	},
