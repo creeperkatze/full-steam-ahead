@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   test:
-    name: Test
+    name: Lint and test
     uses: ./.github/workflows/test.yml
     with:
       ref: ${{ inputs.tag || github.ref }}
