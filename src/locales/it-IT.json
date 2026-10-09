@@ -1,0 +1,331 @@
+{
+	"common": {
+		"clear": "Cancella",
+		"browse": "Sfoglia",
+		"cancel": "Annulla",
+		"close": "Chiudi",
+		"loading": "Caricamento…",
+		"autoDetected": "Rilevato automaticamente",
+		"select": "Seleziona…"
+	},
+	"artworkSource": {
+		"missing": "Mancante",
+		"officialSteam": "Steam ufficiale",
+		"localFile": "File locale",
+		"existingCustom": "Esistente",
+		"steamGridDb": "SteamGridDB",
+		"unknown": "Sconosciuto"
+	},
+	"titleBar": {
+		"logoAlt": "Full Steam Ahead",
+		"viewOnGithub": "Visualizza su GitHub",
+		"importProgress": "Avanzamento importazione",
+		"steps": {
+			"start": "Inizio",
+			"sources": "Sorgenti",
+			"artwork": "Copertine",
+			"review": "Rivedi",
+			"done": "Fatto"
+		},
+		"settings": "Impostazioni",
+		"closeSettings": "Chiudi impostazioni",
+		"minimize": "Minimizza",
+		"maximize": "Massimizza",
+		"restore": "Ripristina",
+		"close": "Chiudi"
+	},
+	"app": {
+		"actions": {
+			"back": "Indietro",
+			"scan": "Scansiona",
+			"continue": "Continua",
+			"apply": "Applica",
+			"close": "Chiudi"
+		}
+	},
+	"startView": {
+		"title": "Trova i tuoi giochi",
+		"subtitle": "Scansiona i launcher installati per importarli su Steam.",
+		"detectingSteam": "Rilevamento dell'installazione di Steam…",
+		"steamNotFound": "Nessuna installazione di Steam trovata. Controlla il percorso nelle Impostazioni.",
+		"tryAgain": "Riprova",
+		"noUsersFound": "Nessun utente Steam trovato.",
+		"steamUser": "Utente Steam",
+		"unnamedUser": "Utente Steam senza nome",
+		"scanningTitle": "Scansione dei giochi in corso",
+		"sourceFound": "{count} trovato",
+		"sourcePending": "nessuno",
+		"sourcesScanned": "{done} di {total} sorgenti scansionate"
+	},
+	"sourcesView": {
+		"pickExecutable": "Scegli l'eseguibile",
+		"executablePathPlaceholder": "Percorso dell'eseguibile",
+		"displayNamePlaceholder": "Nome visualizzato",
+		"add": "Aggiungi",
+		"noManualGames": "Nessun gioco manuale ancora aggiunto."
+	},
+	"sourceCard": {
+		"viaLauncher": "Tramite Launcher",
+		"urlOnlyTitle": "Questo gioco può essere avviato solo tramite il suo schema URL",
+		"rename": "Rinomina",
+		"resetName": "Ripristina nome",
+		"remove": "Rimuovi"
+	},
+	"artworkView": {
+		"selectGamesPrompt": "Seleziona i giochi prima di rivedere le copertine.",
+		"slots": {
+			"header": "Intestazione",
+			"capsule": "Capsula",
+			"hero": "Copertina grande",
+			"logo": "Logo",
+			"icon": "Icona"
+		},
+		"pickLocalArtworkTitle": "Scegli una copertina locale",
+		"browseSteamGridDbTitle": "Sfoglia SteamGridDB",
+		"useOfficialArtworkTitle": "Usa le copertine ufficiali di Steam",
+		"deleteArtworkTitle": "Elimina copertina"
+	},
+	"reviewView": {
+		"preparingPreview": "Preparazione dell'anteprima...",
+		"steamEntry": "Voce di Steam",
+		"new": "Nuovo",
+		"update": "Aggiorna",
+		"alreadyAdded": "Già aggiunto",
+		"add": "Aggiungi",
+		"backup": "Backup",
+		"filesCount": "{count} file",
+		"managedCollection": "Gestito",
+		"changeCount": "{count} modifica | {count} modifiche"
+	},
+	"doneView": {
+		"steps": {
+			"stoppingSteam": "Arresto di Steam",
+			"creatingBackups": "Creazione dei backup",
+			"applyingArtworkFor": "Scaricamento delle copertine per {name}",
+			"applyingArtwork": "Applicazione delle copertine",
+			"updatingShortcuts": "Aggiornamento dei collegamenti",
+			"updatingCollections": "Aggiornamento delle collezioni",
+			"restartingSteam": "Riavvio di Steam"
+		},
+		"allDoneTitle": "Tutto fatto!",
+		"allDoneSubtitle": "I collegamenti e le copertine di Steam sono stati aggiornati.",
+		"changesApplied": "modifiche applicate",
+		"backupsCreated": "backup creati",
+		"kofiTitle": "Ti piace Full Steam Ahead?",
+		"kofiSubtitle": "Considera di offrirmi un caffè su Ko-fi",
+		"starting": "Avvio in corso..."
+	},
+	"appShell": {
+		"checkingForUpdates": "Verifica aggiornamenti",
+		"latestVersion": "Ultima versione",
+		"updateAvailable": "Aggiornamento disponibile",
+		"donate": "Donazione",
+		"onGithub": "Su GitHub"
+	},
+	"updateModal": {
+		"title": "Nuova versione disponibile",
+		"description": "La versione {latest} è disponibile. Attualmente utilizzi la versione {current}.",
+		"downloading": "Scaricamento dell'aggiornamento...",
+		"readyTitle": "Aggiornamento pronto",
+		"readyDescription": "La versione {latest} è stata installata. Riavvia per completare l'aggiornamento.",
+		"error": "Impossibile installare l'aggiornamento: {message}",
+		"later": "Più tardi",
+		"update": "Aggiorna",
+		"retry": "Riprova",
+		"restartNow": "Riavvia ora"
+	},
+	"flatpakPermissionModal": {
+		"title": "Steam richiede un'ulteriore autorizzazione",
+		"description": "Steam viene eseguito in una sandbox, il che gli impedisce di avviare collegamenti esterni. Concedere questa autorizzazione gli permette di eseguire comandi al di fuori della sandbox; fallo solo se ti fidi di ciò che avvii tramite esso.",
+		"granted": "Autorizzazione concessa.",
+		"error": "Impossibile concedere l'autorizzazione: {message}",
+		"later": "Salta",
+		"grant": "Concedi autorizzazione",
+		"close": "Chiudi"
+	},
+	"steamGridDbBrowser": {
+		"searchPlaceholder": "Cerca su SteamGridDB…",
+		"searchFailed": "Ricerca non riuscita.",
+		"loadImagesFailed": "Impossibile caricare le immagini.",
+		"noImagesFound": "Nessuna immagine trovata."
+	},
+	"settingsShell": {
+		"tabs": {
+			"customization": "Personalizzazione",
+			"steam": "Steam",
+			"sources": "Sorgenti",
+			"artwork": "Copertine",
+			"data": "Dati",
+			"backups": "Backup",
+			"debug": "Debug"
+		},
+		"donateCard": {
+			"title": "Dona su Ko-fi",
+			"description": "Offrimi un caffè"
+		},
+		"crowdinCard": {
+			"title": "Visualizza su Crowdin",
+			"description": "Aiuta a tradurre"
+		},
+		"githubCard": {
+			"title": "Visualizza su GitHub",
+			"description": "Lascia una stella"
+		}
+	},
+	"settings": {
+		"customization": {
+			"title": "Personalizzazione",
+			"language": {
+				"label": "Lingua",
+				"description": "Imposta la lingua di visualizzazione dell'app. Aiuta a tradurre su {crowdin}."
+			},
+			"colorScheme": {
+				"label": "Schema colori",
+				"description": "Scegli tra chiaro, scuro o in base al sistema.",
+				"auto": "Predefinito di sistema",
+				"light": "Chiaro",
+				"dark": "Scuro"
+			},
+			"updateNotifications": {
+				"label": "Notifiche di aggiornamento",
+				"description": "Mostra una notifica quando è disponibile una nuova versione dell'app."
+			}
+		},
+		"steam": {
+			"title": "Steam",
+			"stopSteam": {
+				"label": "Chiudi Steam prima di applicare",
+				"description": "Steam deve essere chiuso per modificare i file dei collegamenti."
+			},
+			"restartSteam": {
+				"label": "Riavvia Steam dopo aver applicato",
+				"description": "Riavvia Steam in modo che i giochi importati appaiano immediatamente."
+			},
+			"createCollections": {
+				"label": "Crea collezioni per piattaforma",
+				"description": "Raggruppa i giochi importati in una collezione per ciascun launcher."
+			},
+			"addSelfShortcut": {
+				"label": "Aggiungi il proprio collegamento",
+				"description": "Aggiunge Full Steam Ahead stesso su Steam, comodo per avviarlo dalla modalità di gioco dello Steam Deck."
+			},
+			"steamLocation": {
+				"label": "Percorso di installazione di Steam",
+				"description": "Ignora il rilevamento automatico se Steam non viene trovato automaticamente."
+			}
+		},
+		"artwork": {
+			"title": "Copertine",
+			"defaultSource": {
+				"label": "Sorgente copertine predefinita",
+				"description": "Scegli da quale sorgente recuperare automaticamente le copertine durante la scansione dei giochi.",
+				"none": "Nessuna",
+				"steam": "Steam",
+				"steamGridDb": "SteamGridDB"
+			},
+			"enableSteamGridDb": {
+				"label": "Abilita SteamGridDB",
+				"description": "Aggiunge un pulsante per scegliere copertine personalizzate da SteamGridDB durante la revisione dei giochi."
+			},
+			"apiKey": {
+				"label": "Chiave API di SteamGridDB",
+				"description": "Richiesta per SteamGridDB. Generane una gratuitamente sulla pagina del tuo account.",
+				"placeholder": "Incolla la tua chiave API",
+				"getKeyTitle": "Ottieni una chiave API su steamgriddb.com"
+			},
+			"allowNsfw": {
+				"label": "Consenti copertine NSFW",
+				"description": "Include immagini con tag NSFW nei risultati di SteamGridDB."
+			}
+		},
+		"sources": {
+			"title": "Sorgenti",
+			"launcherMode": {
+				"label": "Metodo di avvio",
+				"description": "Determina se i giochi si avviano dal proprio eseguibile o tramite il rispettivo launcher. I giochi senza un eseguibile useranno sempre il loro launcher.",
+				"always": "Launcher",
+				"whenRequired": "Launcher quando necessario",
+				"whenNoExecutable": "Diretto"
+			}
+		},
+		"data": {
+			"title": "Dati",
+			"export": {
+				"label": "Esporta impostazioni",
+				"description": "Salva le tue impostazioni correnti in un file JSON.",
+				"buttonLabel": "Esporta",
+				"success": "Impostazioni esportate con successo.",
+				"error": "Esportazione non riuscita.",
+				"warning": {
+					"title": "Esportare le impostazioni?",
+					"description": "Il file esportato conterrà la tua chiave API di SteamGridDB in formato testo non crittografato. Tienilo al sicuro ed evita di condividerlo.",
+					"confirm": "Esporta"
+				}
+			},
+			"import": {
+				"label": "Importa impostazioni",
+				"description": "Ripristina le impostazioni da un file JSON precedentemente esportato.",
+				"buttonLabel": "Importa",
+				"success": "Impostazioni importate con successo.",
+				"error": "Importazione non riuscita."
+			},
+			"reset": {
+				"label": "Ripristina impostazioni",
+				"description": "Ripristina tutte le impostazioni ai loro valori predefiniti.",
+				"buttonLabel": "Ripristina",
+				"success": "Impostazioni ripristinate con successo.",
+				"error": "Ripristino non riuscito.",
+				"confirm": {
+					"title": "Ripristinare le impostazioni?",
+					"description": "Questo ripristinerà tutte le impostazioni ai valori predefiniti. L'azione non può essere annullata.",
+					"confirm": "Sì, ripristina"
+				}
+			}
+		},
+		"backups": {
+			"title": "Backup",
+			"deleteAll": {
+				"label": "Elimina tutti i backup",
+				"description": "Rimuovi permanentemente ogni backup memorizzato.",
+				"buttonLabel": "Elimina tutti"
+			},
+			"loading": "Caricamento backup…",
+			"noBackups": "Nessun backup trovato.",
+			"fileCount": "{count} file | {count} file",
+			"restore": "Ripristina",
+			"deleteBackupTitle": "Elimina backup",
+			"restoredMessage": "{count} file ripristinato con successo. | {count} file ripristinati con successo.",
+			"confirm": {
+				"deleteAllTitle": "Eliminare tutti i backup?",
+				"deleteTitle": "Eliminare il backup?",
+				"restoreTitle": "Ripristinare il backup?",
+				"deleteAllBody": "Questo eliminerà permanentemente l'unico backup presente ({count}). L'azione non può essere annullata. | Questo eliminerà permanentemente tutti i {count} backup. L'azione non può essere annullata.",
+				"deleteBody": "Questo eliminerà permanentemente il backup del {date}. L'azione non può essere annullata.",
+				"restoreBody": "Questo sovrascriverà i file correnti di Steam per questo account con il backup del {date}. L'azione non può essere annullata.",
+				"confirmDeleteAll": "Sì, elimina tutti",
+				"confirmDelete": "Sì, elimina",
+				"confirmRestore": "Sì, ripristina"
+			},
+			"errors": {
+				"restoreFailed": "Ripristino non riuscito.",
+				"deleteFailed": "Eliminazione non riuscita.",
+				"deleteAllFailed": "Eliminazione totale non riuscita."
+			}
+		},
+		"debug": {
+			"title": "Debug",
+			"loadingMetadata": "Caricamento metadati…",
+			"fields": {
+				"version": "Versione",
+				"platform": "Piattaforma",
+				"dataPath": "Percorso dati"
+			},
+			"logsFolder": {
+				"label": "Cartella dei log",
+				"description": "Apri la cartella contenente i file di log della sessione.",
+				"open": "Apri"
+			},
+			"openError": "Impossibile aprire la cartella dei log."
+		}
+	}
+}
