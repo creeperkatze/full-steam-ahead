@@ -1,29 +1,28 @@
 version: 2
 
+multi-ecosystem-groups:
+  app:
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps'
+
 updates:
   - package-ecosystem: 'cargo'
     directory: '/src-tauri'
-    schedule:
-      interval: 'weekly'
-    groups:
-      cargo-minor-patch:
-        update-types:
-          - 'minor'
-          - 'patch'
-    commit-message:
-      prefix: 'deps(cargo)'
+    multi-ecosystem-group: 'app'
+    patterns: ['*']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'npm'
     directory: '/'
-    schedule:
-      interval: 'weekly'
-    groups:
-      npm-minor-patch:
-        update-types:
-          - 'minor'
-          - 'patch'
-    commit-message:
-      prefix: 'deps(npm)'
+    multi-ecosystem-group: 'app'
+    patterns: ['*']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'github-actions'
     directory: '/'
