@@ -18,11 +18,25 @@ updates:
 
   - package-ecosystem: 'npm'
     directory: '/'
+    # The website is a separate pnpm project with its own lockfile
+    exclude-paths: ['website/**']
     multi-ecosystem-group: 'app'
     patterns: ['*']
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+
+  - package-ecosystem: 'npm'
+    directory: '/website'
+    schedule:
+      interval: 'weekly'
+    groups:
+      website-minor-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    commit-message:
+      prefix: 'deps(website)'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
