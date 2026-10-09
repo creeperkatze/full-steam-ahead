@@ -149,7 +149,8 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_process::init());
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_wayland_nvidia_quirk::init());
 
     // Flatpak apps update through Flathub, not the built-in updater.
     #[cfg(not(feature = "disable-auto-updates"))]
