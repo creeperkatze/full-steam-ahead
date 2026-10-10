@@ -52,6 +52,7 @@
 		"translate": "Translate"
 	},
 	"stats": {
-		"downloads": "{platform} Downloads"
+		"downloads": "{platform} Downloads",
+		"flathubInstalls": "Flathub Installs"
 	}
 }
