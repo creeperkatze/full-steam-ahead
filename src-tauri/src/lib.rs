@@ -115,6 +115,31 @@ fn export_bindings(
     )
 }
 
+/// Builds the main window inside a GTK-drawn frame, which adds a native shadow and resize edges.
+#[cfg(target_os = "linux")]
+fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
+    use gtk::prelude::GtkWindowExt;
+
+    let Some(config) = app.config().app.windows.iter().find(|w| w.label == "main") else {
+        return Ok(());
+    };
+
+    // Rounded corners need a transparent window, and transparency needs a compositor.
+    let compositing = gtk::gdk::Screen::default().is_some_and(|screen| screen.is_composited());
+    let mut builder =
+        tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.transparent(compositing);
+    if compositing {
+        builder = builder.initialization_script("window.__FSA_ROUNDED_CORNERS__ = true;");
+    }
+
+    // An empty titlebar keeps the GTK frame but hides its title bar.
+    let window = builder.build()?;
+    window
+        .gtk_window()?
+        .set_titlebar(Some(&gtk::EventBox::new()));
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let specta = specta_builder();
@@ -167,6 +192,8 @@ pub fn run() {
     builder
         .setup(move |app| {
             specta.mount_events(app);
+            #[cfg(target_os = "linux")]
+            create_linux_main_window(app)?;
             #[cfg(not(target_os = "linux"))]
             if let Some(window) = app.get_webview_window("main") {
                 if let Err(e) = window.set_shadow(true) {

@@ -1387,6 +1387,7 @@ dependencies = [
  "crc32fast",
  "dirs 7.0.0",
  "encoding_rs",
+ "gtk",
  "keyvalues-parser",
  "keyvalues-serde",
  "reqwest",
