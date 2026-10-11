@@ -142,10 +142,10 @@
         overflow: hidden;
     }
 
-    /* Matches the GTK frame. Containment clips fixed elements like modals too. */
+    /* Matches the GTK frame in lib.rs. Containment clips fixed elements like modals too. */
     html.rounded-window body
     {
-        @apply h-screen overflow-hidden rounded-lg;
+        @apply h-screen overflow-hidden rounded-[15px];
         contain: layout;
     }
 

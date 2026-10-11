@@ -146,9 +146,10 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
 fn round_gtk_frame(screen: &gtk::gdk::Screen) {
     use gtk::prelude::CssProviderExt;
 
-    // 8px matches rounded-lg on the page body. The shadows are Adwaita's without its 1px outline.
+    // 15px matches libadwaita windows since GNOME 48, and the page body in main.css.
+    // The shadows are Adwaita's without its 1px outline.
     const CSS: &[u8] = b"
-        decoration { border-radius: 8px; box-shadow: 0 3px 9px 1px rgba(0, 0, 0, 0.5); }
+        decoration { border-radius: 15px; box-shadow: 0 3px 9px 1px rgba(0, 0, 0, 0.5); }
         decoration:backdrop {
             box-shadow: 0 3px 9px 1px transparent, 0 2px 6px 2px rgba(0, 0, 0, 0.2);
         }
