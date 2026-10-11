@@ -16,7 +16,11 @@ A desktop app to import games from other launchers into Steam.
 
 ## 🚀 Installation
 
-Download the latest release for your platform from the [Releases page](https://github.com/creeperkatze/full-steam-ahead/releases).
+Download the latest version for your platform from the [website](https://full-steam-ahead.creeperkatze.dev).
+
+Also available in these stores:
+
+- **[Flathub](https://flathub.org/apps/dev.creeperkatze.full-steam-ahead)** ![Flathub Version](https://img.shields.io/flathub/v/dev.creeperkatze.full-steam-ahead?label=)![Flathub Downloads](https://img.shields.io/flathub/downloads/dev.creeperkatze.full-steam-ahead?style=flat&color=yellow)
 
 Prefer to build from source? See [Building from source](#-building-from-source) below.
 
