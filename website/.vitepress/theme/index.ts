@@ -29,7 +29,7 @@ export default createTheme({
 		{ key: 'artworkSource', image: '/screenshots/settings_artwork.png' },
 		{ key: 'backups', image: '/screenshots/settings_backups.png' },
 	],
-	showcaseImageSize: { width: 1202, height: 712 },
+	showcaseImageSize: { width: 1202, height: 682 },
 	slots: {
 		'home-hero-actions-after': () => h(HeroActions),
 	},
