@@ -136,13 +136,12 @@
         scrollbar-width: thin;
     }
 
-    /* Keeps the overflow of body from moving to the viewport */
     html.rounded-window
     {
         overflow: hidden;
     }
 
-    /* Matches the GTK frame in lib.rs. Containment clips fixed elements like modals too. */
+    /* Matches the GTK frame in lib.rs. Containment also clips modals. */
     html.rounded-window body
     {
         @apply h-screen overflow-hidden rounded-[15px];

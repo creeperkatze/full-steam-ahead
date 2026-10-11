@@ -115,7 +115,7 @@ fn export_bindings(
     )
 }
 
-/// Builds the main window inside a GTK-drawn frame, which adds a native shadow and resize edges.
+/// Builds the main window with a GTK frame for its shadow and resize edges.
 #[cfg(target_os = "linux")]
 fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
     use gtk::prelude::GtkWindowExt;
@@ -124,16 +124,16 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
         return Ok(());
     };
 
-    // Rounded corners need a transparent window, and transparency needs a compositor.
+    // Rounded corners need transparency, which needs a compositor
     let screen = gtk::gdk::Screen::default().filter(|screen| screen.is_composited());
     let mut builder = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
         .transparent(screen.is_some());
     if let Some(screen) = &screen {
-        round_gtk_frame(screen);
+        style_gtk_frame(screen);
         builder = builder.initialization_script("window.__FSA_ROUNDED_CORNERS__ = true;");
     }
 
-    // An empty titlebar keeps the GTK frame but hides its title bar.
+    // An empty titlebar keeps the frame but hides the title bar
     let window = builder.build()?;
     window
         .gtk_window()?
@@ -141,13 +141,12 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Rounds all four corners of the GTK frame and drops its outline. Themes like Adwaita only round the top ones.
+/// Gives the frame the radius and shadows of libadwaita windows.
 #[cfg(target_os = "linux")]
-fn round_gtk_frame(screen: &gtk::gdk::Screen) {
+fn style_gtk_frame(screen: &gtk::gdk::Screen) {
     use gtk::prelude::CssProviderExt;
 
-    // The radius and shadows match libadwaita windows since GNOME 48, without their outline.
-    // The radius also matches the page body in main.css. The margin leaves room for the shadow.
+    // The radius matches the page body in main.css
     const CSS: &[u8] = b"
         decoration {
             border-radius: 15px;
@@ -157,16 +156,9 @@ fn round_gtk_frame(screen: &gtk::gdk::Screen) {
         decoration:backdrop {
             box-shadow: 0 0 14px 5px transparent, 0 0 10px 5px rgba(0, 0, 0, 0.08);
         }
-        .maximized decoration, .maximized decoration:backdrop,
-        .fullscreen decoration, .fullscreen decoration:backdrop {
-            border-radius: 0;
-            box-shadow: none;
-        }
-        .tiled decoration, .tiled decoration:backdrop,
-        .tiled-top decoration, .tiled-top decoration:backdrop,
-        .tiled-right decoration, .tiled-right decoration:backdrop,
-        .tiled-bottom decoration, .tiled-bottom decoration:backdrop,
-        .tiled-left decoration, .tiled-left decoration:backdrop {
+        .maximized decoration, .fullscreen decoration, .tiled decoration,
+        .tiled-top decoration, .tiled-right decoration, .tiled-bottom decoration,
+        .tiled-left decoration {
             border-radius: 0;
             box-shadow: 0 0 0 20px transparent;
         }
