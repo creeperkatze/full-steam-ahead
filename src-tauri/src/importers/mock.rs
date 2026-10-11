@@ -65,15 +65,13 @@ fn games(source: &ImportSource) -> &'static [Game] {
                 Some("run com.heroicgameslauncher.hgl heroic://launch/legendary/Hawthorn --no-gui --no-sandbox"),
             ),
         ],
-        ImportSource::Legendary => &[("Satisfactory", "/usr/bin/legendary", Some("launch CrabEA"))],
+        ImportSource::Legendary => &[
+            ("Satisfactory", "/usr/bin/legendary", Some("launch CrabEA")),
+            ("Control", "/usr/bin/legendary", Some("launch Calluna")),
+        ],
         ImportSource::Lutris => &[("Terraria", "/usr/bin/lutris", Some("lutris:rungame/terraria"))],
         ImportSource::Itch => &[("Celeste", "/home/user/.config/itch/apps/celeste/Celeste", None)],
         ImportSource::Flatpak => &[("OpenTTD", FLATPAK, Some("run org.openttd.OpenTTD"))],
-        ImportSource::Bottles => &[(
-            "Disco Elysium",
-            FLATPAK,
-            Some("run --command=bottles-cli com.usebottles.bottles run -b Games -p 'Disco Elysium'"),
-        )],
         ImportSource::MiniGalaxy => &[(
             "Stardew Valley",
             "/home/user/GOG Games/Stardew Valley/start.sh",
