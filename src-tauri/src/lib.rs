@@ -141,17 +141,30 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Rounds all four corners of the GTK frame. Themes like Adwaita only round the top ones.
+/// Rounds all four corners of the GTK frame and drops its outline. Themes like Adwaita only round the top ones.
 #[cfg(target_os = "linux")]
 fn round_gtk_frame(screen: &gtk::gdk::Screen) {
     use gtk::prelude::CssProviderExt;
 
-    // 8px matches rounded-lg on the page body
+    // 8px matches rounded-lg on the page body. The shadows are Adwaita's without its 1px outline.
     const CSS: &[u8] = b"
-        decoration { border-radius: 8px; }
-        .maximized decoration, .fullscreen decoration, .tiled decoration,
-        .tiled-top decoration, .tiled-right decoration, .tiled-bottom decoration,
-        .tiled-left decoration { border-radius: 0; }
+        decoration { border-radius: 8px; box-shadow: 0 3px 9px 1px rgba(0, 0, 0, 0.5); }
+        decoration:backdrop {
+            box-shadow: 0 3px 9px 1px transparent, 0 2px 6px 2px rgba(0, 0, 0, 0.2);
+        }
+        .maximized decoration, .maximized decoration:backdrop,
+        .fullscreen decoration, .fullscreen decoration:backdrop {
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .tiled decoration, .tiled decoration:backdrop,
+        .tiled-top decoration, .tiled-top decoration:backdrop,
+        .tiled-right decoration, .tiled-right decoration:backdrop,
+        .tiled-bottom decoration, .tiled-bottom decoration:backdrop,
+        .tiled-left decoration, .tiled-left decoration:backdrop {
+            border-radius: 0;
+            box-shadow: 0 0 0 20px transparent;
+        }
     ";
     let provider = gtk::CssProvider::new();
     if let Err(error) = provider.load_from_data(CSS) {
