@@ -146,12 +146,16 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
 fn round_gtk_frame(screen: &gtk::gdk::Screen) {
     use gtk::prelude::CssProviderExt;
 
-    // 15px matches libadwaita windows since GNOME 48, and the page body in main.css.
-    // The shadows are Adwaita's without its 1px outline.
+    // The radius and shadows match libadwaita windows since GNOME 48, without their outline.
+    // The radius also matches the page body in main.css. The margin leaves room for the shadow.
     const CSS: &[u8] = b"
-        decoration { border-radius: 15px; box-shadow: 0 3px 9px 1px rgba(0, 0, 0, 0.5); }
+        decoration {
+            border-radius: 15px;
+            margin: 20px;
+            box-shadow: 0 0 14px 5px rgba(0, 0, 0, 0.15), 0 0 5px 2px rgba(0, 0, 0, 0.1);
+        }
         decoration:backdrop {
-            box-shadow: 0 3px 9px 1px transparent, 0 2px 6px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 14px 5px transparent, 0 0 10px 5px rgba(0, 0, 0, 0.08);
         }
         .maximized decoration, .maximized decoration:backdrop,
         .fullscreen decoration, .fullscreen decoration:backdrop {
