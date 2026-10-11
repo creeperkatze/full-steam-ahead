@@ -22,6 +22,26 @@ Also available in these stores:
 
 Prefer to build from source? See [🔒 Building from source](#-building-from-source) below.
 
+## 🎮 Supported platforms
+
+| Platform | Windows | macOS | Linux |
+|---|---|---|---|
+| Epic Games | ✅ | ✅ | ✅ |
+| GOG | ✅ | ❌ | ✅ |
+| itch.io | ✅ | ✅ | ✅ |
+| EA app | ✅ | - | ✅ |
+| Ubisoft Connect | ✅ | - | ✅ |
+| Amazon Games | ✅ | - | - |
+| Xbox | ✅ | - | - |
+| Playnite | ✅ | - | - |
+| Bottles | - | - | ✅ |
+| Flatpak | - | - | ✅ |
+| Heroic | ❌ | ❌ | ✅ |
+| Legendary | ❌ | ❌ | ✅ |
+| Lutris | - | - | ✅ |
+| MiniGalaxy | - | - | ✅ |
+| Proton | - | - | ✅ |s
+
 ## ✨ Features
 
 <table>
@@ -70,26 +90,6 @@ Prefer to build from source? See [🔒 Building from source](#-building-from-sou
 <td><h3>Every backup, one restore away</h3>Browse every automatic backup Full Steam Ahead has made, restore any of them, or clean up the ones you don't need.</td>
 </tr>
 </table>
-
-## 🎮 Supported platforms
-
-| Platform | Windows | macOS | Linux |
-|---|---|---|---|
-| Epic Games | ✅ | ✅ | ✅ |
-| GOG | ✅ | ❌ | ✅ |
-| itch.io | ✅ | ✅ | ✅ |
-| EA app | ✅ | - | ✅ |
-| Ubisoft Connect | ✅ | - | ✅ |
-| Amazon Games | ✅ | - | - |
-| Xbox | ✅ | - | - |
-| Playnite | ✅ | - | - |
-| Bottles | - | - | ✅ |
-| Flatpak | - | - | ✅ |
-| Heroic | ❌ | ❌ | ✅ |
-| Legendary | ❌ | ❌ | ✅ |
-| Lutris | - | - | ✅ |
-| MiniGalaxy | - | - | ✅ |
-| Proton | - | - | ✅ |
 
 ## 🔒 Building from source
 
