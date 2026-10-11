@@ -11,8 +11,6 @@ A desktop app to import games from other launchers into Steam.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/creeperkatze)
 
-> [!NOTE]
-> Full Steam Ahead builds on the work of [BoilR](https://github.com/PhilipK/BoilR). The supported platforms and much of the importer logic originated there. If you're looking for an alternative, check it out.
 
 ## 🚀 Installation
 
@@ -24,58 +22,56 @@ Also available in these stores:
 
 Prefer to build from source? See [🔒 Building from source](#-building-from-source) below.
 
-## 📸 Screenshots
-
-<table>
-<tr>
-<td width="33%"><img src=".github/assets/screenshots/start.png"><p align="center"><sub>Pick your Steam user</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/sources.png"><p align="center"><sub>Choose which games to import</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/artwork.png"><p align="center"><sub>Review matched grid images, heroes, and logos</sub></p></td>
-</tr>
-<tr>
-<td width="33%"><img src=".github/assets/screenshots/steamgriddb.png"><p align="center"><sub>Browse custom artwork on SteamGridDB</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/review.png"><p align="center"><sub>Review before you apply anything</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/done.png"><p align="center"><sub>All done, with an automatic backup</sub></p></td>
-</tr>
-</table>
-
-<details>
-<summary>Settings</summary>
-<br>
-
-<table>
-<tr>
-<td width="33%"><img src=".github/assets/screenshots/settings_sources.png"><p align="center"><sub>Configure sources</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_artwork.png"><p align="center"><sub>Choose where your artwork comes from</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_steam.png"><p align="center"><sub>Decide how Steam gets handled</sub></p></td>
-</tr>
-<tr>
-<td width="33%"><img src=".github/assets/screenshots/settings_backups.png"><p align="center"><sub>Every backup, one restore away</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_customization.png"><p align="center"><sub>Make it feel like yours</sub></p></td>
-<td width="33%"><img src=".github/assets/screenshots/settings_debug.png"><p align="center"><sub>Debug info and logs</sub></p></td>
-</tr>
-</table>
-
-</details>
-
 ## ✨ Features
 
 <table>
 <tr>
-<td width="50%"><b>Platforms</b><br>Automatically detects installed games from a wide range of launchers and platforms.</td>
-<td width="50%"><b>Artwork management</b><br>Fetches and applies grid images, hero art, and logos for your imported games using matched Steam assets.</td>
+<td width="60%"><img src=".github/assets/screenshots/start.png"></td>
+<td><h3>Pick your Steam user</h3>Scan your installed launchers and pick which Steam user to import into, right when you open the app.</td>
 </tr>
 <tr>
-<td width="50%"><b>Collections</b><br>Organizes imported games into Steam collections so your library stays tidy.</td>
-<td width="50%"><b>Preview & backup</b><br>Review the full list of changes before anything is applied. A backup is created automatically so you can always roll back.</td>
+<td><h3>Choose which games to import</h3>Every detected game from Epic, GOG, itch.io, and more is listed with a toggle, or add any executable manually as a custom non-Steam game.</td>
+<td width="60%"><img src=".github/assets/screenshots/sources.png"></td>
 </tr>
 <tr>
-<td width="50%"><b>Manual import</b><br>Add any executable as a custom non-Steam game with your own launch options.</td>
-<td width="50%"><b>Automatic Steam restart</b><br>After importing, Full Steam Ahead detects and restarts Steam so your new shortcuts show up immediately.</td>
+<td width="60%"><img src=".github/assets/screenshots/artwork.png"></td>
+<td><h3>Review matched grid images, heroes, and logos</h3>Full Steam Ahead fetches matching grid images, hero art, logos, and icons for every game it imports.</td>
+</tr>
+<tr>
+<td><h3>Browse custom artwork on SteamGridDB</h3>Browse SteamGridDB's full library for every game and swap in the artwork you actually want.</td>
+<td width="60%"><img src=".github/assets/screenshots/steamgriddb.png"></td>
+</tr>
+<tr>
+<td width="60%"><img src=".github/assets/screenshots/review.png"></td>
+<td><h3>Review before you apply anything</h3>See every Steam entry and launcher link that's about to be added or updated before you apply anything.</td>
+</tr>
+<tr>
+<td><h3>All done, with an automatic backup</h3>Changes are applied and a backup of your Steam config is created automatically, so you can always roll back.</td>
+<td width="60%"><img src=".github/assets/screenshots/done.png"></td>
+</tr>
+<tr>
+<td width="60%"><img src=".github/assets/screenshots/settings_customization.png"></td>
+<td><h3>Make it feel like yours</h3>Choose your language and switch between light, dark, or system color scheme, right from the settings.</td>
+</tr>
+<tr>
+<td><h3>Decide how Steam gets handled</h3>Decide whether Steam is closed and restarted automatically, group imports into per-launcher collections, and override the install location if it isn't auto-detected.</td>
+<td width="60%"><img src=".github/assets/screenshots/settings_steam.png"></td>
+</tr>
+<tr>
+<td width="60%"><img src=".github/assets/screenshots/settings_sources.png"></td>
+<td><h3>Configure sources</h3>Enable or disable each launcher, and override its auto-detected install path if Full Steam Ahead can't find it on its own.</td>
+</tr>
+<tr>
+<td><h3>Choose where your artwork comes from</h3>Choose which source artwork is fetched from automatically, Steam or SteamGridDB, then enable SteamGridDB browsing and add your own API key.</td>
+<td width="60%"><img src=".github/assets/screenshots/settings_artwork.png"></td>
+</tr>
+<tr>
+<td width="60%"><img src=".github/assets/screenshots/settings_backups.png"></td>
+<td><h3>Every backup, one restore away</h3>Browse every automatic backup Full Steam Ahead has made, restore any of them, or clean up the ones you don't need.</td>
 </tr>
 </table>
 
-### Supported platforms
+## 🎮 Supported platforms
 
 | Platform | Windows | macOS | Linux |
 |---|---|---|---|
@@ -94,12 +90,6 @@ Prefer to build from source? See [🔒 Building from source](#-building-from-sou
 | Lutris | - | - | ✅ |
 | MiniGalaxy | - | - | ✅ |
 | Proton | - | - | ✅ |
-
-## ⚙️ Setup
-
-1. Launch Full Steam Ahead.
-2. The app will detect your Steam installation automatically.
-3. Choose which games to import, review the artwork, and confirm the changes.
 
 ## 🔒 Building from source
 
