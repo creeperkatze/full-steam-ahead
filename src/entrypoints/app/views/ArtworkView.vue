@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 
 import SteamGridDbIcon from '../../../assets/icons/steamgriddb.svg'
 import GameIcon from '../../../components/GameIcon.vue'
+import SourceLabel from '../../../components/SourceLabel.vue'
 import SteamGridDbBrowser from '../../../components/SteamGridDbBrowser.vue'
 import UiButton from '../../../components/ui/Button.vue'
 import { useAppState } from '../../../composables/useAppState'
@@ -190,6 +191,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 				<header class="flex min-h-12 items-center gap-2 border-b border-border bg-surface-4 p-2">
 					<GameIcon :candidate="candidate" :size="20" />
 					<strong class="min-w-0 truncate text-base">{{ candidate.name }}</strong>
+					<SourceLabel :source="candidate.source" />
 				</header>
 
 				<div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3 p-2">

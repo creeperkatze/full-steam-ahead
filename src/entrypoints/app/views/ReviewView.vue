@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import GameIcon from '../../../components/GameIcon.vue'
+import SourceLabel from '../../../components/SourceLabel.vue'
 import ItemRow from '../../../components/ui/ItemRow.vue'
 import { useAppState } from '../../../composables/useAppState'
 import type { PlannedChange, PreviewPlan } from '../../../types'
@@ -141,6 +142,10 @@ function fileName(path: string) {
 								:size="20"
 							/>
 							<strong class="min-w-0 truncate text-base">{{ game.name }}</strong>
+							<SourceLabel
+								v-if="candidateById.get(game.id)"
+								:source="candidateById.get(game.id)!.source"
+							/>
 						</div>
 						<span class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-secondary">
 							{{ t('reviewView.changeCount', { count: changeCount(game) }, changeCount(game)) }}
