@@ -214,7 +214,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 
 						<div class="flex gap-2">
 							<UiButton
-								class="h-9 flex-1"
+								class="h-9 min-w-0 flex-1"
 								size="icon"
 								:title="t('artworkView.pickLocalArtworkTitle')"
 								@click="pickArtwork(candidate.id, slot.kind)"
@@ -223,7 +223,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 							</UiButton>
 							<UiButton
 								v-if="steamGridDbAvailable"
-								class="h-9 flex-1"
+								class="h-9 min-w-0 flex-1"
 								size="icon"
 								:title="t('artworkView.browseSteamGridDbTitle')"
 								@click="openSteamGridDbBrowser(candidate, slot.kind)"
@@ -231,7 +231,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								<SteamGridDbIcon class="h-3 w-auto" />
 							</UiButton>
 							<UiButton
-								class="h-9 flex-1"
+								class="h-9 min-w-0 flex-1"
 								size="icon"
 								:title="t('artworkView.useOfficialArtworkTitle')"
 								:disabled="
@@ -244,7 +244,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 								<RotateCcw :size="14" />
 							</UiButton>
 							<UiButton
-								class="h-9 flex-1"
+								class="h-9 min-w-0 flex-1"
 								size="icon"
 								:title="t('artworkView.deleteArtworkTitle')"
 								:disabled="!displayAsset(candidate, slot.kind)?.pathOrUrl"
