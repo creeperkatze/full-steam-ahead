@@ -14,19 +14,17 @@ pub fn find_existing<'a>(
     shortcuts: &'a [ShortcutEntry],
     candidate: &ImportCandidate,
 ) -> Option<&'a ShortcutEntry> {
-    // Both paths so games are still recognised after the launcher toggle changes.
-    let computed_ids = [
-        Some(candidate.executable_path.as_path()),
-        candidate.launcher_path.as_deref(),
-    ]
-    .into_iter()
-    .flatten()
-    .map(|exe| non_steam_app_id(&quote_path(exe), &candidate.name));
+    // Older versions keyed shortcuts imported through the launcher by the launcher's path.
+    let launcher_id = candidate
+        .launcher_path
+        .as_deref()
+        .map(|exe| non_steam_app_id(&quote_path(exe), &candidate.original_name));
 
     candidate
         .existing_app_id
         .into_iter()
-        .chain(computed_ids)
+        .chain([candidate.app_id])
+        .chain(launcher_id)
         .find_map(|id| shortcuts.iter().find(|s| s.app_id == id))
 }
 
@@ -251,6 +249,7 @@ mod tests {
             executable_path: PathBuf::from(exe),
             start_dir: PathBuf::from("C:\\Games"),
             launch_options: launch_options.map(String::from),
+            app_id: non_steam_app_id(&quote_path(Path::new(exe)), name),
             existing_app_id: None,
             matched_steam_app_id: None,
             tags: Vec::new(),
@@ -319,6 +318,26 @@ mod tests {
         candidate.name = "Renamed In FSA".to_string();
         candidate.executable_path = PathBuf::from("moved/game.exe");
         assert!(find_existing(&[shortcut], &candidate).is_some());
+    }
+
+    #[test]
+    fn app_id_survives_a_rename_and_the_launcher_toggle() {
+        let mut candidate = make_candidate("Game", "game.exe", None);
+        candidate.launcher_path = Some(PathBuf::from("launcher.exe"));
+        candidate.url_scheme = Some("launch game".to_string());
+        let before = candidate_app_id(&candidate);
+        candidate.name = "Renamed In FSA".to_string();
+        candidate.use_launcher_url = true;
+        assert_eq!(candidate_app_id(&candidate), before);
+    }
+
+    #[test]
+    fn a_rename_in_fsa_does_not_link_to_the_shortcut_of_the_new_name() {
+        let mut candidate = make_candidate("Game", "game.exe", None);
+        let other = make_candidate("Renamed", "game.exe", None);
+        candidate.name = "Renamed".to_string();
+        let shortcuts = [renamed_in_steam(&other, "Renamed")];
+        assert!(find_existing(&shortcuts, &candidate).is_none());
     }
 
     #[test]

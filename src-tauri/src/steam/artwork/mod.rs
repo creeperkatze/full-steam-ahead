@@ -675,6 +675,7 @@ mod tests {
             executable_path: PathBuf::from("game.exe"),
             start_dir: PathBuf::from("."),
             launch_options: None,
+            app_id: 1,
             existing_app_id: None,
             matched_steam_app_id: None,
             tags: vec![],

@@ -111,6 +111,7 @@ export type ImportCandidate = {
 	executablePath: string,
 	startDir: string,
 	launchOptions: string | null,
+	appId: number,
 	existingAppId: number | null,
 	matchedSteamAppId: number | null,
 	tags: string[],

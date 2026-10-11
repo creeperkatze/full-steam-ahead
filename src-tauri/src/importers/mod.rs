@@ -153,6 +153,7 @@ pub fn candidate_from_parts(
         executable_path,
         start_dir,
         launch_options,
+        app_id,
         existing_app_id: None,
         matched_steam_app_id,
         tags,

@@ -182,6 +182,7 @@ mod tests {
             executable_path: PathBuf::from("game.exe"),
             start_dir: PathBuf::from("C:\\Games"),
             launch_options: launch_options.map(String::from),
+            app_id: crate::steam::non_steam_app_id("\"game.exe\"", "Test Game"),
             existing_app_id: None,
             matched_steam_app_id: None,
             tags: vec!["Epic".to_string()],

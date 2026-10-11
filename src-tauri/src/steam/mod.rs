@@ -14,12 +14,7 @@ pub fn non_steam_app_id(exe: &str, name: &str) -> u32 {
 
 /// The app id of the candidate's shortcut, which artwork and collections are keyed by.
 pub fn candidate_app_id(candidate: &crate::models::ImportCandidate) -> u32 {
-    candidate.existing_app_id.unwrap_or_else(|| {
-        non_steam_app_id(
-            &crate::importers::quote_path(candidate.effective_executable()),
-            &candidate.name,
-        )
-    })
+    candidate.existing_app_id.unwrap_or(candidate.app_id)
 }
 
 #[cfg(test)]
