@@ -5,8 +5,10 @@ FSA writes shortcuts (`shortcuts.vdf`), artwork (the `grid` folder) and collecti
 ## Shortcut identity
 
 - A shortcut is identified by its app id only, never by name or exe. Steam keeps the app id when a shortcut is renamed or edited, so artwork and collections stay attached.
-- `shortcuts::link_existing` sets a candidate's `existing_app_id`. It looks for the linked id first, then for the id FSA would have computed from the launcher's name and the game or launcher exe.
+- A candidate's `app_id` is computed once at scan from the launcher's name and the game's exe. Renaming it in FSA or toggling the launcher doesn't change it.
+- `shortcuts::link_existing` sets a candidate's `existing_app_id`. It looks for the linked id, then the candidate's `app_id`, then the id older versions gave shortcuts that start through the launcher.
 - `steam::candidate_app_id` is the only place that decides a candidate's app id. Use it for shortcuts, artwork and collections.
+- A game that matches no shortcut is imported as new. FSA doesn't guess by name or exe, so the user deletes an old duplicate themselves.
 
 ## Updating a shortcut
 
@@ -22,6 +24,15 @@ A scan uses the name from Steam, so a rename there survives the next import. `or
 ## Preview and apply
 
 Both build the updated shortcuts with `shortcuts::with_candidates`. Apply writes that list and the preview compares it with the file. Change the rules in one place so the preview can't disagree with what apply writes.
+
+## Artwork
+
+`artwork::selected_artwork_assets` decides each slot. `src/helpers/artwork.ts` mirrors it for the artwork view.
+
+1. Artwork picked in FSA wins. Its asset has `chosen` set.
+2. A game already in Steam keeps the artwork it has.
+3. A new game gets the proposed artwork, from Steam or SteamGridDB.
+4. Steam keeps a deleted shortcut's artwork. A new game removes these leftovers when nothing replaces them.
 
 ## Collections
 

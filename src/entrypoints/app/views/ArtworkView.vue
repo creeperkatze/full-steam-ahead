@@ -114,26 +114,13 @@ function deleteArtwork(candidateId: string, kind: ArtworkKind) {
 
 function useOfficialArtwork(candidateId: string, kind: ArtworkKind) {
 	const candidate = state.candidates.value.find((candidate) => candidate.id === candidateId)
-	const hasOfficial = candidate?.artwork.proposed.some(
+	const official = candidate?.artwork.proposed.find(
 		(asset) => asset.kind === kind && asset.source === 'officialSteam',
 	)
-	if (!hasOfficial) return
+	if (!official) return
 
 	removeArtworkOverride(candidateId, kind)
-	state.candidates.value = state.candidates.value.map((candidate) => {
-		if (candidate.id !== candidateId) return candidate
-		return {
-			...candidate,
-			artwork: {
-				...candidate.artwork,
-				proposed: candidate.artwork.proposed.map((asset) =>
-					asset.kind === kind && asset.source === 'officialSteam'
-						? { ...asset, chosen: true }
-						: asset,
-				),
-			},
-		}
-	})
+	upsertArtworkAsset(candidateId, { ...official, chosen: true })
 }
 
 function upsertArtworkAsset(candidateId: string, asset: ArtworkAsset) {
