@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 use tracing::{info, instrument};
 
@@ -18,4 +19,14 @@ pub fn show_main_window(app: tauri::AppHandle) {
             tracing::warn!(%error, "Could not show the main window");
         }
     }
+}
+
+/// Kept up to date by the Linux main window, whose frame turns square when maximized or tiled.
+pub static WINDOW_CORNERS_ROUNDED: AtomicBool = AtomicBool::new(true);
+
+#[tauri::command]
+#[instrument(skip_all)]
+#[specta::specta]
+pub async fn window_corners_rounded() -> bool {
+    WINDOW_CORNERS_ROUNDED.load(Ordering::Relaxed)
 }
