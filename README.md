@@ -46,48 +46,48 @@ Prefer to build from source? See [🔒 Building from source](#-building-from-sou
 
 <table>
 <tr>
-<td width="60%"><img src=".github/assets/screenshots/start.png"></td>
-<td><h3>Pick your Steam user</h3>Scan your installed launchers and pick which Steam user to import into, right when you open the app.</td>
+<td width="50%"><img src=".github/assets/screenshots/start.png"></td>
+<td width="50%"><h3>Pick your Steam user</h3>Scan your installed launchers and pick which Steam user to import into, right when you open the app.</td>
 </tr>
 <tr>
-<td><h3>Choose which games to import</h3>Every detected game from Epic, GOG, itch.io, and more is listed with a toggle, or add any executable manually as a custom non-Steam game.</td>
-<td width="60%"><img src=".github/assets/screenshots/sources.png"></td>
+<td width="50%"><h3>Choose which games to import</h3>Every detected game from Epic, GOG, itch.io, and more is listed with a toggle, or add any executable manually as a custom non-Steam game.</td>
+<td width="50%"><img src=".github/assets/screenshots/sources.png"></td>
 </tr>
 <tr>
-<td width="60%"><img src=".github/assets/screenshots/artwork.png"></td>
-<td><h3>Review matched grid images, heroes, and logos</h3>Full Steam Ahead fetches matching grid images, hero art, logos, and icons for every game it imports.</td>
+<td width="50%"><img src=".github/assets/screenshots/artwork.png"></td>
+<td width="50%"><h3>Review matched grid images, heroes, and logos</h3>Full Steam Ahead fetches matching grid images, hero art, logos, and icons for every game it imports.</td>
 </tr>
 <tr>
-<td><h3>Browse custom artwork on SteamGridDB</h3>Browse SteamGridDB's full library for every game and swap in the artwork you actually want.</td>
-<td width="60%"><img src=".github/assets/screenshots/steamgriddb.png"></td>
+<td width="50%"><h3>Browse custom artwork on SteamGridDB</h3>Browse SteamGridDB's full library for every game and swap in the artwork you actually want.</td>
+<td width="50%"><img src=".github/assets/screenshots/steamgriddb.png"></td>
 </tr>
 <tr>
-<td width="60%"><img src=".github/assets/screenshots/review.png"></td>
-<td><h3>Review before you apply anything</h3>See every Steam entry and launcher link that's about to be added or updated before you apply anything.</td>
+<td width="50%"><img src=".github/assets/screenshots/review.png"></td>
+<td width="50%"><h3>Review before you apply anything</h3>See every Steam entry and launcher link that's about to be added or updated before you apply anything.</td>
 </tr>
 <tr>
-<td><h3>All done, with an automatic backup</h3>Changes are applied and a backup of your Steam config is created automatically, so you can always roll back.</td>
-<td width="60%"><img src=".github/assets/screenshots/done.png"></td>
+<td width="50%"><h3>All done, with an automatic backup</h3>Changes are applied and a backup of your Steam config is created automatically, so you can always roll back.</td>
+<td width="50%"><img src=".github/assets/screenshots/done.png"></td>
 </tr>
 <tr>
-<td width="60%"><img src=".github/assets/screenshots/settings_customization.png"></td>
-<td><h3>Make it feel like yours</h3>Choose your language and switch between light, dark, or system color scheme, right from the settings.</td>
+<td width="50%"><img src=".github/assets/screenshots/settings_customization.png"></td>
+<td width="50%"><h3>Make it feel like yours</h3>Choose your language and switch between light, dark, or system color scheme, right from the settings.</td>
 </tr>
 <tr>
-<td><h3>Decide how Steam gets handled</h3>Decide whether Steam is closed and restarted automatically, group imports into per-launcher collections, and override the install location if it isn't auto-detected.</td>
-<td width="60%"><img src=".github/assets/screenshots/settings_steam.png"></td>
+<td width="50%"><h3>Decide how Steam gets handled</h3>Decide whether Steam is closed and restarted automatically, group imports into per-launcher collections, and override the install location if it isn't auto-detected.</td>
+<td width="50%"><img src=".github/assets/screenshots/settings_steam.png"></td>
 </tr>
 <tr>
-<td width="60%"><img src=".github/assets/screenshots/settings_sources.png"></td>
-<td><h3>Configure sources</h3>Enable or disable each launcher, and override its auto-detected install path if Full Steam Ahead can't find it on its own.</td>
+<td width="50%"><img src=".github/assets/screenshots/settings_sources.png"></td>
+<td width="50%"><h3>Configure sources</h3>Enable or disable each launcher, and override its auto-detected install path if Full Steam Ahead can't find it on its own.</td>
 </tr>
 <tr>
-<td><h3>Choose where your artwork comes from</h3>Choose which source artwork is fetched from automatically, Steam or SteamGridDB, then enable SteamGridDB browsing and add your own API key.</td>
-<td width="60%"><img src=".github/assets/screenshots/settings_artwork.png"></td>
+<td width="50%"><h3>Choose where your artwork comes from</h3>Choose which source artwork is fetched from automatically, Steam or SteamGridDB, then enable SteamGridDB browsing and add your own API key.</td>
+<td width="50%"><img src=".github/assets/screenshots/settings_artwork.png"></td>
 </tr>
 <tr>
-<td width="60%"><img src=".github/assets/screenshots/settings_backups.png"></td>
-<td><h3>Every backup, one restore away</h3>Browse every automatic backup Full Steam Ahead has made, restore any of them, or clean up the ones you don't need.</td>
+<td width="50%"><img src=".github/assets/screenshots/settings_backups.png"></td>
+<td width="50%"><h3>Every backup, one restore away</h3>Browse every automatic backup Full Steam Ahead has made, restore any of them, or clean up the ones you don't need.</td>
 </tr>
 </table>
 
