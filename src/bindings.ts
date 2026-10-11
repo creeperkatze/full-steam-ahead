@@ -62,6 +62,7 @@ export type ArtworkAsset = {
 	pathOrUrl: string,
 	source: ArtworkSource,
 	willReplaceExisting: boolean,
+	chosen: boolean,
 };
 
 export type ArtworkKind = "header" | "capsule" | "hero" | "logo" | "icon";

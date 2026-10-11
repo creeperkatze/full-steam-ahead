@@ -11,6 +11,7 @@ import SourceLabel from '../../../components/SourceLabel.vue'
 import SteamGridDbBrowser from '../../../components/SteamGridDbBrowser.vue'
 import UiButton from '../../../components/ui/Button.vue'
 import { useAppState } from '../../../composables/useAppState'
+import { displayAsset } from '../../../helpers/artwork'
 import type { ArtworkAsset, ArtworkKind, ImportCandidate, SteamGridDbImage } from '../../../types'
 
 const state = useAppState()
@@ -39,22 +40,6 @@ function isOverrideSource(source: ArtworkAsset['source']): boolean {
 	return OVERRIDE_SOURCES.includes(source)
 }
 
-// Priority order must match selected_artwork_assets in src-tauri/src/steam/artwork/mod.rs.
-function selectedAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAsset | undefined {
-	const matches = candidate.artwork.proposed.filter((asset) => asset.kind === kind)
-	return (
-		matches.find((asset) => asset.source === 'missing') ??
-		matches.find((asset) => asset.source === 'localFile') ??
-		matches.find((asset) => asset.source === 'steamGridDb') ??
-		matches.find((asset) => asset.source === 'officialSteam') ??
-		matches[0]
-	)
-}
-
-function existingAsset(candidate: ImportCandidate, kind: ArtworkKind): ArtworkAsset | undefined {
-	return candidate.artwork.existing.find((asset) => asset.kind === kind)
-}
-
 function sourceLabel(asset?: ArtworkAsset) {
 	if (!asset) return t('artworkSource.missing')
 	if (asset.source === 'officialSteam') return t('artworkSource.officialSteam')
@@ -81,10 +66,6 @@ function markPreviewErrored(asset?: ArtworkAsset) {
 	if (src) brokenPreviewUrls.value[src] = true
 }
 
-function displayAsset(candidate: ImportCandidate, kind: ArtworkKind) {
-	return selectedAsset(candidate, kind) || existingAsset(candidate, kind)
-}
-
 async function pickArtwork(candidateId: string, kind: ArtworkKind) {
 	const picked = await open({
 		multiple: false,
@@ -98,6 +79,7 @@ async function pickArtwork(candidateId: string, kind: ArtworkKind) {
 		pathOrUrl: picked,
 		source: 'localFile',
 		willReplaceExisting: true,
+		chosen: true,
 	})
 }
 
@@ -114,6 +96,7 @@ function onSteamGridDbSelect(image: SteamGridDbImage) {
 		pathOrUrl: image.url,
 		source: 'steamGridDb',
 		willReplaceExisting: true,
+		chosen: true,
 	})
 	browsingSlot.value = null
 }
@@ -125,6 +108,7 @@ function deleteArtwork(candidateId: string, kind: ArtworkKind) {
 		pathOrUrl: '',
 		source: 'missing',
 		willReplaceExisting: true,
+		chosen: true,
 	})
 }
 
@@ -136,6 +120,20 @@ function useOfficialArtwork(candidateId: string, kind: ArtworkKind) {
 	if (!hasOfficial) return
 
 	removeArtworkOverride(candidateId, kind)
+	state.candidates.value = state.candidates.value.map((candidate) => {
+		if (candidate.id !== candidateId) return candidate
+		return {
+			...candidate,
+			artwork: {
+				...candidate.artwork,
+				proposed: candidate.artwork.proposed.map((asset) =>
+					asset.kind === kind && asset.source === 'officialSteam'
+						? { ...asset, chosen: true }
+						: asset,
+				),
+			},
+		}
+	})
 }
 
 function upsertArtworkAsset(candidateId: string, asset: ArtworkAsset) {
@@ -205,11 +203,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 							<span
 								class="min-w-0 truncate rounded-sm border border-border-muted px-1.5 py-0.5 text-xs text-secondary"
 							>
-								{{
-									sourceLabel(
-										selectedAsset(candidate, slot.kind) || existingAsset(candidate, slot.kind),
-									)
-								}}
+								{{ sourceLabel(displayAsset(candidate, slot.kind)) }}
 							</span>
 						</div>
 

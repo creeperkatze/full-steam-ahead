@@ -2,6 +2,7 @@
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, ref, watch } from 'vue'
 
+import { displayAsset } from '../helpers/artwork'
 import type { ImportCandidate } from '../types'
 
 const props = defineProps<{ candidate: ImportCandidate; size?: number }>()
@@ -9,10 +10,8 @@ const props = defineProps<{ candidate: ImportCandidate; size?: number }>()
 const errored = ref(false)
 
 const iconSrc = computed(() => {
-	const asset =
-		props.candidate.artwork.proposed.find((a) => a.kind === 'icon') ??
-		props.candidate.artwork.existing.find((a) => a.kind === 'icon')
-	if (!asset) return null
+	const asset = displayAsset(props.candidate, 'icon')
+	if (!asset?.pathOrUrl) return null
 	return asset.source === 'localFile' || asset.source === 'existingCustom'
 		? convertFileSrc(asset.pathOrUrl)
 		: asset.pathOrUrl

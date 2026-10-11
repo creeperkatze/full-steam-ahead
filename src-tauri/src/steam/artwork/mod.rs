@@ -92,6 +92,7 @@ fn steamgriddb_assets(
                 path_or_url: image.url,
                 source: ArtworkSource::SteamGridDb,
                 will_replace_existing,
+                chosen: false,
             })
         })
         .collect()
@@ -236,62 +237,60 @@ pub fn changes_icon(candidate: &ImportCandidate) -> bool {
     })
 }
 
+/// What the import writes to each artwork slot.
+/// A choice made in FSA wins. Otherwise a game already in Steam keeps its artwork and a new game gets the proposal.
 pub fn selected_artwork_assets(candidate: &ImportCandidate) -> Vec<ArtworkAsset> {
-    [
-        ArtworkKind::Header,
-        ArtworkKind::Capsule,
-        ArtworkKind::Hero,
-        ArtworkKind::Logo,
-        ArtworkKind::Icon,
-    ]
-    .into_iter()
-    .filter_map(|kind| {
-        let marked_missing = candidate
-            .artwork
-            .proposed
-            .iter()
-            .any(|asset| asset.kind == kind && asset.source == ArtworkSource::Missing);
-        if marked_missing {
+    let in_steam = candidate.existing_app_id.is_some();
+    ARTWORK_KINDS
+        .into_iter()
+        .filter_map(|kind| {
             let existing = candidate
                 .artwork
                 .existing
                 .iter()
                 .find(|asset| asset.kind == kind);
-            return Some(ArtworkAsset {
-                kind,
-                path_or_url: existing.map_or_else(String::new, |asset| asset.path_or_url.clone()),
-                source: ArtworkSource::Missing,
-                will_replace_existing: existing.is_some(),
-            });
-        }
-
-        candidate
-            .artwork
-            .proposed
-            .iter()
-            .find(|asset| asset.kind == kind && asset.source == ArtworkSource::LocalFile)
-            .or_else(|| {
-                candidate
-                    .artwork
-                    .proposed
-                    .iter()
-                    .find(|asset| asset.kind == kind && asset.source == ArtworkSource::SteamGridDb)
-            })
-            .or_else(|| {
-                candidate.artwork.proposed.iter().find(|asset| {
-                    asset.kind == kind && asset.source == ArtworkSource::OfficialSteam
+            let proposed = |chosen: bool| {
+                SELECTION_ORDER.iter().find_map(|source| {
+                    candidate.artwork.proposed.iter().find(|asset| {
+                        asset.kind == kind && asset.source == *source && asset.chosen == chosen
+                    })
                 })
-            })
-            .or_else(|| {
-                candidate
-                    .artwork
-                    .proposed
-                    .iter()
-                    .find(|asset| asset.kind == kind)
-            })
-            .cloned()
-    })
-    .collect()
+            };
+
+            if let Some(asset) = proposed(true) {
+                if asset.source == ArtworkSource::Missing {
+                    return Some(removal(kind, existing, true));
+                }
+                return Some(asset.clone());
+            }
+            if in_steam && existing.is_some() {
+                return None;
+            }
+            if let Some(asset) = proposed(false) {
+                return Some(asset.clone());
+            }
+            // Steam keeps a deleted shortcut's artwork and would show it on the new one
+            existing.map(|_| removal(kind, existing, false))
+        })
+        .collect()
+}
+
+/// Order in which artwork sources win over each other. src/helpers/artwork.ts mirrors it.
+const SELECTION_ORDER: [ArtworkSource; 4] = [
+    ArtworkSource::Missing,
+    ArtworkSource::LocalFile,
+    ArtworkSource::SteamGridDb,
+    ArtworkSource::OfficialSteam,
+];
+
+fn removal(kind: ArtworkKind, existing: Option<&ArtworkAsset>, chosen: bool) -> ArtworkAsset {
+    ArtworkAsset {
+        kind,
+        path_or_url: existing.map_or_else(String::new, |asset| asset.path_or_url.clone()),
+        source: ArtworkSource::Missing,
+        will_replace_existing: existing.is_some(),
+        chosen,
+    }
 }
 
 fn existing_assets(grid_path: &Path, app_id: u32) -> Vec<ArtworkAsset> {
@@ -324,6 +323,7 @@ fn existing_assets(grid_path: &Path, app_id: u32) -> Vec<ArtworkAsset> {
                         path_or_url: path.display().to_string(),
                         source: ArtworkSource::ExistingCustom,
                         will_replace_existing: false,
+                        chosen: false,
                     });
                 }
             }
@@ -342,6 +342,7 @@ fn official_assets(steam_app_id: u32, existing: &[ArtworkAsset]) -> Vec<ArtworkA
                 path_or_url: url,
                 source: ArtworkSource::OfficialSteam,
                 will_replace_existing,
+                chosen: false,
             }
         })
         .collect()
@@ -663,6 +664,7 @@ mod tests {
             path_or_url: "url".to_string(),
             source,
             will_replace_existing: false,
+            chosen: false,
         }
     }
 
@@ -726,6 +728,66 @@ mod tests {
         ]);
         let selected = selected_artwork_assets(&candidate);
         assert_eq!(selected.len(), 1);
+    }
+
+    fn with_existing_hero(mut candidate: ImportCandidate, in_steam: bool) -> ImportCandidate {
+        candidate.existing_app_id = in_steam.then_some(1);
+        candidate.artwork.existing =
+            vec![make_asset(ArtworkKind::Hero, ArtworkSource::ExistingCustom)];
+        candidate
+    }
+
+    fn chosen(kind: ArtworkKind, source: ArtworkSource) -> ArtworkAsset {
+        ArtworkAsset {
+            chosen: true,
+            ..make_asset(kind, source)
+        }
+    }
+
+    #[test]
+    fn a_game_in_steam_keeps_its_artwork_over_the_proposal() {
+        let candidate = with_existing_hero(
+            make_candidate(vec![make_asset(
+                ArtworkKind::Hero,
+                ArtworkSource::OfficialSteam,
+            )]),
+            true,
+        );
+        assert!(selected_artwork_assets(&candidate).is_empty());
+    }
+
+    #[test]
+    fn a_choice_in_fsa_replaces_the_artwork_in_steam() {
+        let candidate = with_existing_hero(
+            make_candidate(vec![chosen(
+                ArtworkKind::Hero,
+                ArtworkSource::OfficialSteam,
+            )]),
+            true,
+        );
+        let selected = selected_artwork_assets(&candidate);
+        assert_eq!(selected[0].source, ArtworkSource::OfficialSteam);
+    }
+
+    #[test]
+    fn a_new_game_gets_the_proposal_over_leftover_artwork() {
+        let candidate = with_existing_hero(
+            make_candidate(vec![make_asset(
+                ArtworkKind::Hero,
+                ArtworkSource::OfficialSteam,
+            )]),
+            false,
+        );
+        let selected = selected_artwork_assets(&candidate);
+        assert_eq!(selected[0].source, ArtworkSource::OfficialSteam);
+    }
+
+    #[test]
+    fn a_new_game_removes_leftover_artwork_without_a_proposal() {
+        let candidate = with_existing_hero(make_candidate(vec![]), false);
+        let selected = selected_artwork_assets(&candidate);
+        assert_eq!(selected[0].source, ArtworkSource::Missing);
+        assert!(selected[0].will_replace_existing);
     }
 
     // apply_source_preference

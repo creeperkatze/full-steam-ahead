@@ -114,7 +114,6 @@ fn candidate_changes(
     }
 
     for asset in super::artwork::selected_artwork_assets(candidate) {
-        let is_official_steam = asset.source == ArtworkSource::OfficialSteam;
         let is_noop_delete = asset.source == ArtworkSource::Missing && !asset.will_replace_existing;
 
         let file = super::artwork::target_path(grid_path, app_id, &asset.kind, &asset.path_or_url);
@@ -122,8 +121,8 @@ fn candidate_changes(
             artwork_files.push(file.clone());
         }
 
-        // Official artwork would download the same file again. Deleting an empty slot does nothing.
-        if (is_official_steam && asset.will_replace_existing) || is_noop_delete {
+        // Deleting an empty slot does nothing.
+        if is_noop_delete {
             continue;
         }
 

@@ -179,6 +179,7 @@ pub struct ArtworkAsset {
     pub path_or_url: String,
     pub source: ArtworkSource,
     pub will_replace_existing: bool,
+    pub chosen: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
