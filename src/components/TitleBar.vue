@@ -76,7 +76,7 @@ onUnmounted(() => unlisten?.())
 				:key="step"
 				type="button"
 				:disabled="!navigableSteps[index]"
-				class="flex w-32 min-h-9 items-center justify-start gap-2 rounded-md border p-2 text-start text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border disabled:hover:bg-surface-5 disabled:hover:text-secondary"
+				class="flex min-w-28 min-h-9 items-center justify-start gap-2 whitespace-nowrap rounded-md border p-2 text-start text-secondary transition-colors hover:border-accent hover:bg-accent-bg hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border disabled:hover:bg-surface-5 disabled:hover:text-secondary"
 				:class="
 					activeStep >= index
 						? 'border-accent bg-accent-bg text-primary'

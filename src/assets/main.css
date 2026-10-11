@@ -131,7 +131,7 @@
 {
     body
     {
-        @apply m-0 min-h-screen min-w-260 bg-surface-1 font-sans text-sm tracking-normal text-primary;
+        @apply m-0 min-h-screen min-w-250 bg-surface-1 font-sans text-sm tracking-normal text-primary;
         scrollbar-color: var(--color-border) transparent;
         scrollbar-width: thin;
     }
