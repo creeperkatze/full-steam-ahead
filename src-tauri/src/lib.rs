@@ -15,7 +15,6 @@ use commands::{
     grant_steam_flatpak_permission, import_settings, list_backups, load_settings, open_logs_folder,
     read_shortcuts_for_user, reset_settings, restore_backup, save_settings, scan_sources,
     show_main_window, steamgriddb_images, steamgriddb_search, validate_steam_location,
-    window_corners_rounded,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -89,7 +88,6 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             steamgriddb_images,
             close_app,
             show_main_window,
-            window_corners_rounded,
             list_backups,
             restore_backup,
             delete_backup,
@@ -115,82 +113,6 @@ fn export_bindings(
         specta_typescript::Typescript::default(),
         concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts"),
     )
-}
-
-/// Builds the main window with a GTK frame for its shadow and resize edges.
-#[cfg(target_os = "linux")]
-fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
-    use gtk::prelude::{GtkWindowExt, StyleContextExt, WidgetExt};
-
-    let Some(config) = app.config().app.windows.iter().find(|w| w.label == "main") else {
-        return Ok(());
-    };
-
-    // Rounded corners need transparency, which needs a compositor
-    let screen = gtk::gdk::Screen::default().filter(|screen| screen.is_composited());
-    let mut builder = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
-        .transparent(screen.is_some());
-    if let Some(screen) = &screen {
-        style_gtk_frame(screen);
-        builder = builder.initialization_script("window.__FSA_ROUNDED_CORNERS__ = true;");
-    }
-
-    // An empty titlebar keeps the frame but hides the title bar
-    let gtk_window = builder.build()?.gtk_window()?;
-    gtk_window.set_titlebar(Some(&gtk::EventBox::new()));
-    // Scopes the frame style to this window, so file dialogs keep the theme's frame
-    gtk_window.style_context().add_class("fsa-main");
-    gtk_window.connect_window_state_event(|_, event| {
-        use gtk::gdk::WindowState;
-        let square = WindowState::MAXIMIZED
-            | WindowState::FULLSCREEN
-            | WindowState::TILED
-            | WindowState::TOP_TILED
-            | WindowState::RIGHT_TILED
-            | WindowState::BOTTOM_TILED
-            | WindowState::LEFT_TILED;
-        let rounded = !event.new_window_state().intersects(square);
-        commands::WINDOW_CORNERS_ROUNDED.store(rounded, std::sync::atomic::Ordering::Relaxed);
-        gtk::glib::Propagation::Proceed
-    });
-    Ok(())
-}
-
-/// Gives the frame the radius and shadows of libadwaita windows.
-#[cfg(target_os = "linux")]
-fn style_gtk_frame(screen: &gtk::gdk::Screen) {
-    use gtk::prelude::CssProviderExt;
-
-    // The radius matches the page body in main.css
-    const CSS: &[u8] = b"
-        .fsa-main decoration {
-            border-radius: 15px;
-            margin: 20px;
-            box-shadow: 0 0 14px 5px rgba(0, 0, 0, 0.15), 0 0 5px 2px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(0, 0, 0, 0.05);
-        }
-        .fsa-main decoration:backdrop {
-            box-shadow: 0 0 14px 5px transparent, 0 0 10px 5px rgba(0, 0, 0, 0.08),
-                0 0 0 1px rgba(0, 0, 0, 0.05);
-        }
-        .fsa-main.maximized decoration, .fsa-main.fullscreen decoration,
-        .fsa-main.tiled decoration, .fsa-main.tiled-top decoration,
-        .fsa-main.tiled-right decoration, .fsa-main.tiled-bottom decoration,
-        .fsa-main.tiled-left decoration {
-            border-radius: 0;
-            box-shadow: 0 0 0 20px transparent;
-        }
-    ";
-    let provider = gtk::CssProvider::new();
-    if let Err(error) = provider.load_from_data(CSS) {
-        tracing::warn!(%error, "Could not load the window frame style");
-        return;
-    }
-    gtk::StyleContext::add_provider_for_screen(
-        screen,
-        &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-    );
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -245,8 +167,6 @@ pub fn run() {
     builder
         .setup(move |app| {
             specta.mount_events(app);
-            #[cfg(target_os = "linux")]
-            create_linux_main_window(app)?;
             #[cfg(not(target_os = "linux"))]
             if let Some(window) = app.get_webview_window("main") {
                 if let Err(e) = window.set_shadow(true) {

@@ -23,7 +23,6 @@ export const commands = {
 	steamgriddbImages: (apiKey: string, gameId: number, kind: ArtworkKind, allowNsfw: boolean) => __TAURI_INVOKE<SteamGridDbImage[]>("steamgriddb_images", { apiKey, gameId, kind, allowNsfw }),
 	closeApp: () => __TAURI_INVOKE<void>("close_app"),
 	showMainWindow: () => __TAURI_INVOKE<void>("show_main_window"),
-	windowCornersRounded: () => __TAURI_INVOKE<boolean>("window_corners_rounded"),
 	listBackups: () => __TAURI_INVOKE<BackupInfo[]>("list_backups"),
 	restoreBackup: (backupId: string) => __TAURI_INVOKE<number>("restore_backup", { backupId }),
 	deleteBackup: (backupId: string) => __TAURI_INVOKE<null>("delete_backup", { backupId }),

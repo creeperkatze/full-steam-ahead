@@ -136,20 +136,6 @@
         scrollbar-width: thin;
     }
 
-    html.rounded-window
-    {
-        overflow: hidden;
-    }
-
-    /* Matches the GTK frame in lib.rs. Containment also clips modals. */
-    html.rounded-window body
-    {
-        @apply h-screen overflow-hidden rounded-[15px];
-        contain: layout;
-        outline: 1px solid rgb(255 255 255 / 7%);
-        outline-offset: -1px;
-    }
-
     *
     {
         @apply scroll-smooth;
