@@ -135,9 +135,17 @@ fn default_itch_location() -> PathBuf {
     }
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        std::env::var("HOME")
-            .map(|h| PathBuf::from(h).join(".config").join("itch"))
-            .unwrap_or_else(|_| PathBuf::from(".config/itch"))
+        let home = std::env::var("HOME").map(PathBuf::from).unwrap_or_default();
+        let flatpak = home
+            .join(".var")
+            .join("app")
+            .join("io.itch.itch")
+            .join("config")
+            .join("itch");
+        if flatpak.join("db").join("butler.db").exists() {
+            return flatpak;
+        }
+        home.join(".config").join("itch")
     }
 }
 
