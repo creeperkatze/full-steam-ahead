@@ -202,7 +202,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 									displayAsset(candidate, slot.kind)?.pathOrUrl &&
 									!previewErrored(displayAsset(candidate, slot.kind))
 								"
-								class="max-h-full max-w-full object-contain"
+								class="size-full object-scale-down"
 								:src="previewSrc(displayAsset(candidate, slot.kind))"
 								alt=""
 								@error="markPreviewErrored(displayAsset(candidate, slot.kind))"
