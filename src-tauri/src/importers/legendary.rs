@@ -13,20 +13,25 @@ use std::{
     path::{Path, PathBuf},
 };
 
+const RARE_FLATPAK: &str = "io.github.dummerle.rare";
+
 pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<ImportCandidate>> {
-    let (executable, games) = if let Some(custom) = custom_path {
+    let (executable, launch_prefix, games) = if let Some(custom) = custom_path {
         // A custom executable was explicitly chosen, so don't fall back to Rare
         let exe = custom.to_string_lossy().to_string();
         let games = run_legendary(&exe).unwrap_or_default();
-        (exe, games)
+        (exe, String::new(), games)
     } else if let Some(games) = run_legendary("legendary") {
-        ("legendary".to_string(), games)
+        ("legendary".to_string(), String::new(), games)
     } else if super::sandbox::resolve_host_binary("rare").is_some() {
         // Rare is a GUI without `list-installed`, but it shares Legendary's config
         // and can launch games itself
         tracing::debug!("Legendary not available, reading its config for Rare");
         let games = read_installed_json(&config_dir()).unwrap_or_default();
-        ("rare".to_string(), games)
+        ("rare".to_string(), String::new(), games)
+    } else if let Some(games) = run_rare_flatpak() {
+        tracing::debug!("Using the Legendary bundled with the Rare Flatpak");
+        ("flatpak".to_string(), format!("run {RARE_FLATPAK} "), games)
     } else {
         tracing::debug!("Neither Legendary nor Rare found");
         return Ok(Vec::new());
@@ -42,7 +47,7 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
                 "legendary",
                 game.title,
                 host_binary_path(&executable),
-                format!("launch {}", shell_quote(&game.app_name)),
+                format!("{launch_prefix}launch {}", shell_quote(&game.app_name)),
                 vec!["Legendary".to_string()],
             )
         })
@@ -52,8 +57,28 @@ pub fn scan(user: &SteamUser, custom_path: Option<&Path>) -> AppResult<Vec<Impor
 }
 
 fn run_legendary(executable: &str) -> Option<Vec<LegendaryGame>> {
-    let stdout = command_stdout(host_command(executable).args(["list-installed", "--json"]))?;
-    parse_launcher_json(&format!("{executable} list-installed"), &stdout)
+    list_installed(
+        executable,
+        host_command(executable).args(["list-installed", "--json"]),
+    )
+}
+
+fn run_rare_flatpak() -> Option<Vec<LegendaryGame>> {
+    list_installed(
+        RARE_FLATPAK,
+        host_command("flatpak").args([
+            "run",
+            "--command=legendary",
+            RARE_FLATPAK,
+            "list-installed",
+            "--json",
+        ]),
+    )
+}
+
+fn list_installed(label: &str, command: &mut std::process::Command) -> Option<Vec<LegendaryGame>> {
+    let stdout = command_stdout(command)?;
+    parse_launcher_json(&format!("{label} list-installed"), &stdout)
 }
 
 /// Matches how Legendary resolves its config directory.
