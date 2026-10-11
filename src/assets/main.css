@@ -146,6 +146,8 @@
     {
         @apply h-screen overflow-hidden rounded-[15px];
         contain: layout;
+        outline: 1px solid rgb(255 255 255 / 7%);
+        outline-offset: -1px;
     }
 
     *

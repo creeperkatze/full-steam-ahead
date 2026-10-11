@@ -151,10 +151,12 @@ fn style_gtk_frame(screen: &gtk::gdk::Screen) {
         decoration {
             border-radius: 15px;
             margin: 20px;
-            box-shadow: 0 0 14px 5px rgba(0, 0, 0, 0.15), 0 0 5px 2px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 14px 5px rgba(0, 0, 0, 0.15), 0 0 5px 2px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
         }
         decoration:backdrop {
-            box-shadow: 0 0 14px 5px transparent, 0 0 10px 5px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 0 14px 5px transparent, 0 0 10px 5px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
         }
         .maximized decoration, .fullscreen decoration, .tiled decoration,
         .tiled-top decoration, .tiled-right decoration, .tiled-bottom decoration,
