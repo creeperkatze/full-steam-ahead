@@ -67,7 +67,7 @@ fn games(source: &ImportSource) -> &'static [Game] {
         ],
         ImportSource::Legendary => &[
             ("Satisfactory", "/usr/bin/legendary", Some("launch CrabEA")),
-            ("Control", "/usr/bin/legendary", Some("launch Calluna")),
+            ("Cyberpunk 2077", "/usr/bin/legendary", Some("launch Ginger")),
         ],
         ImportSource::Lutris => &[("Terraria", "/usr/bin/lutris", Some("lutris:rungame/terraria"))],
         ImportSource::Itch => &[("Celeste", "/home/user/.config/itch/apps/celeste/Celeste", None)],
