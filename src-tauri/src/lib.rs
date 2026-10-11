@@ -125,10 +125,11 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
     };
 
     // Rounded corners need a transparent window, and transparency needs a compositor.
-    let compositing = gtk::gdk::Screen::default().is_some_and(|screen| screen.is_composited());
-    let mut builder =
-        tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.transparent(compositing);
-    if compositing {
+    let screen = gtk::gdk::Screen::default().filter(|screen| screen.is_composited());
+    let mut builder = tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
+        .transparent(screen.is_some());
+    if let Some(screen) = &screen {
+        round_gtk_frame(screen);
         builder = builder.initialization_script("window.__FSA_ROUNDED_CORNERS__ = true;");
     }
 
@@ -138,6 +139,30 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
         .gtk_window()?
         .set_titlebar(Some(&gtk::EventBox::new()));
     Ok(())
+}
+
+/// Rounds all four corners of the GTK frame. Themes like Adwaita only round the top ones.
+#[cfg(target_os = "linux")]
+fn round_gtk_frame(screen: &gtk::gdk::Screen) {
+    use gtk::prelude::CssProviderExt;
+
+    // 8px matches rounded-lg on the page body
+    const CSS: &[u8] = b"
+        decoration { border-radius: 8px; }
+        .maximized decoration, .fullscreen decoration, .tiled decoration,
+        .tiled-top decoration, .tiled-right decoration, .tiled-bottom decoration,
+        .tiled-left decoration { border-radius: 0; }
+    ";
+    let provider = gtk::CssProvider::new();
+    if let Err(error) = provider.load_from_data(CSS) {
+        tracing::warn!(%error, "Could not load the window frame style");
+        return;
+    }
+    gtk::StyleContext::add_provider_for_screen(
+        screen,
+        &provider,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
