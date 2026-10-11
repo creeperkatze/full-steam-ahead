@@ -22,7 +22,7 @@ Also available in these stores:
 
 - **[Flathub](https://flathub.org/apps/dev.creeperkatze.full-steam-ahead)** ![Flathub Version](https://img.shields.io/flathub/v/dev.creeperkatze.full-steam-ahead?label=)![Flathub Downloads](https://img.shields.io/flathub/downloads/dev.creeperkatze.full-steam-ahead?style=flat&color=yellow)
 
-Prefer to build from source? See [Building from source](#-building-from-source) below.
+Prefer to build from source? See [🔒 Building from source](#-building-from-source) below.
 
 ## 📸 Screenshots
 
