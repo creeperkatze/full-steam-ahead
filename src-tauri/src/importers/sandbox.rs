@@ -236,7 +236,8 @@ mod tests {
     #[test]
     fn config_dir_ignores_relative_and_empty_values() {
         for value in ["", "relative/cfg"] {
-            let env = env_of(&[("HOME", "/home/u"), ("XDG_CONFIG_HOME", value)]);
+            let vars = [("HOME", "/home/u"), ("XDG_CONFIG_HOME", value)];
+            let env = env_of(&vars);
             assert_eq!(
                 host_config_dir_impl(false, env),
                 PathBuf::from("/home/u/.config")
