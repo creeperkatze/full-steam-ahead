@@ -179,7 +179,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 					<SourceLabel :source="candidate.source" />
 				</header>
 
-				<div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3 p-2">
+				<div class="grid min-w-0 grid-cols-5 gap-3 p-2">
 					<div
 						v-for="slot in slots"
 						:key="slot.kind"
