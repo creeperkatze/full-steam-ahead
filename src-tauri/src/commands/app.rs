@@ -19,3 +19,33 @@ pub fn show_main_window(app: tauri::AppHandle) {
         }
     }
 }
+
+/// Whether the window frame is rounded, which it isn't while maximized, fullscreen or tiled.
+/// Stays sync, because GTK only works on the main thread.
+#[tauri::command]
+#[instrument(skip_all)]
+#[specta::specta]
+pub fn window_corners_rounded(window: tauri::WebviewWindow) -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        use gtk::{gdk::WindowState, prelude::WidgetExt};
+
+        let square = WindowState::MAXIMIZED
+            | WindowState::FULLSCREEN
+            | WindowState::TILED
+            | WindowState::TOP_TILED
+            | WindowState::RIGHT_TILED
+            | WindowState::BOTTOM_TILED
+            | WindowState::LEFT_TILED;
+        window
+            .gtk_window()
+            .ok()
+            .and_then(|gtk_window| gtk_window.window())
+            .is_some_and(|gdk_window| !gdk_window.state().intersects(square))
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = window;
+        false
+    }
+}

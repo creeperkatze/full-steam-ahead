@@ -15,6 +15,7 @@ use commands::{
     grant_steam_flatpak_permission, import_settings, list_backups, load_settings, open_logs_folder,
     read_shortcuts_for_user, reset_settings, restore_backup, save_settings, scan_sources,
     show_main_window, steamgriddb_images, steamgriddb_search, validate_steam_location,
+    window_corners_rounded,
 };
 use tauri::Manager;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -88,6 +89,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             steamgriddb_images,
             close_app,
             show_main_window,
+            window_corners_rounded,
             list_backups,
             restore_backup,
             delete_backup,
@@ -118,7 +120,7 @@ fn export_bindings(
 /// Builds the main window with a GTK frame for its shadow and resize edges.
 #[cfg(target_os = "linux")]
 fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
-    use gtk::prelude::GtkWindowExt;
+    use gtk::prelude::{GtkWindowExt, StyleContextExt, WidgetExt};
 
     let Some(config) = app.config().app.windows.iter().find(|w| w.label == "main") else {
         return Ok(());
@@ -134,10 +136,10 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
     }
 
     // An empty titlebar keeps the frame but hides the title bar
-    let window = builder.build()?;
-    window
-        .gtk_window()?
-        .set_titlebar(Some(&gtk::EventBox::new()));
+    let gtk_window = builder.build()?.gtk_window()?;
+    gtk_window.set_titlebar(Some(&gtk::EventBox::new()));
+    // Scopes the frame style to this window, so file dialogs keep the theme's frame
+    gtk_window.style_context().add_class("fsa-main");
     Ok(())
 }
 
@@ -148,19 +150,20 @@ fn style_gtk_frame(screen: &gtk::gdk::Screen) {
 
     // The radius matches the page body in main.css
     const CSS: &[u8] = b"
-        decoration {
+        .fsa-main decoration {
             border-radius: 15px;
             margin: 20px;
             box-shadow: 0 0 14px 5px rgba(0, 0, 0, 0.15), 0 0 5px 2px rgba(0, 0, 0, 0.1),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
         }
-        decoration:backdrop {
+        .fsa-main decoration:backdrop {
             box-shadow: 0 0 14px 5px transparent, 0 0 10px 5px rgba(0, 0, 0, 0.08),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
         }
-        .maximized decoration, .fullscreen decoration, .tiled decoration,
-        .tiled-top decoration, .tiled-right decoration, .tiled-bottom decoration,
-        .tiled-left decoration {
+        .fsa-main.maximized decoration, .fsa-main.fullscreen decoration,
+        .fsa-main.tiled decoration, .fsa-main.tiled-top decoration,
+        .fsa-main.tiled-right decoration, .fsa-main.tiled-bottom decoration,
+        .fsa-main.tiled-left decoration {
             border-radius: 0;
             box-shadow: 0 0 0 20px transparent;
         }
