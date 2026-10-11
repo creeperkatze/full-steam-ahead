@@ -183,7 +183,7 @@ function removeArtworkOverride(candidateId: string, kind: ArtworkKind) {
 					<div
 						v-for="slot in slots"
 						:key="slot.kind"
-						class="grid min-w-0 grid-rows-[auto_auto_auto] gap-2 rounded-lg border border-border/60 bg-surface-5 p-2"
+						class="grid min-w-0 grid-cols-1 grid-rows-[auto_auto_auto] gap-2 rounded-lg border border-border/60 bg-surface-5 p-2"
 					>
 						<div class="flex min-w-0 items-center justify-between gap-2">
 							<strong class="shrink-0 text-sm">{{ slot.label }}</strong>
