@@ -19,6 +19,10 @@ pub fn apply_plan_with_progress(
     on_progress: impl Fn(ApplyProgressEvent),
     request: ApplyRequest,
 ) -> AppResult<ApplyResult> {
+    if crate::importers::mock::ENABLED {
+        return Ok(crate::importers::mock::apply(&on_progress, request));
+    }
+
     tracing::info!(
         candidates = request.candidates.len(),
         stop_steam = request.options.stop_steam,

@@ -3,6 +3,7 @@ pub mod epic;
 pub mod gog;
 pub mod itch;
 pub mod manual;
+pub mod mock;
 pub mod scan;
 pub mod ubisoft;
 

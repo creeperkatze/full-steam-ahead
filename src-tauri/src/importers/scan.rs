@@ -137,6 +137,9 @@ fn scan_single_source(
         tracing::warn!("Source is not available on this platform");
         return Vec::new();
     };
+    if importers::mock::ENABLED {
+        return importers::mock::scan(source, user);
+    }
     scan(user, custom_path).unwrap_or_else(|error| {
         tracing::warn!(%error, "Scan failed");
         Vec::new()
