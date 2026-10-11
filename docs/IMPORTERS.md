@@ -43,7 +43,8 @@ On Linux:
 
 ## Scope
 
-- Skip entries that can't be launched (uninstalled, DLC, missing executable or folder) and log why at `debug`.
+- Skip entries the launcher marks as uninstalled, and DLC. Log why at `debug`.
+- Trust the launcher's list of installed games. Don't check that a game's folder or executable still exists. The Flatpak build can't see most game folders, so it would skip games that are installed.
 - Don't take shortcut icons from launcher or install metadata. Artwork comes from the artwork pipeline.
 
 ## Checking a change

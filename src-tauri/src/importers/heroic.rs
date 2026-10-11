@@ -121,16 +121,6 @@ struct HeroicEpicGame {
     title: String,
     #[serde(default)]
     is_dlc: bool,
-    install_path: String,
-    executable: String,
-}
-
-impl HeroicEpicGame {
-    fn is_installed(&self) -> bool {
-        Path::new(&self.install_path)
-            .join(&self.executable)
-            .exists()
-    }
 }
 
 fn scan_epic_games(
@@ -143,11 +133,10 @@ fn scan_epic_games(
     };
     map.into_values()
         .filter(|g| {
-            let keep = !g.is_dlc && g.is_installed();
-            if !keep {
-                tracing::debug!(game = g.title, dlc = g.is_dlc, "Skipping Heroic Epic entry");
+            if g.is_dlc {
+                tracing::debug!(game = g.title, "Skipping Heroic Epic DLC");
             }
-            keep
+            !g.is_dlc
         })
         .map(|game| heroic_launch_candidate(user, game.title, None, &game.app_name, install_mode))
         .collect()
@@ -209,17 +198,6 @@ fn scan_nile_games(
 
     installed
         .into_iter()
-        .filter(|g| {
-            let exists = Path::new(&g.path).exists();
-            if !exists {
-                tracing::debug!(
-                    id = g.id,
-                    path = g.path,
-                    "Skipping Heroic Amazon game whose folder is gone"
-                );
-            }
-            exists
-        })
         .map(|game| {
             let name = titles.remove(&game.id).unwrap_or_else(|| {
                 Path::new(&game.path)
@@ -251,21 +229,13 @@ struct HeroicSideloadGame {
 
 #[derive(Deserialize, Default)]
 struct HeroicSideloadInstall {
-    executable: Option<String>,
     #[serde(default)]
     is_dlc: bool,
 }
 
 impl HeroicSideloadGame {
     fn is_launchable(&self) -> bool {
-        if !self.is_installed || self.install.is_dlc {
-            return false;
-        }
-        // Browser apps have no executable. Heroic opens their URL itself.
-        match self.install.executable.as_deref() {
-            Some(exe) if !exe.is_empty() => Path::new(exe).exists(),
-            _ => true,
-        }
+        self.is_installed && !self.install.is_dlc
     }
 }
 
@@ -418,10 +388,7 @@ mod tests {
         let game = &library.games[0];
         assert_eq!(game.app_name, "aBcD1234");
         assert_eq!(game.title, "My Game");
-        assert_eq!(
-            game.install.executable.as_deref(),
-            Some("/games/mygame/game.exe")
-        );
+        assert!(game.is_launchable());
     }
 
     #[test]
@@ -431,11 +398,10 @@ mod tests {
     }
 
     #[test]
-    fn sideload_skips_uninstalled_and_missing_executables() {
+    fn sideload_skips_uninstalled_and_dlc() {
         let json = r#"{"games":[
             {"app_name":"a","title":"Not installed","is_installed":false,"install":{}},
-            {"app_name":"b","title":"Missing exe","is_installed":true,
-             "install":{"executable":"/definitely/not/here.exe"}},
+            {"app_name":"b","title":"DLC","is_installed":true,"install":{"is_dlc":true}},
             {"app_name":"c","title":"Browser app","is_installed":true,"install":{},
              "browserUrl":"https://example.com"}
         ]}"#;
@@ -468,12 +434,9 @@ fn scan_gog_games(
     let mut candidates = Vec::new();
     for entry in config.installed {
         let install_path = PathBuf::from(&entry.install_path);
-        if !install_path.exists() {
-            tracing::debug!(id = entry.app_name, path = %install_path.display(), "Skipping Heroic GOG game whose folder is gone");
-            continue;
-        }
 
-        if entry.platform == "linux" {
+        // Without access to the folder, Heroic launches the game instead
+        if entry.platform == "linux" && install_path.is_dir() {
             let gog_candidates = gog::scan_folders(user, vec![install_path.clone()]);
             if !gog_candidates.is_empty() {
                 for mut c in gog_candidates {

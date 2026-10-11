@@ -90,18 +90,9 @@ fn config_dir() -> PathBuf {
 }
 
 fn read_installed_json(config_dir: &Path) -> Option<Vec<LegendaryGame>> {
-    let map = read_launcher_json(&config_dir.join("installed.json"))?;
-    Some(installed_games(map))
-}
-
-fn installed_games(map: HashMap<String, LegendaryGame>) -> Vec<LegendaryGame> {
-    map.into_values()
-        .filter(|g| {
-            g.install_path
-                .as_deref()
-                .is_none_or(|p| Path::new(p).exists())
-        })
-        .collect()
+    let map: HashMap<String, LegendaryGame> =
+        read_launcher_json(&config_dir.join("installed.json"))?;
+    Some(map.into_values().collect())
 }
 
 #[derive(Deserialize)]
@@ -110,7 +101,6 @@ struct LegendaryGame {
     title: String,
     #[serde(default)]
     is_dlc: bool,
-    install_path: Option<String>,
 }
 
 #[cfg(test)]
@@ -124,17 +114,6 @@ mod tests {
         assert_eq!(games.len(), 1);
         assert_eq!(games[0].app_name, "game1");
         assert_eq!(games[0].title, "Game One");
-    }
-
-    #[test]
-    fn installed_json_skips_missing_install_paths() {
-        let json = r#"{
-            "Kept": {"app_name":"Kept","title":"Kept","version":"1","install_path":"/"},
-            "Gone": {"app_name":"Gone","title":"Gone","version":"1","install_path":"/definitely/not/here"}
-        }"#;
-        let games = installed_games(serde_json::from_str(json).unwrap());
-        assert_eq!(games.len(), 1);
-        assert_eq!(games[0].app_name, "Kept");
     }
 
     #[test]
