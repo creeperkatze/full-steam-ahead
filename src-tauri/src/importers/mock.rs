@@ -66,22 +66,9 @@ fn games(source: &ImportSource) -> &'static [Game] {
             ),
         ],
         ImportSource::Legendary => &[("Satisfactory", "/usr/bin/legendary", Some("launch CrabEA"))],
-        ImportSource::Lutris => &[
-            ("Terraria", "/usr/bin/lutris", Some("lutris:rungame/terraria")),
-            ("Dead Cells", "/usr/bin/lutris", Some("lutris:rungame/dead-cells")),
-        ],
-        ImportSource::Itch => &[
-            ("Celeste", "/home/user/.config/itch/apps/celeste/Celeste", None),
-            (
-                "A Short Hike",
-                "/home/user/.config/itch/apps/a-short-hike/AShortHike.x86_64",
-                None,
-            ),
-        ],
-        ImportSource::Flatpak => &[
-            ("Mindustry", FLATPAK, Some("run com.github.Anuken.Mindustry")),
-            ("OpenTTD", FLATPAK, Some("run org.openttd.OpenTTD")),
-        ],
+        ImportSource::Lutris => &[("Terraria", "/usr/bin/lutris", Some("lutris:rungame/terraria"))],
+        ImportSource::Itch => &[("Celeste", "/home/user/.config/itch/apps/celeste/Celeste", None)],
+        ImportSource::Flatpak => &[("OpenTTD", FLATPAK, Some("run org.openttd.OpenTTD"))],
         ImportSource::Bottles => &[(
             "Disco Elysium",
             FLATPAK,
@@ -126,18 +113,11 @@ fn games(source: &ImportSource) -> &'static [Game] {
                 None,
             ),
         ],
-        ImportSource::Itch => &[
-            (
-                "Celeste",
-                r"C:\Users\User\AppData\Roaming\itch\apps\celeste\Celeste.exe",
-                None,
-            ),
-            (
-                "A Short Hike",
-                r"C:\Users\User\AppData\Roaming\itch\apps\a-short-hike\AShortHike.exe",
-                None,
-            ),
-        ],
+        ImportSource::Itch => &[(
+            "Celeste",
+            r"C:\Users\User\AppData\Roaming\itch\apps\celeste\Celeste.exe",
+            None,
+        )],
         ImportSource::EaApp => &[(
             "It Takes Two",
             r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe",
