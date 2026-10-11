@@ -102,7 +102,7 @@ async function pickArtwork(candidateId: string, kind: ArtworkKind) {
 }
 
 function openSteamGridDbBrowser(candidate: ImportCandidate, kind: ArtworkKind) {
-	browsingSlot.value = { candidateId: candidate.id, kind, name: candidate.originalName }
+	browsingSlot.value = { candidateId: candidate.id, kind, name: candidate.name }
 }
 
 function onSteamGridDbSelect(image: SteamGridDbImage) {

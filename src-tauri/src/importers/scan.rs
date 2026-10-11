@@ -73,19 +73,18 @@ pub fn prepare_candidate(
         artwork::relink_existing(&mut candidate.artwork, &user.grid_path, shortcut.app_id);
     }
 
-    // Searched by the launcher's name, which finds more than a name the user made up.
-    artwork::apply_source_preference(
-        &mut candidate.artwork,
-        &candidate.original_name,
-        settings.default_artwork_source,
-        &settings.steam_grid_db,
-    );
-
     // A rename in Steam is kept instead of being reverted on the next import.
     if let Some(shortcut) = existing.filter(|s| use_steam_name && s.app_name != candidate.name) {
         tracing::debug!(game = %candidate.name, steam_name = %shortcut.app_name, "Using the name from Steam");
         candidate.name = shortcut.app_name.clone();
     }
+
+    artwork::apply_source_preference(
+        &mut candidate.artwork,
+        &candidate.name,
+        settings.default_artwork_source,
+        &settings.steam_grid_db,
+    );
 }
 
 type ScanFn = fn(&SteamUser, Option<&Path>) -> AppResult<Vec<ImportCandidate>>;
