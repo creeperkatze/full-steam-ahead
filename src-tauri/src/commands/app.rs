@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 use tracing::{info, instrument};
 
@@ -20,31 +21,12 @@ pub fn show_main_window(app: tauri::AppHandle) {
     }
 }
 
+/// Kept up to date by the Linux main window, whose frame turns square when maximized or tiled.
+pub static WINDOW_CORNERS_ROUNDED: AtomicBool = AtomicBool::new(true);
+
 #[tauri::command]
 #[instrument(skip_all)]
 #[specta::specta]
-pub fn window_corners_rounded(window: tauri::WebviewWindow) -> bool {
-    // Stays sync, because GTK only works on the main thread
-    #[cfg(target_os = "linux")]
-    {
-        use gtk::{gdk::WindowState, prelude::WidgetExt};
-
-        let square = WindowState::MAXIMIZED
-            | WindowState::FULLSCREEN
-            | WindowState::TILED
-            | WindowState::TOP_TILED
-            | WindowState::RIGHT_TILED
-            | WindowState::BOTTOM_TILED
-            | WindowState::LEFT_TILED;
-        window
-            .gtk_window()
-            .ok()
-            .and_then(|gtk_window| gtk_window.window())
-            .is_some_and(|gdk_window| !gdk_window.state().intersects(square))
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        let _ = window;
-        false
-    }
+pub async fn window_corners_rounded() -> bool {
+    WINDOW_CORNERS_ROUNDED.load(Ordering::Relaxed)
 }

@@ -140,6 +140,19 @@ fn create_linux_main_window(app: &tauri::App) -> tauri::Result<()> {
     gtk_window.set_titlebar(Some(&gtk::EventBox::new()));
     // Scopes the frame style to this window, so file dialogs keep the theme's frame
     gtk_window.style_context().add_class("fsa-main");
+    gtk_window.connect_window_state_event(|_, event| {
+        use gtk::gdk::WindowState;
+        let square = WindowState::MAXIMIZED
+            | WindowState::FULLSCREEN
+            | WindowState::TILED
+            | WindowState::TOP_TILED
+            | WindowState::RIGHT_TILED
+            | WindowState::BOTTOM_TILED
+            | WindowState::LEFT_TILED;
+        let rounded = !event.new_window_state().intersects(square);
+        commands::WINDOW_CORNERS_ROUNDED.store(rounded, std::sync::atomic::Ordering::Relaxed);
+        gtk::glib::Propagation::Proceed
+    });
     Ok(())
 }
 
