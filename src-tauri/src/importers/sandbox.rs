@@ -80,6 +80,29 @@ fn wrap_for_sandboxed_steam(
     (PathBuf::from(FLATPAK_SPAWN), options)
 }
 
+/// The host's config folder. Inside a Flatpak, `XDG_CONFIG_HOME` points to FSA's own folder.
+pub fn host_config_dir() -> PathBuf {
+    host_config_dir_impl(Path::new("/.flatpak-info").exists(), |name| {
+        std::env::var_os(name)
+    })
+}
+
+fn host_config_dir_impl(
+    in_sandbox: bool,
+    env: impl Fn(&str) -> Option<std::ffi::OsString>,
+) -> PathBuf {
+    let var = if in_sandbox {
+        "HOST_XDG_CONFIG_HOME"
+    } else {
+        "XDG_CONFIG_HOME"
+    };
+    env(var)
+        .map(PathBuf::from)
+        // The XDG spec says to ignore relative paths
+        .filter(|path| path.is_absolute())
+        .unwrap_or_else(|| PathBuf::from(env("HOME").unwrap_or_default()).join(".config"))
+}
+
 /// Takes the first absolute path
 fn parse_command_v(stdout: &str) -> Option<PathBuf> {
     stdout
@@ -160,6 +183,65 @@ mod tests {
             true,
         );
         assert_eq!(options, "--host \"/opt/my launcher/run\" play");
+    }
+
+    fn env_of<'a>(vars: &'a [(&str, &str)]) -> impl Fn(&str) -> Option<std::ffi::OsString> + 'a {
+        move |name| {
+            vars.iter()
+                .find(|(key, _)| *key == name)
+                .map(|(_, value)| value.into())
+        }
+    }
+
+    #[test]
+    fn config_dir_uses_xdg_config_home_outside_sandbox() {
+        let env = env_of(&[("HOME", "/home/u"), ("XDG_CONFIG_HOME", "/home/u/cfg")]);
+        assert_eq!(
+            host_config_dir_impl(false, env),
+            PathBuf::from("/home/u/cfg")
+        );
+    }
+
+    #[test]
+    fn config_dir_uses_the_host_value_inside_sandbox() {
+        let env = env_of(&[
+            ("HOME", "/home/u"),
+            (
+                "XDG_CONFIG_HOME",
+                "/home/u/.var/app/dev.creeperkatze.full-steam-ahead/config",
+            ),
+            ("HOST_XDG_CONFIG_HOME", "/home/u/cfg"),
+        ]);
+        assert_eq!(
+            host_config_dir_impl(true, env),
+            PathBuf::from("/home/u/cfg")
+        );
+    }
+
+    #[test]
+    fn config_dir_ignores_the_sandbox_value_when_the_host_has_none() {
+        let env = env_of(&[
+            ("HOME", "/home/u"),
+            (
+                "XDG_CONFIG_HOME",
+                "/home/u/.var/app/dev.creeperkatze.full-steam-ahead/config",
+            ),
+        ]);
+        assert_eq!(
+            host_config_dir_impl(true, env),
+            PathBuf::from("/home/u/.config")
+        );
+    }
+
+    #[test]
+    fn config_dir_ignores_relative_and_empty_values() {
+        for value in ["", "relative/cfg"] {
+            let env = env_of(&[("HOME", "/home/u"), ("XDG_CONFIG_HOME", value)]);
+            assert_eq!(
+                host_config_dir_impl(false, env),
+                PathBuf::from("/home/u/.config")
+            );
+        }
     }
 
     #[test]

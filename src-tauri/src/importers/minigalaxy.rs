@@ -93,9 +93,7 @@ fn default_games_dir() -> AppResult<PathBuf> {
     })?;
     let home = PathBuf::from(home);
 
-    let native_config = std::env::var("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| home.join(".config"));
+    let native_config = super::sandbox::host_config_dir();
     let flatpak_config = home
         .join(".var")
         .join("app")

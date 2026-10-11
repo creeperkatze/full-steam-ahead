@@ -2,7 +2,7 @@ use crate::{
     error::AppResult,
     importers::{
         command_stdout, launcher_candidate, parse_launcher_json, read_launcher_json,
-        sandbox::{host_binary_path, host_command},
+        sandbox::{host_binary_path, host_command, host_config_dir},
         shell_quote,
     },
     models::{ImportCandidate, ImportSource, SteamUser},
@@ -86,12 +86,7 @@ fn config_dir() -> PathBuf {
     if let Ok(path) = std::env::var("LEGENDARY_CONFIG_PATH") {
         return PathBuf::from(path);
     }
-    if let Ok(path) = std::env::var("XDG_CONFIG_HOME") {
-        return PathBuf::from(path).join("legendary");
-    }
-    PathBuf::from(std::env::var("HOME").unwrap_or_default())
-        .join(".config")
-        .join("legendary")
+    host_config_dir().join("legendary")
 }
 
 fn read_installed_json(config_dir: &Path) -> Option<Vec<LegendaryGame>> {
