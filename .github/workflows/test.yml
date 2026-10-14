@@ -42,6 +42,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
           cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install Linux system dependencies
         run: |
@@ -91,6 +92,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
           cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
