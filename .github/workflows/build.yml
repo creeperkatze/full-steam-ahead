@@ -4,10 +4,8 @@ on:
   push:
     tags:
       - "v*"
-    branches: [main]
-    paths:
-      - "src-tauri/Cargo.lock"
-      - "src-tauri/Cargo.toml"
+  schedule:
+    - cron: "0 0 * * 1"
   workflow_dispatch:
     inputs:
       tag:
@@ -41,20 +39,19 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            bundles: nsis,msi
+            args: --bundles nsis,msi
             uploadPlainBinary: true
           - platform: windows-11-arm
-            bundles: nsis,msi
+            args: --bundles nsis,msi
             uploadPlainBinary: true
           - platform: ubuntu-latest
-            bundles: deb,appimage,rpm
+            args: --bundles deb,appimage,rpm
             uploadPlainBinary: false
           - platform: ubuntu-24.04-arm
-            bundles: deb,appimage,rpm
+            args: --bundles deb,appimage,rpm
             uploadPlainBinary: false
           - platform: macos-latest
-            target: --target universal-apple-darwin
-            bundles: dmg
+            args: --target universal-apple-darwin --bundles dmg
             uploadPlainBinary: false
 
     runs-on: ${{ matrix.platform }}
@@ -102,21 +99,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build to warm the cache
-        if: env.RELEASE != 'true'
-        run: pnpm exec tauri build --no-bundle ${{ matrix.target }}
-
       - name: Build and release
-        if: env.RELEASE == 'true'
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ inputs.tag || github.ref_name }}
-          releaseName: ${{ inputs.tag || github.ref_name }}
+          # Without a tag the action only builds, which warms the cache on scheduled runs
+          tagName: ${{ env.RELEASE == 'true' && (inputs.tag || github.ref_name) || '' }}
+          releaseName: ${{ env.RELEASE == 'true' && (inputs.tag || github.ref_name) || '' }}
           releaseDraft: true
           releaseAssetNamePattern: 'full-steam-ahead-[version]-[platform]-[arch][setup][ext]'
-          args: ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          args: ${{ matrix.args }}
           uploadPlainBinary: ${{ matrix.uploadPlainBinary }}
