@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*"
+    branches: [main]
+    paths:
+      - "src-tauri/Cargo.lock"
+      - "src-tauri/Cargo.toml"
   workflow_dispatch:
     inputs:
       tag:
@@ -17,9 +21,13 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  RELEASE: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
+
 jobs:
   test:
     name: Lint and test
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/test.yml
     with:
       ref: ${{ inputs.tag || github.ref }}
@@ -27,24 +35,26 @@ jobs:
   build:
     name: Build (${{ matrix.platform }})
     needs: test
+    if: ${{ !cancelled() && needs.test.result != 'failure' }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: windows-latest
-            args: --bundles nsis,msi
+            bundles: nsis,msi
             uploadPlainBinary: true
           - platform: windows-11-arm
-            args: --bundles nsis,msi
+            bundles: nsis,msi
             uploadPlainBinary: true
           - platform: ubuntu-latest
-            args: --bundles deb,appimage,rpm
+            bundles: deb,appimage,rpm
             uploadPlainBinary: false
           - platform: ubuntu-24.04-arm
-            args: --bundles deb,appimage,rpm
+            bundles: deb,appimage,rpm
             uploadPlainBinary: false
           - platform: macos-latest
-            args: --target universal-apple-darwin --bundles dmg
+            target: --target universal-apple-darwin
+            bundles: dmg
             uploadPlainBinary: false
 
     runs-on: ${{ matrix.platform }}
@@ -92,7 +102,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build to warm the cache
+        if: env.RELEASE != 'true'
+        run: pnpm exec tauri build --no-bundle ${{ matrix.target }}
+
       - name: Build and release
+        if: env.RELEASE == 'true'
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
@@ -103,5 +118,5 @@ jobs:
           releaseName: ${{ inputs.tag || github.ref_name }}
           releaseDraft: true
           releaseAssetNamePattern: 'full-steam-ahead-[version]-[platform]-[arch][setup][ext]'
-          args: ${{ matrix.args }}
+          args: ${{ matrix.target }} --bundles ${{ matrix.bundles }}
           uploadPlainBinary: ${{ matrix.uploadPlainBinary }}
