@@ -14,6 +14,7 @@ export default defineConfig({
 						params: {
 							overrides: {
 								cleanupIds: false,
+								removeViewBox: false,
 							},
 						},
 					},
