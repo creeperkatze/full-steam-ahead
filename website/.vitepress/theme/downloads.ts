@@ -19,7 +19,7 @@ async function loadFlathubInstalls(): Promise<number | null> {
 	const stats = `https://flathub.org/api/v2/stats/${FLATHUB_ID}`
 	try {
 		const res = await fetch(
-			`https://img.shields.io/badge/dynamic/json?url=${encodeURIComponent(stats)}&query=installs_total`,
+			`https://img.shields.io/badge/dynamic/json.json?url=${encodeURIComponent(stats)}&query=installs_total`,
 		)
 		if (!res.ok) return null
 		const value = Number(((await res.json()) as { value?: string }).value)
