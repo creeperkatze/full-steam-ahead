@@ -13,10 +13,14 @@ const PLATFORMS = [
 	{ label: 'Linux', marker: '-linux-' },
 ]
 
-// Flathub's stats API has no CORS headers, so go through shields.io
+// Flathub's stats API has no CORS headers, so go through shields.io.
+// The dynamic badge keeps the raw number, the flathub badge abbreviates it to "1.2k"
 async function loadFlathubInstalls(): Promise<number | null> {
+	const stats = `https://flathub.org/api/v2/stats/${FLATHUB_ID}`
 	try {
-		const res = await fetch(`https://img.shields.io/flathub/downloads/${FLATHUB_ID}.json`)
+		const res = await fetch(
+			`https://img.shields.io/badge/dynamic/json?url=${encodeURIComponent(stats)}&query=installs_total`,
+		)
 		if (!res.ok) return null
 		const value = Number(((await res.json()) as { value?: string }).value)
 		return Number.isFinite(value) ? value : null
