@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 
 import DeFlag from '../../../../assets/icons/flags/de.svg?component'
 import GbFlag from '../../../../assets/icons/flags/gb.svg?component'
+import ItFlag from '../../../../assets/icons/flags/it.svg?component'
 import OptionSelect from '../../../../components/options/OptionSelect.vue'
 import OptionToggle from '../../../../components/options/OptionToggle.vue'
 import SectionHeader from '../../../../components/options/SectionHeader.vue'
@@ -17,6 +18,7 @@ import type { ColorScheme } from '../../../../theme'
 const FLAGS: Record<SupportedLocale, Component> = {
 	'en-US': GbFlag,
 	'de-DE': DeFlag,
+	'it-IT': ItFlag,
 }
 
 const state = useAppState()
