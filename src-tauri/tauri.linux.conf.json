@@ -1,9 +1,5 @@
 {
-    "bundle": {
-        "icon": [
-            "icons/linux/128x128.png",
-            "icons/linux/128x128@2x.png",
-            "icons/linux/icon.png"
-        ]
-    }
+	"bundle": {
+		"icon": ["icons/linux/128x128.png", "icons/linux/128x128@2x.png", "icons/linux/icon.png"]
+	}
 }

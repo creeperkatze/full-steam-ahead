@@ -9,7 +9,8 @@ This project uses pnpm. `website/` is the separate VitePress project site with i
 - `pnpm dev` runs the app with auto-updates disabled. It also regenerates `src/bindings.ts`.
 - `pnpm gen:bindings` regenerates `src/bindings.ts` without starting the app.
 - `pnpm test` runs the Rust tests; the frontend has no tests.
-- `pnpm lint` runs ESLint, clippy and `cargo fmt --check`. `pnpm lint:fix` applies their fixes and formats.
+- `pnpm lint` runs oxlint and clippy. `pnpm lint:fix` applies their fixes.
+- `pnpm fmt` formats with oxfmt and `cargo fmt`. `pnpm fmt:check` only checks.
 - `pnpm typecheck` checks the frontend.
 - Never run the `release:*` scripts or push tags. Releases are done by the maintainer.
 

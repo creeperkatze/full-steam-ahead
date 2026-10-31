@@ -1,9 +1,6 @@
-/* eslint-disable simple-import-sort/imports */
-
 import { h } from 'vue'
 
 import { createTheme, messagesFromGlob } from '../shared/theme'
-
 import { loadDownloads } from './downloads'
 import HeroActions from './HeroActions.vue'
 import Logo from './icons/logo.svg?skipsvgo'

@@ -6,12 +6,19 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to publish"
+        description: 'Release tag to publish'
         required: true
 
 jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+
   publish:
     name: Publish
+    needs: ci
     runs-on: ubuntu-slim
     permissions:
       contents: read

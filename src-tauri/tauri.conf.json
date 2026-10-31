@@ -1,104 +1,102 @@
 {
-    "$schema": "https://schema.tauri.app/config/2",
-    "productName": "Full Steam Ahead",
-    "version": "../package.json",
-    "identifier": "dev.creeperkatze.full-steam-ahead",
-    "mainBinaryName": "Full Steam Ahead",
-    "build": {
-        "beforeDevCommand": "pnpm web:dev",
-        "beforeBuildCommand": "pnpm web:build",
-        "devUrl": "http://localhost:1420",
-        "frontendDist": "../dist"
-    },
-    "app": {
-        "macOSPrivateApi": true,
-        "windows": [
-            {
-                "title": "Full Steam Ahead",
-                "label": "main",
-                "width": 1200,
-                "height": 680,
-                "minWidth": 1000,
-                "minHeight": 680,
-                "resizable": true,
-                "fullscreen": false,
-                "visible": false,
-                "decorations": false,
-                "titleBarStyle": "Overlay",
-                "hiddenTitle": true,
-                "zoomHotkeysEnabled": false,
-                "trafficLightPosition": {
-                    "x": 8,
-                    "y": 20
-                }
-            }
-        ],
-        "security": {
-            "csp": {
-                "default-src": "'self'",
-                "script-src": "'self'",
-                "style-src": "'self' 'unsafe-inline'",
-                "img-src": "'self' asset: http://asset.localhost https:",
-                "font-src": "'self'",
-                "connect-src": "'self' ipc: http://ipc.localhost https://api.github.com",
-                "object-src": "'none'",
-                "base-uri": "'self'",
-                "form-action": "'none'",
-                "frame-src": "'none'"
-            },
-            "assetProtocol": {
-                "enable": true,
-                "scope": [
-                    "**"
-                ]
-            },
-            "devCsp": {
-                "default-src": "'self'",
-                "script-src": "'self'",
-                "style-src": "'self' 'unsafe-inline'",
-                "img-src": "'self' asset: http://asset.localhost https:",
-                "font-src": "'self'",
-                "connect-src": "'self' ipc: http://ipc.localhost https://api.github.com ws://localhost:1420",
-                "object-src": "'none'",
-                "base-uri": "'self'",
-                "form-action": "'none'",
-                "frame-src": "'none'"
-            }
-        }
-    },
-    "plugins": {
-        "updater": {
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ2NkQ2MzQ4NUZFQ0E3RkYKUldUL3AreGZTR050MWdKN0JMbitNZHBNVENjUUNMNFI4MU9GTEdoZzl5L05uY25pdE9ibTZFQmMK",
-            "endpoints": [
-                "https://github.com/creeperkatze/full-steam-ahead/releases/latest/download/latest.json"
-            ]
-        }
-    },
-    "bundle": {
-        "active": true,
-        "createUpdaterArtifacts": true,
-        "category": "Utility",
-        "publisher": "Creeperkatze",
-        "copyright": "",
-        "homepage": "https://github.com/creeperkatze/full-steam-ahead",
-        "license": "AGPL-3.0-only",
-        "licenseFile": "../LICENSE",
-        "shortDescription": "A desktop app to import games from other launchers into Steam.",
-        "longDescription": "",
-        "targets": "all",
-        "icon": [
-            "icons/128x128.png",
-            "icons/128x128@2x.png",
-            "icons/icon.png",
-            "icons/icon.icns",
-            "icons/icon.ico"
-        ],
-        "windows": {
-            "allowDowngrades": false,
-            "nsis": {
-                "installMode": "currentUser",
-                "startMenuFolder": "Full Steam Ahead"
-            }
-        }
-    }
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Full Steam Ahead",
+	"version": "../package.json",
+	"identifier": "dev.creeperkatze.full-steam-ahead",
+	"mainBinaryName": "Full Steam Ahead",
+	"build": {
+		"beforeDevCommand": "pnpm web:dev",
+		"beforeBuildCommand": "pnpm web:build",
+		"devUrl": "http://localhost:1420",
+		"frontendDist": "../dist"
+	},
+	"app": {
+		"macOSPrivateApi": true,
+		"windows": [
+			{
+				"title": "Full Steam Ahead",
+				"label": "main",
+				"width": 1200,
+				"height": 680,
+				"minWidth": 1000,
+				"minHeight": 680,
+				"resizable": true,
+				"fullscreen": false,
+				"visible": false,
+				"decorations": false,
+				"titleBarStyle": "Overlay",
+				"hiddenTitle": true,
+				"zoomHotkeysEnabled": false,
+				"trafficLightPosition": {
+					"x": 8,
+					"y": 20
+				}
+			}
+		],
+		"security": {
+			"csp": {
+				"default-src": "'self'",
+				"script-src": "'self'",
+				"style-src": "'self' 'unsafe-inline'",
+				"img-src": "'self' asset: http://asset.localhost https:",
+				"font-src": "'self'",
+				"connect-src": "'self' ipc: http://ipc.localhost https://api.github.com",
+				"object-src": "'none'",
+				"base-uri": "'self'",
+				"form-action": "'none'",
+				"frame-src": "'none'"
+			},
+			"assetProtocol": {
+				"enable": true,
+				"scope": ["**"]
+			},
+			"devCsp": {
+				"default-src": "'self'",
+				"script-src": "'self'",
+				"style-src": "'self' 'unsafe-inline'",
+				"img-src": "'self' asset: http://asset.localhost https:",
+				"font-src": "'self'",
+				"connect-src": "'self' ipc: http://ipc.localhost https://api.github.com ws://localhost:1420",
+				"object-src": "'none'",
+				"base-uri": "'self'",
+				"form-action": "'none'",
+				"frame-src": "'none'"
+			}
+		}
+	},
+	"plugins": {
+		"updater": {
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ2NkQ2MzQ4NUZFQ0E3RkYKUldUL3AreGZTR050MWdKN0JMbitNZHBNVENjUUNMNFI4MU9GTEdoZzl5L05uY25pdE9ibTZFQmMK",
+			"endpoints": [
+				"https://github.com/creeperkatze/full-steam-ahead/releases/latest/download/latest.json"
+			]
+		}
+	},
+	"bundle": {
+		"active": true,
+		"createUpdaterArtifacts": true,
+		"category": "Utility",
+		"publisher": "Creeperkatze",
+		"copyright": "",
+		"homepage": "https://github.com/creeperkatze/full-steam-ahead",
+		"license": "AGPL-3.0-only",
+		"licenseFile": "../LICENSE",
+		"shortDescription": "A desktop app to import games from other launchers into Steam.",
+		"longDescription": "",
+		"targets": "all",
+		"icon": [
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"windows": {
+			"allowDowngrades": false,
+			"nsis": {
+				"installMode": "currentUser",
+				"startMenuFolder": "Full Steam Ahead"
+			}
+		}
+	}
 }

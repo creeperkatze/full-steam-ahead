@@ -1,254 +1,226 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@theme
-{
-    --font-sans: 'Inter Variable', Inter, "Segoe UI", sans-serif;
+@theme {
+	--font-sans: 'Inter Variable', Inter, 'Segoe UI', sans-serif;
 
-    --color-surface-1: #f4f6f9;
-    --color-surface-2: #e2e7ee;
-    --color-surface-3: #e8ecf2;
-    --color-surface-4: #dce2ea;
-    --color-surface-5: #ffffff;
-    --color-surface-inset: #edf0f5;
-    --color-surface-hover: #d3dae4;
+	--color-surface-1: #f4f6f9;
+	--color-surface-2: #e2e7ee;
+	--color-surface-3: #e8ecf2;
+	--color-surface-4: #dce2ea;
+	--color-surface-5: #ffffff;
+	--color-surface-inset: #edf0f5;
+	--color-surface-hover: #d3dae4;
 
-    --color-primary: #1e293b;
-    --color-secondary: #475569;
-    --color-path: #2c4a63;
+	--color-primary: #1e293b;
+	--color-secondary: #475569;
+	--color-path: #2c4a63;
 
-    --color-border: #c3ccd8;
-    --color-border-muted: #d6dde6;
-    --color-border-dashed: #a9b4c2;
+	--color-border: #c3ccd8;
+	--color-border-muted: #d6dde6;
+	--color-border-dashed: #a9b4c2;
 
-    --color-accent: #0d84e0;
-    --color-accent-strong: #1a9fff;
-    --color-accent-hover: #0b6cc4;
-    --color-accent-bg: #e5f2fc;
-    --color-accent-contrast: #07131f;
-    --color-accent-icon: #ffffff;
+	--color-accent: #0d84e0;
+	--color-accent-strong: #1a9fff;
+	--color-accent-hover: #0b6cc4;
+	--color-accent-bg: #e5f2fc;
+	--color-accent-contrast: #07131f;
+	--color-accent-icon: #ffffff;
 
-    --color-danger: #c0362b;
-    --color-danger-bg: #fdecea;
-    --color-danger-control: #fbe4e1;
-    --color-danger-hover: #f8d7d3;
-    --color-danger-border: #f1b3ac;
+	--color-danger: #c0362b;
+	--color-danger-bg: #fdecea;
+	--color-danger-control: #fbe4e1;
+	--color-danger-hover: #f8d7d3;
+	--color-danger-border: #f1b3ac;
 
-    --color-warning: #92650a;
-    --color-warning-bg: #fef6df;
-    --color-warning-border: #e8d190;
+	--color-warning: #92650a;
+	--color-warning-bg: #fef6df;
+	--color-warning-border: #e8d190;
 }
 
-:root
-{
-    color-scheme: light;
+:root {
+	color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark)
-{
-    :root:not([data-theme="light"])
-    {
-        color-scheme: dark;
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		color-scheme: dark;
 
-        --color-surface-1: #1c2230;
-        --color-surface-2: #13171e;
-        --color-surface-3: #242c3a;
-        --color-surface-4: #2d3444;
-        --color-surface-5: #1f2532;
-        --color-surface-inset: #161b25;
-        --color-surface-hover: #29303f;
+		--color-surface-1: #1c2230;
+		--color-surface-2: #13171e;
+		--color-surface-3: #242c3a;
+		--color-surface-4: #2d3444;
+		--color-surface-5: #1f2532;
+		--color-surface-inset: #161b25;
+		--color-surface-hover: #29303f;
 
-        --color-primary: #c8d6e4;
-        --color-secondary: #8aa2b6;
-        --color-path: #9eb6c6;
+		--color-primary: #c8d6e4;
+		--color-secondary: #8aa2b6;
+		--color-path: #9eb6c6;
 
-        --color-border: #3b4858;
-        --color-border-muted: #2d3848;
-        --color-border-dashed: #4c5e6e;
+		--color-border: #3b4858;
+		--color-border-muted: #2d3848;
+		--color-border-dashed: #4c5e6e;
 
-        --color-accent: #2badff;
-        --color-accent-strong: #1a9fff;
-        --color-accent-hover: #0f7fd1;
-        --color-accent-bg: #0d1e2e;
-        --color-accent-contrast: #07131f;
-        --color-accent-icon: #07131f;
+		--color-accent: #2badff;
+		--color-accent-strong: #1a9fff;
+		--color-accent-hover: #0f7fd1;
+		--color-accent-bg: #0d1e2e;
+		--color-accent-contrast: #07131f;
+		--color-accent-icon: #07131f;
 
-        --color-danger: #f0a397;
-        --color-danger-bg: #2b1d1a;
-        --color-danger-control: #3a2421;
-        --color-danger-hover: #472b27;
-        --color-danger-border: #754037;
+		--color-danger: #f0a397;
+		--color-danger-bg: #2b1d1a;
+		--color-danger-control: #3a2421;
+		--color-danger-hover: #472b27;
+		--color-danger-border: #754037;
 
-        --color-warning: #f0d98a;
-        --color-warning-bg: #292518;
-        --color-warning-border: #6d5a2e;
-    }
+		--color-warning: #f0d98a;
+		--color-warning-bg: #292518;
+		--color-warning-border: #6d5a2e;
+	}
 }
 
-:root[data-theme="dark"]
-{
-    color-scheme: dark;
+:root[data-theme='dark'] {
+	color-scheme: dark;
 
-    --color-surface-1: #1c2230;
-    --color-surface-2: #13171e;
-    --color-surface-3: #242c3a;
-    --color-surface-4: #2d3444;
-    --color-surface-5: #1f2532;
-    --color-surface-inset: #161b25;
-    --color-surface-hover: #29303f;
+	--color-surface-1: #1c2230;
+	--color-surface-2: #13171e;
+	--color-surface-3: #242c3a;
+	--color-surface-4: #2d3444;
+	--color-surface-5: #1f2532;
+	--color-surface-inset: #161b25;
+	--color-surface-hover: #29303f;
 
-    --color-primary: #c8d6e4;
-    --color-secondary: #8aa2b6;
-    --color-path: #9eb6c6;
+	--color-primary: #c8d6e4;
+	--color-secondary: #8aa2b6;
+	--color-path: #9eb6c6;
 
-    --color-border: #3b4858;
-    --color-border-muted: #2d3848;
-    --color-border-dashed: #4c5e6e;
+	--color-border: #3b4858;
+	--color-border-muted: #2d3848;
+	--color-border-dashed: #4c5e6e;
 
-    --color-accent: #2badff;
-    --color-accent-strong: #1a9fff;
-    --color-accent-hover: #0f7fd1;
-    --color-accent-bg: #0d1e2e;
-    --color-accent-contrast: #07131f;
-    --color-accent-icon: #07131f;
+	--color-accent: #2badff;
+	--color-accent-strong: #1a9fff;
+	--color-accent-hover: #0f7fd1;
+	--color-accent-bg: #0d1e2e;
+	--color-accent-contrast: #07131f;
+	--color-accent-icon: #07131f;
 
-    --color-danger: #f0a397;
-    --color-danger-bg: #2b1d1a;
-    --color-danger-control: #3a2421;
-    --color-danger-hover: #472b27;
-    --color-danger-border: #754037;
+	--color-danger: #f0a397;
+	--color-danger-bg: #2b1d1a;
+	--color-danger-control: #3a2421;
+	--color-danger-hover: #472b27;
+	--color-danger-border: #754037;
 
-    --color-warning: #f0d98a;
-    --color-warning-bg: #292518;
-    --color-warning-border: #6d5a2e;
+	--color-warning: #f0d98a;
+	--color-warning-bg: #292518;
+	--color-warning-border: #6d5a2e;
 }
 
-:root[data-theme="light"]
-{
-    color-scheme: light;
+:root[data-theme='light'] {
+	color-scheme: light;
 }
 
-@layer base
-{
-    body
-    {
-        @apply m-0 min-h-screen min-w-240 bg-surface-1 font-sans text-sm tracking-normal text-primary;
-        scrollbar-color: var(--color-border) transparent;
-        scrollbar-width: thin;
-    }
+@layer base {
+	body {
+		@apply m-0 min-h-screen min-w-240 bg-surface-1 font-sans text-sm tracking-normal text-primary;
+		scrollbar-color: var(--color-border) transparent;
+		scrollbar-width: thin;
+	}
 
-    *
-    {
-        @apply scroll-smooth;
-    }
+	* {
+		@apply scroll-smooth;
+	}
 
-    button,
-    input,
-    select
-    {
-        font: inherit;
-    }
+	button,
+	input,
+	select {
+		font: inherit;
+	}
 
-    [data-tauri-drag-region]
-    {
-        -webkit-app-region: drag;
-    }
+	[data-tauri-drag-region] {
+		-webkit-app-region: drag;
+	}
 
-    button,
-    a,
-    input,
-    select
-    {
-        -webkit-app-region: no-drag;
-    }
+	button,
+	a,
+	input,
+	select {
+		-webkit-app-region: no-drag;
+	}
 
-    input[type="checkbox"]
-    {
-        accent-color: var(--color-accent);
-    }
+	input[type='checkbox'] {
+		accent-color: var(--color-accent);
+	}
 
-    button,
-    input,
-    textarea,
-    select,
-    a
-    {
-        outline: none;
-    }
+	button,
+	input,
+	textarea,
+	select,
+	a {
+		outline: none;
+	}
 
-    input:focus-visible,
-    textarea:focus-visible,
-    select:focus-visible
-    {
-        outline: 2px solid var(--color-accent);
-        outline-offset: -1px;
-    }
+	input:focus-visible,
+	textarea:focus-visible,
+	select:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: -1px;
+	}
 
-    button:focus-visible,
-    a:focus-visible
-    {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-    }
+	button:focus-visible,
+	a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
 
-    label:has(input[type="checkbox"]:focus-visible)
-    {
-        outline: 2px solid var(--color-accent);
-        outline-offset: -2px;
-    }
+	label:has(input[type='checkbox']:focus-visible) {
+		outline: 2px solid var(--color-accent);
+		outline-offset: -2px;
+	}
 
-    ::placeholder
-    {
-        color: var(--color-secondary);
-        opacity: 1;
-    }
+	::placeholder {
+		color: var(--color-secondary);
+		opacity: 1;
+	}
 
-    a
-    {
-        color: var(--color-accent);
-        text-decoration: none;
-    }
+	a {
+		color: var(--color-accent);
+		text-decoration: none;
+	}
 
-    a:hover
-    {
-        text-decoration: underline;
-    }
+	a:hover {
+		text-decoration: underline;
+	}
 
-    table
-    {
-        @apply w-full table-fixed border-collapse;
-    }
+	table {
+		@apply w-full table-fixed border-collapse;
+	}
 
-    th,
-    td
-    {
-        @apply border-b border-border px-2.5 py-2.5 text-start align-middle;
-    }
+	th,
+	td {
+		@apply border-b border-border px-2.5 py-2.5 text-start align-middle;
+	}
 
-    th
-    {
-        @apply font-semibold text-secondary;
-    }
+	th {
+		@apply font-semibold text-secondary;
+	}
 }
 
-@layer components
-{
-    .link
-    {
-        color: var(--color-accent);
-        text-decoration: none;
-        cursor: pointer;
-    }
+@layer components {
+	.link {
+		color: var(--color-accent);
+		text-decoration: none;
+		cursor: pointer;
+	}
 
-    .link:hover
-    {
-        text-decoration: underline;
-    }
+	.link:hover {
+		text-decoration: underline;
+	}
 }
 
-@layer utilities
-{
-    .path-cell
-    {
-        @apply truncate text-path;
-    }
+@layer utilities {
+	.path-cell {
+		@apply truncate text-path;
+	}
 }

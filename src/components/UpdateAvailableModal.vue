@@ -79,14 +79,12 @@ function onNotesClick(e: MouseEvent) {
 						{{ t('updateModal.description', { current: currentVersion, latest: latestVersion }) }}
 					</template>
 				</p>
-				<!-- eslint-disable vue/no-v-html -- markdown-it escapes raw HTML -->
 				<div
 					v-if="status === 'available' && releaseNotes"
 					class="release-notes mt-3 max-h-[50vh] overflow-y-auto rounded-lg border border-border bg-surface-3 p-2.5 text-sm text-secondary"
 					@click="onNotesClick"
 					v-html="renderedNotes"
 				/>
-				<!-- eslint-enable vue/no-v-html -->
 				<div
 					v-if="status === 'downloading'"
 					class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-4"

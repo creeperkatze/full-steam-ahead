@@ -1,15 +1,15 @@
-name: Build
+name: Release
 
 on:
   push:
     tags:
-      - "v*"
+      - 'v*.*'
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: '0 0 * * 1'
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to build"
+        description: 'Tag to build'
         required: false
 
 concurrency:
@@ -23,17 +23,17 @@ env:
   RELEASE: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
 
 jobs:
-  test:
-    name: Lint and test
+  ci:
+    name: CI
     if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/ci.yml
     with:
       ref: ${{ inputs.tag || github.ref }}
 
   build:
     name: Build (${{ matrix.platform }})
-    needs: test
-    if: ${{ !cancelled() && needs.test.result != 'failure' }}
+    needs: ci
+    if: ${{ !cancelled() && needs.ci.result != 'failure' }}
     strategy:
       fail-fast: false
       matrix:
@@ -57,13 +57,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - name: Check out code
+      - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
 
-      - name: Install Rust stable
+      - name: Set up Rust
         uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
         with:
           toolchain: stable
@@ -90,10 +90,10 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
-      - name: Setup Node
+      - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies

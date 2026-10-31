@@ -11,7 +11,6 @@ A desktop app to import games from other launchers into Steam.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/creeperkatze)
 
-
 ## 🚀 Installation
 
 Download the latest version for your platform from the [website](https://full-steam-ahead.creeperkatze.dev).
@@ -24,23 +23,23 @@ Prefer to build from source? See [🔒 Building from source](#-building-from-sou
 
 ## 🎮 Supported platforms
 
-| Platform | Windows | macOS | Linux |
-|---|---|---|---|
-| Epic Games | ✅ | ✅ | ✅ |
-| GOG | ✅ | ❌ | ✅ |
-| itch.io | ✅ | ✅ | ✅ |
-| EA app | ✅ | - | ✅ |
-| Ubisoft Connect | ✅ | - | ✅ |
-| Amazon Games | ✅ | - | - |
-| Xbox | ✅ | - | - |
-| Playnite | ✅ | - | - |
-| Bottles | - | - | ✅ |
-| Flatpak | - | - | ✅ |
-| Heroic | ❌ | ❌ | ✅ |
-| Legendary | ❌ | ❌ | ✅ |
-| Lutris | - | - | ✅ |
-| MiniGalaxy | - | - | ✅ |
-| Proton | - | - | ✅ |s
+| Platform        | Windows | macOS | Linux |
+| --------------- | ------- | ----- | ----- |
+| Epic Games      | ✅      | ✅    | ✅    |
+| GOG             | ✅      | ❌    | ✅    |
+| itch.io         | ✅      | ✅    | ✅    |
+| EA app          | ✅      | -     | ✅    |
+| Ubisoft Connect | ✅      | -     | ✅    |
+| Amazon Games    | ✅      | -     | -     |
+| Xbox            | ✅      | -     | -     |
+| Playnite        | ✅      | -     | -     |
+| Bottles         | -       | -     | ✅    |
+| Flatpak         | -       | -     | ✅    |
+| Heroic          | ❌      | ❌    | ✅    |
+| Legendary       | ❌      | ❌    | ✅    |
+| Lutris          | -       | -     | ✅    |
+| MiniGalaxy      | -       | -     | ✅    |
+| Proton          | -       | -     | ✅    |
 
 ## ✨ Features
 
@@ -135,7 +134,7 @@ New translations are automatically pulled every Monday.
 
 Contributions are always welcome!
 
-Please ensure you run `pnpm lint` before opening a pull request.
+Please ensure you run `pnpm lint` and `pnpm fmt:check` before opening a pull request.
 
 ## 📜 License
 
