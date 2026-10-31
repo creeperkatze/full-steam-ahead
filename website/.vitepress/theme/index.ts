@@ -27,6 +27,30 @@ export default createTheme({
 		{ key: 'backups', image: '/screenshots/settings_backups.png' },
 	],
 	showcaseImageSize: { width: 1202, height: 682 },
+	featured: [
+		{
+			publication: 'LinuxLinks',
+			title: 'Full Steam Ahead – import games from other launchers into Steam',
+			icon: '/icons/linuxlinks.png',
+			date: '2026-10-12',
+			link: 'https://www.linuxlinks.com/full-steam-ahead-import-games-steam/',
+		},
+		{
+			publication: 'Edivaldo Brito',
+			title: 'Full Steam Ahead chega ao Linux e organiza sua biblioteca Steam',
+			icon: '/icons/edivaldobrito.png',
+			date: '2026-10-13',
+			link: 'https://www.edivaldobrito.com.br/full-steam-ahead/',
+		},
+		{
+			publication: 'SempreUpdate',
+			title:
+				'Instale o Full Steam Ahead, um iniciador de jogos, no Ubuntu, Fedora, Debian e outras distribuições Linux com Flatpak',
+			icon: '/icons/sempreupdate.png',
+			date: '2026-10-13',
+			link: 'https://sempreupdate.com.br/instale-o-full-steam-ahead-um-iniciador-de-jogos-no-ubuntu-fedora-debian-e-outras-distribuicoes-linux-com-flatpak/',
+		},
+	],
 	slots: {
 		'home-hero-actions-after': () => h(HeroActions),
 	},
