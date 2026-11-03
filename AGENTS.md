@@ -12,7 +12,7 @@ This project uses pnpm. `website/` is the separate VitePress project site with i
 - `pnpm lint` runs oxlint and clippy. `pnpm lint:fix` applies their fixes.
 - `pnpm fmt` formats with oxfmt and `cargo fmt`. `pnpm fmt:check` only checks.
 - `pnpm typecheck` checks the frontend.
-- Never run the `release:*` scripts or push tags. Releases are done by the maintainer.
+- Never run the `release` script or push tags. Releases are done by the maintainer.
 
 ## Rules
 

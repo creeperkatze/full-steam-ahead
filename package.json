@@ -18,9 +18,8 @@
 		"test:coverage": "cargo llvm-cov --manifest-path src-tauri/Cargo.toml --lcov --output-path lcov.info",
 		"intl:prune": "node scripts/prune-locales.js",
 		"version": "node scripts/sync-version.js",
-		"release:patch": "pnpm version patch && git push && git push --tags",
-		"release:minor": "pnpm version minor && git push && git push --tags",
-		"release:major": "pnpm version major && git push && git push --tags"
+		"release": "pnpm version -m \"chore(release): v%s\"",
+		"postversion": "git push --follow-tags"
 	},
 	"dependencies": {
 		"@fontsource-variable/inter": "^5.3.0",
