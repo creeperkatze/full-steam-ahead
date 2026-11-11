@@ -20,7 +20,6 @@ export default defineSiteConfig(
 				link: 'https://flathub.org/apps/dev.creeperkatze.full-steam-ahead',
 				ariaLabel: 'Flathub',
 			},
-			{ icon: 'discord', link: 'https://link.creeperkatze.dev/discord' },
 		],
 	},
 	{
