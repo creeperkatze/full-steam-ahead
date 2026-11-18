@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-11-18
+
 ### Security
 
 - Updated the self updater to include the latest security fixes from Tauri.
@@ -307,7 +309,8 @@
 
 - Fixed no steam profile found error message on linux.
 
-[Unreleased]: https://github.com/creeperkatze/full-steam-ahead/compare/v1.6.2...HEAD
+[Unreleased]: https://github.com/creeperkatze/full-steam-ahead/compare/v1.6.3...HEAD
+[1.6.3]: https://github.com/creeperkatze/full-steam-ahead/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/creeperkatze/full-steam-ahead/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/creeperkatze/full-steam-ahead/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/creeperkatze/full-steam-ahead/compare/v1.5.6...v1.6.0
