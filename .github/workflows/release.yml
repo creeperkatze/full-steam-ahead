@@ -99,6 +99,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Read release notes
+        id: notes
+        if: env.RELEASE == 'true'
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          {
+            echo 'body<<RELEASE_NOTES_EOF'
+            node scripts/changelog.js notes "$TAG"
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and release
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
         env:
@@ -109,6 +122,7 @@ jobs:
           # Without a tag the action only builds, which warms the cache on scheduled runs
           tagName: ${{ env.RELEASE == 'true' && (inputs.tag || github.ref_name) || '' }}
           releaseName: ${{ env.RELEASE == 'true' && (inputs.tag || github.ref_name) || '' }}
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           releaseAssetNamePattern: 'full-steam-ahead-[version]-[platform]-[arch][setup][ext]'
           args: ${{ matrix.args }}

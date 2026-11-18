@@ -14,6 +14,11 @@ This project uses pnpm. `website/` is the separate VitePress project site with i
 - `pnpm typecheck` checks the frontend.
 - Never run the `release` script or push tags. Releases are done by the maintainer.
 
+## Changelog
+
+- Add every user-facing change to the `## [Unreleased]` section of `CHANGELOG.md`, under `### Added`, `### Changed`, `### Fixed` or `### Security`. Never edit released sections.
+- Write entries for users, not developers. `pnpm release` moves them into the new version, and that section becomes the GitHub release notes and the in-app update notes.
+
 ## Rules
 
 - Code behind `#[cfg(unix)]` or `#[cfg(windows)]` only compiles on that platform. Say so when a change couldn't be compiled locally; CI builds and tests on Linux, Windows and macOS.
