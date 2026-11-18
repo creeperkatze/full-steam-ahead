@@ -17,8 +17,8 @@
 		"test": "cargo test --manifest-path src-tauri/Cargo.toml",
 		"test:coverage": "cargo llvm-cov --manifest-path src-tauri/Cargo.toml --lcov --output-path lcov.info",
 		"intl:prune": "node scripts/prune-locales.js",
-		"preversion": "node scripts/changelog.js check",
-		"version": "node scripts/sync-version.js && node scripts/changelog.js release",
+		"preversion": "node scripts/changelog.js notes Unreleased",
+		"version": "node scripts/sync-version.js && node scripts/changelog.js release && git add CHANGELOG.md",
 		"release": "pnpm version -m \"chore(release): v%s\"",
 		"postversion": "git push --follow-tags"
 	},
