@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Security
+
+- Updated the self updater to include the latest security fixes from Tauri.
+
 ## [1.6.2] - 2026-10-25
 
 ### Added
