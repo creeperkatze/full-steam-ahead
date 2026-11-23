@@ -54,5 +54,9 @@
 	"stats": {
 		"downloads": "Download da {platform}",
 		"flathubInstalls": "Installazioni Flathub"
+	},
+	"featured": {
+		"title": "In evidenza",
+		"description": "Articoli e post che parlano di {name}."
 	}
 }
